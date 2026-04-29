@@ -12,6 +12,7 @@ import { IChunckGeneratorProperties, ChunckDataGenerator, GeneratorType } from "
 import { ChunckDataGeneratorFromSave } from "./TerrainGen/ChunckDataGeneratorFromSave";
 import { FloorPow2Exponent, Pow2 } from "../Number";
 import { BlockType } from "./BlockType";
+import { ChunckDataGeneratorFactory } from "./TerrainGen/ChunckDataGeneratorFactory";
 
 export interface ITerrainProperties {
     //randSeed?: Nabu.RandSeed,
@@ -175,7 +176,7 @@ export class Terrain {
 
         this.chunckBuilder = new ChunckMeshBuilder(this);
 
-        this.chunckDataGenerator = ChunckDataGenerator.CreateGenerator(this, prop.generatorProps ? prop.generatorProps : { type: GeneratorType.Flat, blockType: BlockType.Grass });
+        this.chunckDataGenerator = ChunckDataGeneratorFactory.CreateGenerator(this, prop.generatorProps ? prop.generatorProps : { type: GeneratorType.Flat, blockType: BlockType.Grass });
         this.useLocalStorage = prop.useLocalStorage ? true : false;
         this.chunckDataGeneratorSave = new ChunckDataGeneratorFromSave(this);
 

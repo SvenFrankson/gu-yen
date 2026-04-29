@@ -1,7 +1,12 @@
 import { VertexData } from "@babylonjs/core/Meshes/mesh.vertexData";
 import { Mesh } from "@babylonjs/core/Meshes/mesh";
 import { ExtendedVertexData } from "./ExtendedVertexData";
-import { SceneLoader } from "@babylonjs/core/Loading/sceneLoader";
+import { ImportMeshAsync, SceneLoader } from "@babylonjs/core/Loading/sceneLoader";
+import { ColorizeVertexDataInPlace, GetGLTFVertexData, MirrorZVertexDataInPlace, TriFlipVertexDataInPlace } from "../VertexDataUtils";
+import { Scene } from "@babylonjs/core/scene";
+import { Color3 } from "@babylonjs/core/Maths/math.color";
+import { registerBuiltInLoaders } from "@babylonjs/loaders/dynamic";
+registerBuiltInLoaders();
 
 export class ChunckVertexData {
 
@@ -435,26 +440,24 @@ export class ChunckVertexData {
         return useful;
     }
 
-    private static async _LoadChunckVertexDatasFromFile(filePath: string, lod: number, useXZAxisRotation: boolean): Promise<void> {
-        return new Promise<void>(
-            resolve => {
-                SceneLoader.ImportMesh(
-                    "",
-                    filePath,
-                    "",
-                    undefined,
-                    (meshes) => {
-                        for (let i = 0; i < meshes.length; i++) {
-                            let mesh = meshes[i];
-                            if (mesh instanceof Mesh && mesh.name != "zero") {
-                                ChunckVertexData._AddChunckPartMesh(mesh, lod, useXZAxisRotation);
-                            }
-                        }
-                        resolve();
-                    }
-                );
+    private static async _LoadChunckVertexDatasFromFile(filePath: string, lod: number, useXZAxisRotation: boolean, scene: Scene): Promise<void> {
+        const data = await ImportMeshAsync(filePath, scene);
+        data.meshes.forEach(mesh => {
+            if (mesh instanceof Mesh && mesh.name !== "__root__") {
+                console.log(mesh.name);
+                let vData = VertexData.ExtractFromMesh(mesh);
+                ColorizeVertexDataInPlace(vData, new Color3(1, 1, 1));
+                MirrorZVertexDataInPlace(vData);
+                TriFlipVertexDataInPlace(vData);
+                vData.applyToMesh(mesh);
+
+                ChunckVertexData._AddChunckPartMesh(mesh, lod, useXZAxisRotation);
             }
-        );
+        });
+        
+        data.meshes.forEach(mesh => {
+            mesh.dispose(true);
+        });
     }
 
     private static _LoadAltTriangulationChunckVertexDatas(lod: number): void {
@@ -618,8 +621,8 @@ export class ChunckVertexData {
         }
     }
 
-    public static async InitializeData(filePath: string): Promise<boolean> {
-        await ChunckVertexData._LoadChunckVertexDatasFromFile(filePath, 0, true);
+    public static async InitializeData(filePath: string, scene: Scene): Promise<boolean> {
+        await ChunckVertexData._LoadChunckVertexDatasFromFile(filePath, 0, true, scene);
         ChunckVertexData._LoadComposedChunckVertexDatas(0, true);
         ChunckVertexData._LoadAltTriangulationChunckVertexDatas(0);
 

@@ -647,6 +647,7 @@ export class Chunck {
     public async redrawMesh(force?: boolean): Promise<void> {
         if (!this.subdivided) {
             if (this.level <= this.terrain.maxDisplayedLevel) {
+                console.log("Redrawing chunck " + this.name);
                 let t0: number = 0;
                 let analyticOccurence: IChunckAnalyticBuildOccurence | undefined = undefined;
                 if (this.terrain.useAnalytics) {
@@ -673,6 +674,7 @@ export class Chunck {
                         if (!this.mesh) {
                             this.mesh = new Mesh(this.name + "-mesh");
                         }
+                        console.log(vertexData);
                         vertexData.applyToMesh(this.mesh);
                         this.mesh.position.copyFrom(this.position);
 
