@@ -3,6 +3,8 @@ import { Terrain } from "../../Terrain";
 import { Chunck } from "../../Chunck";
 import { BlockType } from "../../BlockType";
 import { TerrainEditionMode } from "../../TerrainEditor/TerrainEditor";
+import { UniqueList } from "../../../UniqueList";
+import { IJK } from "../../../Number";
 export interface ILineProps {}
 
 export class Line extends Shape {

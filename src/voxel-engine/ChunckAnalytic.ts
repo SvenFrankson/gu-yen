@@ -20,56 +20,56 @@ export class ChunckAnalytic {
 
     public get duration(): number {
         if (this._buildOccurences.length > 0) {
-            return this._buildOccurences[this._buildOccurences.length - 1].duration;
+            return this._buildOccurences[this._buildOccurences.length - 1].duration ?? 0;
         }
         return 0;
     }
 
     public get buildDuration(): number {
         if (this._buildOccurences.length > 0) {
-            return this._buildOccurences[this._buildOccurences.length - 1].buildRefDuration;
+            return this._buildOccurences[this._buildOccurences.length - 1].buildRefDuration ?? 0;
         }
         return 0;
     }
 
     public get fillDuration(): number {
         if (this._buildOccurences.length > 0) {
-            return this._buildOccurences[this._buildOccurences.length - 1].fillVertexDuration;
+            return this._buildOccurences[this._buildOccurences.length - 1].fillVertexDuration ?? 0;
         }
         return 0;
     }
 
     public get postProcessDuration(): number {
         if (this._buildOccurences.length > 0) {
-            return this._buildOccurences[this._buildOccurences.length - 1].postProcessDuration;
+            return this._buildOccurences[this._buildOccurences.length - 1].postProcessDuration ?? 0;
         }
         return 0;
     }
 
     public get triangleCount(): number {
         if (this._buildOccurences.length > 0) {
-            return this._buildOccurences[this._buildOccurences.length - 1].triangleCount;
+            return this._buildOccurences[this._buildOccurences.length - 1].triangleCount ?? 0;
         }
         return 0;
     }
 
     public get buildDurationPerTriangle(): number {
         if (this._buildOccurences.length > 0) {
-            return this._buildOccurences[this._buildOccurences.length - 1].duration / (this._buildOccurences[this._buildOccurences.length - 1].triangleCount / 1000);
+            return (this._buildOccurences[this._buildOccurences.length - 1].duration ?? 0) / ((this._buildOccurences[this._buildOccurences.length - 1].triangleCount ?? 0) / 1000);
         }
         return 0;
     }
 
     public get firstNonEmptyReferenceK(): number {
         if (this._buildOccurences.length > 0) {
-            return this._buildOccurences[this._buildOccurences.length - 1].firstNonEmptyReferenceK;
+            return this._buildOccurences[this._buildOccurences.length - 1].firstNonEmptyReferenceK ?? 0;
         }
         return 0;
     }
 
     public get lastNonEmptyReferenceK(): number {
         if (this._buildOccurences.length > 0) {
-            return this._buildOccurences[this._buildOccurences.length - 1].lastNonEmptyReferenceK;
+            return this._buildOccurences[this._buildOccurences.length - 1].lastNonEmptyReferenceK ?? 0;
         }
         return 0;
     }

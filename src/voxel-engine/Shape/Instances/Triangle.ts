@@ -3,6 +3,8 @@ import { Chunck } from "../../Chunck";
 import { BlockType } from "../../BlockType";
 import { TerrainEditionMode } from "../../TerrainEditor/TerrainEditor";
 import { Line } from "./Line";
+import { GetLineIJKsFromTo, IJK } from "../../../Number";
+import { UniqueList } from "../../../UniqueList";
 
 export class Triangle {
     constructor(public terrain: Terrain) {
@@ -12,9 +14,9 @@ export class Triangle {
     public draw(chunck: Chunck, ijk0: IJK, ijk1: IJK, ijk2: IJK, blockType: BlockType, mode: TerrainEditionMode, saveToLocalStorage?: boolean, skipChunckRedraw?: boolean) {
         let affectedChuncks = new UniqueList<Chunck>();
 
-        let line01 = Nabu.GetLineIJKsFromTo(ijk0, ijk1);
-        let line02 = Nabu.GetLineIJKsFromTo(ijk0, ijk2);
-        let line03 = Nabu.GetLineIJKsFromTo(ijk1, ijk2);
+        let line01 = GetLineIJKsFromTo(ijk0, ijk1);
+        let line02 = GetLineIJKsFromTo(ijk0, ijk2);
+        let line03 = GetLineIJKsFromTo(ijk1, ijk2);
 
         let n = Math.max(line01.length, line02.length);
 

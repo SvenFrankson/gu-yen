@@ -2,10 +2,12 @@ import { VertexData } from "@babylonjs/core/Meshes/mesh.vertexData";
 import { Vector3 } from "@babylonjs/core/Maths/math.vector";
 import { Color3 } from "@babylonjs/core/Maths/math.color";
 import { Terrain } from "./Terrain";
-import { Chunck, DRAW_CHUNCK_MARGIN } from "./Chunck";
+import { Chunck, DRAW_CHUNCK_MARGIN, Fillness } from "./Chunck";
 import { ChunckVertexData } from "./ChunckVertexData";
 import { ExtendedVertexData } from "./ExtendedVertexData";
 import { BlockType } from "./BlockType";
+import { IChunckAnalyticBuildOccurence } from "./ChunckAnalytic";
+import { IJK, IsVeryFinite, MinMax } from "../Number";
 
 export class ChunckMeshBuilder {
 
@@ -39,7 +41,7 @@ export class ChunckMeshBuilder {
         this._Colors = new Uint8Array(this._DataLengthIJ * this._DataLengthIJ * this._DataLengthK);
     }
 
-    private _GetVertex(x: number, y: number, z: number): number {
+    private _GetVertex(x: number, y: number, z: number): number | undefined {
         z = Math.floor(z / 2);
         if (y % 2 === 1) {
             x = x / 2;
@@ -392,7 +394,7 @@ export class ChunckMeshBuilder {
                         let K = ijk.k + k;
 
                         let a = alphaMax * (1 - (d / radius));
-                        a = Nabu.MinMax(a, 0, 1);
+                        a = MinMax(a, 0, 1);
 
                         let b = chunck.getData(I, J, K);
                         if (b > BlockType.Water) {

@@ -1,3 +1,4 @@
+/*
 import { ChunckDataGenerator, IChunckGeneratorProperties, GeneratorType } from "./ChunckDataGenerator";
 import { Chunck, DRAW_CHUNCK_MARGIN } from "../Chunck";
 import { BlockType } from "../BlockType";
@@ -202,3 +203,4 @@ export class ChunckDataGeneratorFromMaps extends ChunckDataGenerator {
         }
     }
 }
+*/

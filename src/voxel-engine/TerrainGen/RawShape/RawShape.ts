@@ -1,3 +1,4 @@
+import { IJK } from "../../../Number";
 import { BlockType } from "../../BlockType";
 import { Chunck, DRAW_CHUNCK_MARGIN } from "../../Chunck";
 export abstract class RawShape {
@@ -58,7 +59,7 @@ export class RawShapeSphere extends RawShape {
 }
 
 export class RawShapeDot extends RawShape {
-    public dots: IJK[];
+    public dots: IJK[] = [];
     public minI: number = 0;
     public maxI: number = 0;
     public minJ: number = 0;

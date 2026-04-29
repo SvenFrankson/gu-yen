@@ -1,3 +1,5 @@
+import { IJK, IsVeryFinite, MinMax } from "../../Number";
+import { UniqueList } from "../../UniqueList";
 import { BlockType } from "../BlockType";
 import { Chunck } from "../Chunck";
 import { Terrain } from "../Terrain";
@@ -124,13 +126,13 @@ export class TerrainEditor {
     }
 
     public setBrushSize(s: number): void {
-        s = Nabu.MinMax(s, 1, 20);
+        s = MinMax(s, 1, 20);
         this.brushSize = s;
         if (this.onBrushSizeChanged) {
             this.onBrushSizeChanged(this.brushSize);
         }
     }
-    public onBrushSizeChanged: (s: number) => void;
+    public onBrushSizeChanged: ((s: number) => void) | undefined;
 
     public setBrushShape(shape: BrushShape): void {
         this._brushShape = shape;
@@ -138,7 +140,7 @@ export class TerrainEditor {
             this.onBrushShapeChanged(this._brushShape);
         }
     }
-    public onBrushShapeChanged: (shape: BrushShape) => void;
+    public onBrushShapeChanged: ((shape: BrushShape) => void) | undefined;
 
     public setBrushBlock(b: number): void {
         if (this.mode === TerrainEditionMode.Erase) {
@@ -160,7 +162,7 @@ export class TerrainEditor {
             this.onBrushBlockChanged(this.eraseBrushBlock);
         }
     }
-    public onBrushBlockChanged: (b: number) => void;
+    public onBrushBlockChanged: ((b: number) => void) | undefined;
 
     public setEditionMode(m: TerrainEditionMode): void {
         this.mode = m;
@@ -168,16 +170,16 @@ export class TerrainEditor {
             this.onEditionModeChanged(this.mode);
         }
     }
-    public onEditionModeChanged: (m: TerrainEditionMode) => void;
+    public onEditionModeChanged: ((m: TerrainEditionMode) => void) | undefined;
 
     public setNoise(v: number): void {
-        v = Nabu.MinMax(v, 0, 5);
+        v = MinMax(v, 0, 5);
         this.noise = v;
         if (this.onNoiseChanged) {
             this.onNoiseChanged(this.noise);
         }
     }
-    public onNoiseChanged: (b: number) => void;
+    public onNoiseChanged: ((b: number) => void) | undefined;
 
     public doTest = () => {};
 
@@ -190,27 +192,27 @@ export class TerrainEditor {
         if (!props) {
             props = {};
         }
-        if (isNaN(props.mode)) {
+        if (!IsVeryFinite(props.mode)) {
             props.mode = this.mode;
         }
-        if (isNaN(props.brushSize)) {
+        if (!IsVeryFinite(props.brushSize)) {
             props.brushSize = this.brushSize;
         }
-        if (isNaN(props.brushShape)) {
+        if (!IsVeryFinite(props.brushShape)) {
             props.brushShape = this.brushShape;
         }
-        if (isNaN(props.noiseValue)) {
+        if (!IsVeryFinite(props.noiseValue)) {
             props.noiseValue = this.noiseValue;
         }
-        if (isNaN(props.brushBlock)) {
+        if (!IsVeryFinite(props.brushBlock)) {
             props.brushBlock = this.mode === TerrainEditionMode.Erase ? this.eraseBrushBlock : this.addBrushBlock;
         }
         if (props.saveToLocalStorage === undefined) {
             props.saveToLocalStorage = this.terrain.useLocalStorage;
         }
 
-        let first = - Math.floor(props.brushSize / 2);
-        let last = Math.ceil(props.brushSize / 2);
+        let first = - Math.floor(props.brushSize as number / 2);
+        let last = Math.ceil(props.brushSize as number / 2);
         let kFirst = first;
         let kLast = last;
         if (props.brushShape === BrushShape.Disc || props.brushShape === BrushShape.Square) {
@@ -230,10 +232,10 @@ export class TerrainEditor {
             for (let i = first; i < last; i++) {
                 for (let j = first; j < last; j++) {
                     for (let k = first; k < last; k++) {
-                        let offset = props.brushSize % 2 === 0 ? 0.5 : 0;
+                        let offset = props.brushSize as number % 2 === 0 ? 0.5 : 0;
                         let d = Math.sqrt((i + offset) * (i + offset) + (j + offset) * (j + offset) + (k + offset) * (k + offset));
-                        if (d <= Math.ceil(props.brushSize / 2)) {
-                            if (Math.random() < props.noiseValue) {
+                        if (d <= Math.ceil(props.brushSize as number / 2)) {
+                            if (Math.random() < (props.noiseValue as number)) {
                                 let block = chunck.getData(ijk.i + i, ijk.j + j, ijk.k + k);
                                 if (block === BlockType.None) {
                                     let adjExists = false;
@@ -251,7 +253,7 @@ export class TerrainEditor {
                 }
             }
             todo.forEach(task => {
-                let chuncks = chunck.setData(props.brushBlock, task.i, task.j, task.k, true, affectedBlocks);
+                let chuncks = chunck.setData(props.brushBlock as number, task.i, task.j, task.k, true, affectedBlocks);
                 k0 = Math.min(k0, task.k);
                 k1 = Math.max(k1, task.k);
                 chuncks.forEach(c => { affectedChuncks.push(c); });
@@ -262,10 +264,10 @@ export class TerrainEditor {
             for (let i = first; i < last; i++) {
                 for (let j = first; j < last; j++) {
                     for (let k = first; k < last; k++) {
-                        let offset = props.brushSize % 2 === 0 ? 0.5 : 0;
+                        let offset = props.brushSize as number % 2 === 0 ? 0.5 : 0;
                         let d = Math.sqrt((i + offset) * (i + offset) + (j + offset) * (j + offset) + (k + offset) * (k + offset));
-                        if (d <= Math.ceil(props.brushSize / 2)) {
-                            if (Math.random() < props.noiseValue) {
+                        if (d <= Math.ceil(props.brushSize as number / 2)) {
+                            if (Math.random() < (props.noiseValue as number)) {
                                 let block = chunck.getData(ijk.i + i, ijk.j + j, ijk.k + k);
                                 if (block != BlockType.None) {
                                     let adjEmpty = false;
@@ -295,10 +297,10 @@ export class TerrainEditor {
             for (let i = first; i < last; i++) {
                 for (let j = first; j < last; j++) {
                     for (let k = first; k < last; k++) {
-                        let offset = props.brushSize % 2 === 0 ? 0.5 : 0;
+                        let offset = props.brushSize as number % 2 === 0 ? 0.5 : 0;
                         let d = Math.sqrt((i + offset) * (i + offset) + (j + offset) * (j + offset) + (k + offset) * (k + offset));
-                        if (d <= Math.ceil(props.brushSize / 2)) {
-                            if (Math.random() < props.noiseValue) {
+                        if (d <= Math.ceil(props.brushSize as number / 2)) {
+                            if (Math.random() < (props.noiseValue as number)) {
                                 let block = chunck.getData(ijk.i + i, ijk.j + j, ijk.k + k);
                                 let adjCount = 0;
                                 for (let n = 0; n < TerrainEditor.adjIndexes3.length; n++) {
@@ -337,15 +339,15 @@ export class TerrainEditor {
             })
         }
         else {
-            let maxD = Math.ceil(props.brushSize / 2);
+            let maxD = Math.ceil(props.brushSize as number / 2);
             if (props.brushShape === BrushShape.Disc) {
-                maxD = Math.floor(props.brushSize * 0.5) + 0.3;
+                maxD = Math.floor(props.brushSize as number * 0.5) + 0.3;
             }
 
             for (let i = first; i < last; i++) {
                 for (let j = first; j < last; j++) {
                     for (let k = kFirst; k < kLast; k++) {
-                        let offset = props.brushSize % 2 === 0 ? 0.5 : 0;
+                        let offset = props.brushSize as number % 2 === 0 ? 0.5 : 0;
                         let d = Infinity;
                         if (props.brushShape === BrushShape.Sphere) {
                             d = Math.sqrt((i + offset) * (i + offset) + (j + offset) * (j + offset) + (k + offset) * (k + offset));
@@ -354,7 +356,7 @@ export class TerrainEditor {
                             d = Math.max(Math.abs(i + offset), Math.abs(j + offset), Math.abs(k + offset));
                         }
                         if (props.brushShape === BrushShape.Disc) {
-                            if (props.brushSize % 2 === 0) {
+                            if (props.brushSize as number % 2 === 0) {
                                 d = Math.sqrt((i + 0.5) * (i + 0.5) + (j + 0.5) * (j + 0.5));
                             }
                             else {
@@ -365,27 +367,27 @@ export class TerrainEditor {
                             d = Math.max(Math.abs(i + offset), Math.abs(j + offset));
                         }
                         if (d <= maxD) {
-                            let chuncks = [];
+                            let chuncks: Chunck[] = [];
                             
                             if (props.mode === TerrainEditionMode.Add) {
-                                if (Math.random() < props.noiseValue) {
-                                    chuncks = chunck.setData(props.brushBlock, ijk.i + i, ijk.j + j, ijk.k + k, true, affectedBlocks);
+                                if (Math.random() < (props.noiseValue as number)) {
+                                    chuncks = chunck.setData(props.brushBlock as number, ijk.i + i, ijk.j + j, ijk.k + k, true, affectedBlocks);
                                     k0 = Math.min(k0, ijk.k + k);
                                     k1 = Math.max(k1, ijk.k + k);
                                 }
                             }
                             else if (props.mode === TerrainEditionMode.AddIfEmpty) {
-                                if (Math.random() < props.noiseValue) {
+                                if (Math.random() < (props.noiseValue as number)) {
                                     let block = chunck.getData(ijk.i + i, ijk.j + j, ijk.k + k);
                                     if (block === BlockType.None) {
-                                        chuncks = chunck.setData(props.brushBlock, ijk.i + i, ijk.j + j, ijk.k + k, true, affectedBlocks);
+                                        chuncks = chunck.setData(props.brushBlock as number, ijk.i + i, ijk.j + j, ijk.k + k, true, affectedBlocks);
                                         k0 = Math.min(k0, ijk.k + k);
                                         k1 = Math.max(k1, ijk.k + k);
                                     }
                                 }
                             }
                             else if (props.mode === TerrainEditionMode.Erase) {
-                                if (Math.random() < props.noiseValue) {
+                                if (Math.random() < (props.noiseValue as number)) {
                                     if (props.brushBlock === BlockType.None) {
                                         chuncks = chunck.setData(BlockType.None, ijk.i + i, ijk.j + j, ijk.k + k, true, affectedBlocks);
                                         k0 = Math.min(k0, ijk.k + k);

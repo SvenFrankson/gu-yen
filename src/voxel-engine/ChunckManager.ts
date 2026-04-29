@@ -4,6 +4,8 @@ import { Mesh } from "@babylonjs/core/Meshes/mesh";
 import { Vector3 } from "@babylonjs/core/Maths/math.vector";
 import { Terrain } from "./Terrain";
 import { Chunck } from "./Chunck";
+import { UniqueList } from "../UniqueList";
+import { MeshBuilder } from "@babylonjs/core/Meshes/meshBuilder";
 
 class ChunckRedrawRequest {
 
@@ -17,29 +19,29 @@ class ChunckRedrawRequest {
 }
 
 interface IChunckManagerProperties {
-    scene?: Scene,
+    scene: Scene,
     terrain: Terrain,
     fullRenderMode?: boolean
 }
 
 export class ChunckManager {
     
-    private _viewpoint: Vector3;
+    private _viewpoint: Vector3 = Vector3.Zero();
     private _chunckIndex: number = 0;
     public chuncks: UniqueList<Chunck>;
-    private _chunckLevelsDistancesSubdivide: number[];
-    private _chunckLevelsDistancesCollapse: number[];
-    private _chunckLevelsSquareDistancesSubdivide: number[];
-    private _chunckLevelsSquareDistancesCollapse: number[];
+    private _chunckLevelsDistancesSubdivide: number[] = [];
+    private _chunckLevelsDistancesCollapse: number[] = [];
+    private _chunckLevelsSquareDistancesSubdivide: number[] = [];
+    private _chunckLevelsSquareDistancesCollapse: number[] = [];
     public scene: Scene;
     public terrain: Terrain;
     public pause: boolean = false;
     public fullRenderMode: boolean = false;
 
-    public currentGlobalLightUpdate: Chunck;
+    public currentGlobalLightUpdate: Chunck | undefined;
     public globalLightUpdateRequest: UniqueList<Chunck>;
 
-    public debugRenderDistMesh: Mesh;
+    public debugRenderDistMesh: Mesh | undefined;
 
     public setShowDebugRenderDist(v: boolean): void {
         if (v && !this.debugRenderDistMesh) {
@@ -68,7 +70,11 @@ export class ChunckManager {
     ) {
         this.scene = prop.scene;
         this.terrain = prop.terrain;
-        this.fullRenderMode = prop.fullRenderMode;
+        this.fullRenderMode = prop.fullRenderMode ?? false;
+
+        this._viewpoint = Vector3.Zero();
+        this.chuncks = new UniqueList<Chunck>();
+        this.globalLightUpdateRequest = new UniqueList<Chunck>();
 
         this.setDistance(100)
     }
@@ -99,9 +105,6 @@ export class ChunckManager {
     }
 
     public initialize(): void {
-        this._viewpoint = Vector3.Zero();
-        this.chuncks = new UniqueList<Chunck>();
-        this.globalLightUpdateRequest = new UniqueList<Chunck>();
         this.scene.onBeforeRenderObservable.add(this._update);
     }
 
@@ -187,7 +190,7 @@ export class ChunckManager {
             this._viewpoint.copyFrom(this.scene.activeCameras[0].globalPosition);
         }
         else {
-            this._viewpoint.copyFrom(this.scene.activeCamera.globalPosition);
+            this._viewpoint.copyFrom(this.scene.activeCamera?.globalPosition ?? Vector3.Zero());
         }
         
         let doneCount = 0;
@@ -244,7 +247,7 @@ export class ChunckManager {
             this._viewpoint.copyFrom(this.scene.activeCameras[0].globalPosition);
         }
         else {
-            this._viewpoint.copyFrom(this.scene.activeCamera.globalPosition);
+            this._viewpoint.copyFrom(this.scene.activeCamera?.globalPosition ?? Vector3.Zero());
         }
         if (this.debugRenderDistMesh) {
             this.debugRenderDistMesh.position.copyFrom(this._viewpoint);

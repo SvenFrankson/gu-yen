@@ -1,9 +1,13 @@
 import { Engine } from "@babylonjs/core/Engines/engine";
 import { Mesh } from "@babylonjs/core/Meshes/mesh";
 import { Vector3 } from "@babylonjs/core/Maths/math.vector";
-import { ChunckAnalytic } from "./ChunckAnalytic";
+import { ChunckAnalytic, IChunckAnalyticBuildOccurence } from "./ChunckAnalytic";
 import { Terrain } from "./Terrain";
 import { BlockType } from "./BlockType";
+import { IJK, Pow2 } from "../Number";
+import { IActionAffectedBlocks } from "./TerrainEditor/TerrainEditor";
+import { MeshBuilder } from "@babylonjs/core/Meshes/meshBuilder";
+import { Compress, Decompress } from "../Compress";
 
 export var DRAW_CHUNCK_MARGIN: number = 2;
 
@@ -23,7 +27,7 @@ enum AdjacentAxis {
 
 export class Chunck {
 
-    private _analytic: ChunckAnalytic;
+    private _analytic?: ChunckAnalytic;
     public get analytic(): ChunckAnalytic {
         if (!this._analytic) {
             this._analytic = new ChunckAnalytic(this);
@@ -58,9 +62,9 @@ export class Chunck {
     public readonly level: number = 0;
     public readonly isWorldEdge: boolean = false;
     public levelFactor: number = 0;
-    public adjacents: Chunck[] = [];
+    public adjacents: (Chunck | undefined)[] = [];
     public children: Chunck[] = [];
-    public parent: Chunck;
+    public parent?: Chunck;
 
     public getFillness(k: number): Fillness {
         if (k < 0) {
@@ -139,8 +143,8 @@ export class Chunck {
         return true;
     }
 
-    public mesh: Mesh;
-    public shellMesh: Mesh;
+    public mesh: Mesh | undefined;
+    public shellMesh: Mesh | undefined;
 
     private _registered: boolean = false;
     public get registered(): boolean {
@@ -157,12 +161,12 @@ export class Chunck {
     constructor(
         public iPos: number = 0,
         public jPos: number = 0,
-        arg1?: Chunck | Terrain
+        arg1: Chunck | Terrain
     ) {
         if (arg1 instanceof Terrain) {
             this.terrain = arg1;
         }
-        if (arg1 instanceof Chunck) {
+        else {
             this.parent = arg1;
             this.terrain = this.parent.terrain;
         }
@@ -173,7 +177,7 @@ export class Chunck {
         }
         else {
             this.level = this.terrain.maxLevel;
-            this.levelFactor = Nabu.Pow2(this.level);
+            this.levelFactor = Pow2(this.level);
         }
 
         this.name = "chunck:" + this.level + ":" + this.iPos + "-" + this.jPos;
@@ -193,6 +197,10 @@ export class Chunck {
         if (this.iPos === 0 || this.jPos === 0 || this.iPos === this.terrain.chunckCountIJ - 1 || this.jPos === this.terrain.chunckCountIJ - 1) {
             this.isWorldEdge = true;
         }
+        
+        this._dataSizeIJ = 2 * DRAW_CHUNCK_MARGIN + this.chunckLengthIJ;
+        this._dataSizeK = this.chunckLengthK;
+        this._dataSizeSquare = this._dataSizeIJ * this._dataSizeIJ;
     }
 
     public dispose(): void {
@@ -263,10 +271,10 @@ export class Chunck {
             if (other) {
                 this.adjacents[index] = undefined;
                 if (index % 2 === 0) {
-                    other[index + 1] = undefined;
+                    other.adjacents[index + 1] = undefined;
                 }
                 else {
-                    other[index - 1] = undefined;
+                    other.adjacents[index - 1] = undefined;
                 }
             }
         }
@@ -274,9 +282,6 @@ export class Chunck {
 
     public async initializeData(): Promise<void> {        
         if (!this.dataInitialized) {
-            this._dataSizeIJ = 2 * DRAW_CHUNCK_MARGIN + this.chunckLengthIJ;
-            this._dataSizeK = this.chunckLengthK;
-            this._dataSizeSquare = this._dataSizeIJ * this._dataSizeIJ;
             this._data = [];
             for (let k = 0; k < this._dataSizeK; k++) {
                 this._data[k] = new Uint8Array(1);
@@ -306,28 +311,28 @@ export class Chunck {
             return BlockType.None;
         }
         if (i < - DRAW_CHUNCK_MARGIN) {
-            let chunck = this.terrain.root.getChunck(this.level, this.iPos - 1, this.jPos);
+            let chunck = this.terrain.root?.getChunck(this.level, this.iPos - 1, this.jPos);
             if (chunck && chunck.dataInitialized) {
                 return chunck.getData(i + this.chunckLengthIJ, j, k);
             }
             return BlockType.None;
         }
         if (i >= this.chunckLengthIJ + DRAW_CHUNCK_MARGIN) {
-            let chunck = this.terrain.root.getChunck(this.level, this.iPos + 1, this.jPos);
+            let chunck = this.terrain.root?.getChunck(this.level, this.iPos + 1, this.jPos);
             if (chunck && chunck.dataInitialized) {
                 return chunck.getData(i - this.chunckLengthIJ, j, k);
             }
             return BlockType.None;
         }
         if (j < - DRAW_CHUNCK_MARGIN) {
-            let chunck = this.terrain.root.getChunck(this.level, this.iPos, this.jPos - 1);
+            let chunck = this.terrain.root?.getChunck(this.level, this.iPos, this.jPos - 1);
             if (chunck && chunck.dataInitialized) {
                 return chunck.getData(i, j + this.chunckLengthIJ, k);
             }
             return BlockType.None;
         }
         if (j >= this.chunckLengthIJ + DRAW_CHUNCK_MARGIN) {
-            let chunck = this.terrain.root.getChunck(this.level, this.iPos, this.jPos + 1);
+            let chunck = this.terrain.root?.getChunck(this.level, this.iPos, this.jPos + 1);
             if (chunck && chunck.dataInitialized) {
                 return chunck.getData(i, j - this.chunckLengthIJ, k);
             }
@@ -412,10 +417,10 @@ export class Chunck {
                     if (chunck.setRawDataSafe(v, (i - I * this.chunckLengthIJ + m), (j - J * this.chunckLengthIJ + m), k)) {
                         affectedChuncks.push(chunck);
                         if (affectedBlocks) {
-                            let existing = affectedBlocks.rawBlocks.get(this);
+                            let existing = affectedBlocks.rawBlocks?.get(this);
                             if (!existing) {
                                 existing = [];
-                                affectedBlocks.rawBlocks.set(this, existing);
+                                affectedBlocks.rawBlocks?.set(this, existing);
                             }
                             existing.push({ i: i - I * this.chunckLengthIJ + m, j: j - J * this.chunckLengthIJ + m, k: k });
                         }
@@ -454,12 +459,12 @@ export class Chunck {
         this._data[k] = new Uint8Array([firstBlock]);
     }
 
-    public getChunck(level: number, iPos: number, jPos: number): Chunck {
+    public getChunck(level: number, iPos: number, jPos: number): Chunck | undefined {
         if (this.level === level) {
             return this;
         }
         else {
-            let f = Nabu.Pow2(this.level - level);
+            let f = Pow2(this.level - level);
             let i = Math.floor((iPos - f * this.iPos) / (f / 2));
             let j = Math.floor((jPos - f * this.jPos) / (f / 2));
             if (i < 0 || j < 0 || i >= 2 || j >= 2) {
@@ -478,23 +483,23 @@ export class Chunck {
             descendants = [];
         }
 
-        if (this.level === level + 1 && this.children.length > 0) {
+        if (this.level === level + 1 && this.children && this.children.length > 0) {
             descendants.push(...this.children);
         }
         else {
             for (let i = 0; i < this.children.length; i++) {
-                this.children[i].getDescendants(level, descendants);
+                this.children[i]?.getDescendants(level, descendants);
             }
         }
 
         return descendants;
     }
 
-    public getParent(level: number): Chunck {
+    public getParent(level: number): Chunck | undefined {
         if (this.level >= level) {
             return this;
         }
-        return this.parent.getParent(level);
+        return this.parent?.getParent(level);
     }
 
     public getIJKAtPos(pos: Vector3): IJK {
@@ -516,10 +521,15 @@ export class Chunck {
             j = a.j;
             k = a.k;
         }
+        let v = Vector3.Zero();
+        if (j === undefined || k === undefined) {
+            return v;
+        }
         let x = (i + 0.5) * this.blockSizeIJ_m + this.position.x;
         let z = (j + 0.5) * this.blockSizeIJ_m + this.position.z;
         let y = (k + 0.5) * this.blockSizeK_m + this.position.y;
-        return new Vector3(x, y, z);
+        v.set(x, y, z);
+        return v;
     }
 
     public getEvenIJKAtPos(pos: Vector3): IJK {
@@ -541,17 +551,22 @@ export class Chunck {
             jGlobal = a.j;
             kGlobal = a.k;
         }
+
+        if (jGlobal === undefined || kGlobal === undefined) {
+            return { i: 0, j: 0, k: 0 };
+        }
         let i = Math.floor(iGlobal / this.levelFactor) - this.chunckLengthIJ * this.iPos;
         let j = Math.floor(jGlobal / this.levelFactor) - this.chunckLengthIJ * this.jPos;
         let k = Math.floor(kGlobal / this.levelFactor);
+        
         return { i: i, j: j, k: k };
     }
 
     public IJKLocalToWorldPosToRef(iLocal: number, jLocal: number, kLocal: number, refV: Vector3): Vector3;
     public IJKLocalToWorldPosToRef(ijkLocal: IJK, refV: Vector3): Vector3;
     public IJKLocalToWorldPosToRef(a: number | IJK, b?: number | Vector3, kLocal?: number, refV?: Vector3): Vector3 {
-        let iLocal: number;
-        let jLocal: number;
+        let iLocal: number = 0;
+        let jLocal: number = 0;
         if (typeof(a) === "number") {
             iLocal = a;
             if (typeof(b) === "number") {
@@ -567,10 +582,18 @@ export class Chunck {
             }
         }
         
+        if (!refV) {
+            refV = Vector3.Zero();
+        }
+        if (kLocal === undefined) {
+            return refV;
+        }
+        
         refV.x = (iLocal + 0.5) * this.terrain.blockSizeIJ_m;
         refV.y = (kLocal + 0.5) * this.terrain.blockSizeK_m;
         refV.z = (jLocal + 0.5) * this.terrain.blockSizeIJ_m;
         refV.addInPlace(this.position);
+
         return refV;
     }
 
@@ -588,22 +611,22 @@ export class Chunck {
         }
     }
 
-    private _originX: Mesh;
-    private _originY: Mesh;
-    private _originZ: Mesh;
+    private _originX?: Mesh;
+    private _originY?: Mesh;
+    private _originZ?: Mesh;
     public highlight(): void {
         if (this.mesh) {
             this.mesh.material = this.terrain.highlightMaterial;
         }
         
         this._originX = MeshBuilder.CreateBox("originX", { width: 100, height: 0.2, depth: 0.2 });
-        this._originX.position.copyFrom(this.position);
+        this._originX?.position.copyFrom(this.position);
 
         this._originY = MeshBuilder.CreateBox("originY", { width: 0.2, height: 100, depth: 0.2 });
-        this._originY.position.copyFrom(this.position);
+        this._originY?.position.copyFrom(this.position);
 
         this._originZ = MeshBuilder.CreateBox("originZ", { width: 0.2, height: 0.2, depth: 100 });
-        this._originZ.position.copyFrom(this.position);
+        this._originZ?.position.copyFrom(this.position);
     }
 
     public unlit(): void {
@@ -624,8 +647,8 @@ export class Chunck {
     public async redrawMesh(force?: boolean): Promise<void> {
         if (!this.subdivided) {
             if (this.level <= this.terrain.maxDisplayedLevel) {
-                let t0: number;
-                let analyticOccurence: IChunckAnalyticBuildOccurence;
+                let t0: number = 0;
+                let analyticOccurence: IChunckAnalyticBuildOccurence | undefined = undefined;
                 if (this.terrain.useAnalytics) {
                     t0 = performance.now();
                     analyticOccurence = { 
@@ -666,7 +689,7 @@ export class Chunck {
                         console.warn("ChunckMeshBuilder failed");
                     }
                     this._lastDrawnSides = sides;
-                    if (this.terrain.useAnalytics) {
+                    if (this.terrain.useAnalytics && analyticOccurence && vertexData.positions) {
                         let t1 = performance.now();
                         let dt = t1 - t0;
                         analyticOccurence.duration = dt;
@@ -701,7 +724,7 @@ export class Chunck {
         return this._updatingGlobalLight;
     }
     private _currentGlobalLightK: number = -1;
-    private _currentGlobalLightData: Uint8ClampedArray;
+    private _currentGlobalLightData: Uint8ClampedArray | undefined;
     private updateGlobalLight3DTexture = () => {
         if (!this.mesh) {
             // Kill switch, in case mesh has been deleted, do not go through this.
@@ -747,7 +770,8 @@ export class Chunck {
                 tmpV.z = raySequence[3 * (n - 1) + 2];
                 tmpV.addInPlace(tests[t]);
 
-                let a = Mummu.Angle(this.terrain.sunDir, tmpV);
+                //let a = Mummu.Angle(this.terrain.sunDir, tmpV);
+                let a = 0;
                 if (a < bestAngle) {
                     raySequence[3 * n] = tmpV.x;
                     raySequence[3 * n + 1] = tmpV.y;
@@ -767,7 +791,9 @@ export class Chunck {
             if (fillnessAbove === Fillness.Filled) {
                 for (let i = 0; i < width; i++) {
                     for (let j = 0; j < depth; j++) {
-                        this._currentGlobalLightData[(i + j * width + this._currentGlobalLightK * width * width)] = 0;
+                        if (this._currentGlobalLightData) {
+                            this._currentGlobalLightData[(i + j * width + this._currentGlobalLightK * width * width)] = 0;
+                        }
                     }
                 }
             }
@@ -775,14 +801,18 @@ export class Chunck {
             if (fillnessBelow === Fillness.Empty) {
                 for (let i = 0; i < width; i++) {
                     for (let j = 0; j < depth; j++) {
-                        this._currentGlobalLightData[(i + j * width + this._currentGlobalLightK * width * width)] = 255;
+                        if (this._currentGlobalLightData) {
+                            this._currentGlobalLightData[(i + j * width + this._currentGlobalLightK * width * width)] = 255;
+                        }
                     }
                 }
             }
             else {
                 for (let i = 0; i < width; i++) {
                     for (let j = 0; j < depth; j++) {
-                        this._currentGlobalLightData[(i + j * width + this._currentGlobalLightK * width * width)] = 255;
+                        if (this._currentGlobalLightData) {
+                            this._currentGlobalLightData[(i + j * width + this._currentGlobalLightK * width * width)] = 255;
+                        }
                         for (let n = 0; n < stepCount; n++) {
                             let ii = raySequence[3 * n];
                             let jj = raySequence[3 * n + 2];
@@ -793,7 +823,9 @@ export class Chunck {
                             
                             let v = this.getData(I, J, K);
                             if (v > BlockType.Water) {
-                                this._currentGlobalLightData[(i + j * width + this._currentGlobalLightK * width * width)] = 0;
+                                if (this._currentGlobalLightData) {
+                                    this._currentGlobalLightData[(i + j * width + this._currentGlobalLightK * width * width)] = 0;
+                                }
                                 n = Infinity;
                             }
                             /*
@@ -856,6 +888,7 @@ export class Chunck {
         }
         */
         
+        /*
         let globalLight3DTexture = new RawTexture3D(this._currentGlobalLightData, width, depth, height, Constants.TEXTUREFORMAT_R, this.mesh._scene, false, false, Texture.TRILINEAR_SAMPLINGMODE, Engine.TEXTURETYPE_UNSIGNED_BYTE);
         globalLight3DTexture.wrapU = 1;
         globalLight3DTexture.wrapV = 1;
@@ -866,10 +899,11 @@ export class Chunck {
         }
 
         this._updatingGlobalLight = false;
+        */
         this.terrain.scene.onBeforeRenderObservable.removeCallback(this.updateGlobalLight3DTexture);
     }
 
-    public subdivide(): Chunck[] {
+    public subdivide(): Chunck[] | undefined {
         if (this._subdivided) {
             return;
         }
@@ -909,12 +943,14 @@ export class Chunck {
             //}
             return true;
         }
+        return false;
     }
 
     public collapse(): Chunck {
-        if (this.canCollapse()) {
+        if (this.parent && this.canCollapse()) {
             return this.parent.collapseChildren();
         }
+        return this;
     }
 
     public collapseChildren(): Chunck {
@@ -958,7 +994,7 @@ export class Chunck {
             }
             else {
                 let layerDataString = "";
-                let compressedData = Nabu.Compress(this._data[k]);
+                let compressedData = Compress(this._data[k]);
                 for (let i = 0; i < compressedData.length; i++) {
                     layerDataString += compressedData[i].toString(16).padStart(2, "0");
                 }
@@ -982,7 +1018,7 @@ export class Chunck {
                 for (let n = 0; n < layerDataString.length / 2; n++) {
                     compressedLayerData[n] = parseInt(layerDataString.substring(2 * n, 2 * n + 2), 16);
                 }
-                this._data[k] = Nabu.Decompress(compressedLayerData);
+                this._data[k] = Decompress(compressedLayerData);
             }
             this.updateIsEmptyIsFull(k);
         }

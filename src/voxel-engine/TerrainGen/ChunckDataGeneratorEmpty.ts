@@ -20,6 +20,7 @@ export class ChunckDataGeneratorEmpty extends ChunckDataGenerator {
 
             return true;
         }
+        return false;
     }
 
     public getProps(): IChunckGeneratorProperties {

@@ -1,8 +1,10 @@
 import { Vector3 } from "@babylonjs/core/Maths/math.vector";
 import { Terrain } from "../../Terrain";
-import { Chunck } from "../../Chunck";
+import { Chunck, DRAW_CHUNCK_MARGIN } from "../../Chunck";
 import { BlockType } from "../../BlockType";
 import { TerrainEditionMode } from "../../TerrainEditor/TerrainEditor";
+import { IsVeryFinite } from "../../../Number";
+import { UniqueList } from "../../../UniqueList";
 
 export class FatLine {
 
@@ -24,13 +26,16 @@ export class FatLine {
             this.p1 = Vector3.Zero();
         }
         if (IsVeryFinite(size)) {
-            this.size = size;
+            this.size = size as number;
         }
     }
 
     public draw(block: BlockType, saveToLocalStorage?: boolean, skipChunckRedraw?: boolean) {
         let affectedChuncks = new UniqueList<Chunck>();
         let chunck = this.terrain.getChunckAtPos(this.p0, 0);
+        if (!chunck) {
+            return affectedChuncks;
+        }
 
         let dIJ = Math.ceil(this.size * 0.5 / chunck.blockSizeIJ_m);
         let dK = Math.ceil(this.size * 0.5 / chunck.blockSizeK_m);
@@ -48,10 +53,12 @@ export class FatLine {
             for (let j = j0; j <= j1; j++) {
                 for (let k = k0; k <= k1; k++) {
                     let p = chunck.getPosAtIJK(i, j, k);
+                    /*
                     if (Mummu.DistancePointSegment(p, this.p0, this.p1) < this.size * 0.5) {
                         let chuncks = chunck.setData(block, i, j, k, true);
                         chuncks.forEach(c => { affectedChuncks.push(c); });
                     }
+                    */
                 }
             }
         }
@@ -92,9 +99,11 @@ export class FatLine {
             for (let j = j0; j <= j1; j++) {
                 for (let k = k0; k <= k1; k++) {
                     let p = chunck.getPosAtIJK(i, j, k);
+                    /*
                     if (Mummu.DistancePointSegment(p, this.p0, this.p1) < this.size * 0.5) {
                         chunck.setRawDataSafe(block, i + m, j + m, k + m);
                     }
+                    */
                 }
             }
         }

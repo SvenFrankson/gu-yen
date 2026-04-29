@@ -1,17 +1,18 @@
 import { ChunckDataGenerator, IChunckGeneratorProperties, GeneratorType } from "./ChunckDataGenerator";
 import { Chunck, DRAW_CHUNCK_MARGIN } from "../Chunck";
 import { BlockType } from "../BlockType";
+import { MinMax } from "../../Number";
 
 export class ChunckDataGeneratorPNG extends ChunckDataGenerator {
 
     public size: number = 1024;
     public squareSize: number = 2;
-    public url: string;
-    private _data: Uint8ClampedArray;
+    public url: string = "";
+    private _data: Uint8ClampedArray | undefined;
 
-    private async _getData(): Promise<Uint8ClampedArray> {
+    private async _getData(): Promise<Uint8ClampedArray | undefined> {
         if (!this._data && this.url) {
-            return new Promise<Uint8ClampedArray>(resolve => {
+            return new Promise<Uint8ClampedArray | undefined>(resolve => {
                 let image = document.createElement("img");
                 image.src = this.url;
                 image.onload = () => {
@@ -19,8 +20,10 @@ export class ChunckDataGeneratorPNG extends ChunckDataGenerator {
                     this.size = Math.min(image.width, image.height);
                     canvas.height = this.size;
                     let ctx = canvas.getContext("2d");
-                    ctx.drawImage(image, 0, 0);
-                    this._data = ctx.getImageData(0, 0, this.size, this.size).data;
+                    if (ctx) {
+                        ctx.drawImage(image, 0, 0);
+                        this._data = ctx.getImageData(0, 0, this.size, this.size).data;
+                    }
                     resolve(this._data);
                 }
             });
@@ -37,14 +40,17 @@ export class ChunckDataGeneratorPNG extends ChunckDataGenerator {
         if (!chunck.dataInitialized) {
 
             let heightmap = await this._getData();
+            if (!heightmap) {
+                return false;
+            }
 
             for (let i: number = - m; i < chunck.chunckLengthIJ + m; i++) {
                 for (let j: number = - m; j < chunck.chunckLengthIJ + m; j++) {
 
                     let iGlobal = Math.floor((i + chunck.chunckLengthIJ * chunck.iPos) / this.squareSize);
-                    iGlobal = Nabu.MinMax(iGlobal, 0, this.size - 1);
+                    iGlobal = MinMax(iGlobal, 0, this.size - 1);
                     let jGlobal = Math.floor((j + chunck.chunckLengthIJ * chunck.jPos) / this.squareSize);
-                    jGlobal = Nabu.MinMax(jGlobal, 0, this.size - 1);
+                    jGlobal = MinMax(jGlobal, 0, this.size - 1);
 
                     let hDirt = heightmap[4 * (iGlobal + jGlobal * this.size)];
                     let hGrass = heightmap[4 * (iGlobal + jGlobal * this.size) + 1];
@@ -71,6 +77,8 @@ export class ChunckDataGeneratorPNG extends ChunckDataGenerator {
 
             return true;
         }
+
+        return false;
     }
 
     public getProps(): IChunckGeneratorProperties {

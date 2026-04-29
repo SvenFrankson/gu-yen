@@ -2,13 +2,14 @@ import { ChunckDataGenerator, IChunckGeneratorProperties, GeneratorType } from "
 import { Chunck, DRAW_CHUNCK_MARGIN } from "../Chunck";
 import { BlockType } from "../BlockType";
 import { RawCoumpoundProp } from "./RawProp/RawProp";
+import { IsVeryFinite } from "../../Number";
 
 export class ChunckDataGeneratorFlat extends ChunckDataGenerator {
 
-    public altitude: number;
+    public altitude: number = 0;
     public blockType: BlockType = BlockType.Grass;
 
-    public prop: RawCoumpoundProp;
+    public prop: RawCoumpoundProp | undefined;
 
     public async initializeData(chunck: Chunck): Promise<boolean> {
         let m = DRAW_CHUNCK_MARGIN;
@@ -71,6 +72,8 @@ export class ChunckDataGeneratorFlat extends ChunckDataGenerator {
 
             return true;
         }
+
+        return false;
     }
 
     public getProps(): IChunckGeneratorProperties {

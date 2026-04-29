@@ -1,3 +1,4 @@
+import { IJK, IsVeryFinite } from "../../../Number";
 import { BlockType } from "../../BlockType";
 import { Chunck } from "../../Chunck";
 import { RawShape, RawShapeBox, RawShapeSphere, RawShapeLine, RawShapeDot } from "../RawShape/RawShape";
@@ -131,16 +132,16 @@ export class RawCoumpoundProp extends RawProp {
                     shapeData.rY = shapeData.r;
                     shapeData.rZ = shapeData.r;
                 }
-                let shape = new RawShapeSphere(shapeData.rX, shapeData.rY, shapeData.rZ, shapeData.i, shapeData.j, shapeData.k);
+                let shape = new RawShapeSphere(shapeData.rX as number, shapeData.rY as number, shapeData.rZ as number, shapeData.i, shapeData.j, shapeData.k);
                 this.shapes.push(shape);
             }
             else if (shapeData.type === RawShapeType.Line) {
-                let shape = new RawShapeLine(shapeData.Ai, shapeData.Aj, shapeData.Ak, shapeData.Bi, shapeData.Bj, shapeData.Bk, shapeData.i, shapeData.j, shapeData.k);
+                let shape = new RawShapeLine(shapeData.Ai as number, shapeData.Aj as number, shapeData.Ak as number, shapeData.Bi as number, shapeData.Bj as number, shapeData.Bk as number, shapeData.i, shapeData.j, shapeData.k);
                 this.shapes.push(shape);
             }
             else if (shapeData.type === RawShapeType.Dot) {
                 let shape = new RawShapeDot(shapeData.i, shapeData.j, shapeData.k);
-                shape.dots = shapeData.dots;
+                shape.dots = shapeData.dots as IJK[];
                 shape.refreshMinMax();
                 this.shapes.push(shape);
             }
