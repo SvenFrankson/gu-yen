@@ -1,5 +1,5 @@
 import { Mesh } from "@babylonjs/core/Meshes/mesh";
-import { CHUNCK_HEIGHT, CHUNCK_SIZE } from "./Globals";
+import { CHUNCK_HEIGHT, CHUNCK_SIZE } from "../Globals";
 
 export class Chunck {
 
