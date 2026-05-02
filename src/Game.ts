@@ -64,8 +64,8 @@ export class Game {
                 generatorProps: {
                     type: GeneratorType.PNG,
                     url: "map_2.png",
-                    noiseUrl: "map_2.png",
-                    squareSize: 16
+                    noiseUrl: "noise.png",
+                    squareSize: 8
                 },
                 maxDisplayedLevel: 0,
                 blockSizeIJ_m: 1,

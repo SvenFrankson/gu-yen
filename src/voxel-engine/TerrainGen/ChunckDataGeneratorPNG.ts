@@ -201,11 +201,17 @@ export class ChunckDataGeneratorPNG extends ChunckDataGenerator {
 
                     let h = BicubicInterpolate(iGlobal - i1, jGlobal - j1, v00, v10, v20, v30, v01, v11, v21, v31, v02, v12, v22, v32, v03, v13, v23, v33);
 
-                    let iGlobalNoise = Math.floor(i + chunck.chunckLengthIJ * chunck.iPos) % this.noiseSize;
-                    let jGlobalNoise = Math.floor(j + chunck.chunckLengthIJ * chunck.jPos) % this.noiseSize;
+                    h += 10;
 
-                    let noiseValue = noiseMap[iGlobalNoise + jGlobalNoise * this.noiseSize] / 255;
-                    h += noiseValue * 10;
+                    let iGlobalNoise = Math.floor(i + chunck.chunckLengthIJ * chunck.iPos);
+                    while (iGlobalNoise < 0) iGlobalNoise += this.noiseSize;
+                    iGlobalNoise = iGlobalNoise % this.noiseSize;
+                    let jGlobalNoise = Math.floor(j + chunck.chunckLengthIJ * chunck.jPos);
+                    while (jGlobalNoise < 0) jGlobalNoise += this.noiseSize;
+                    jGlobalNoise = jGlobalNoise % this.noiseSize;
+
+                    let noiseValue = noiseMap[iGlobalNoise + jGlobalNoise * this.noiseSize] / 255 - 0.5;
+                    h += noiseValue * 6;
 
                     let block = BlockType.Grass;
 
