@@ -23,6 +23,7 @@ export interface IChunckGeneratorProperties {
     mapAttributes?: MapAttribute[];
     squareSize?: number;
     url?: string;
+    noiseUrl?: string;
 }
 
 export abstract class ChunckDataGenerator {

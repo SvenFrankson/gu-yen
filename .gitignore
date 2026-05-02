@@ -29,3 +29,7 @@ dist-ssr
 
 #krita
 *.png~
+
+#topo
+to_courb_l.json
+map_2_scale.png

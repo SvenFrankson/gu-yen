@@ -38,6 +38,7 @@ export class ChunckDataGeneratorFactory {
         else if (props.type === GeneratorType.PNG) {
             let chunckDataGenerator = new ChunckDataGeneratorPNG(terrain);
             chunckDataGenerator.url = props.url as string;
+            chunckDataGenerator.noiseUrl = props.noiseUrl as string;
             chunckDataGenerator.squareSize = props.squareSize as number;
             return chunckDataGenerator;
         }

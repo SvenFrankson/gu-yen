@@ -76,7 +76,7 @@ export class ChunckManager {
         this.chuncks = new UniqueList<Chunck>();
         this.globalLightUpdateRequest = new UniqueList<Chunck>();
 
-        this.setDistance(100)
+        this.setDistance(200)
     }
 
     private _distance: number = 100;
