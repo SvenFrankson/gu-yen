@@ -17,7 +17,7 @@ export class RawShapeBox extends RawShape {
         for (let ii = 0; ii < this.w; ii++) {
             for (let jj = 0; jj < this.d; jj++) {
                 for (let kk = 0; kk < this.h; kk++) {
-                    chunck.setRawDataSafe(block, i + this.pi + ii + m, j + this.pj + jj + m, k + this.pk + kk + m);
+                    chunck.setRawDataSafe(block, i + this.pi + ii + m, j + this.pj + jj + m, k + this.pk + kk);
                     chunck.updateIsEmptyIsFull(k + this.pk + kk);
                 }
             }
@@ -49,7 +49,7 @@ export class RawShapeSphere extends RawShape {
                 for (let kk = minK; kk < maxK; kk++) {
                     let dd = (ii * ii) / rrX + (jj * jj) / rrZ + (kk * kk) / rrY;
                     if (dd <= 1) {
-                        chunck.setRawDataSafe(block, i + this.pi + ii + m, j + this.pj + jj + m, k + this.pk + kk + m);
+                        chunck.setRawDataSafe(block, i + this.pi + ii + m, j + this.pj + jj + m, k + this.pk + kk);
                         chunck.updateIsEmptyIsFull(k + this.pk + kk);
                     }
                 }

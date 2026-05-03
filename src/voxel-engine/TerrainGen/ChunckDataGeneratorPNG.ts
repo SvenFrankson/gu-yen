@@ -105,12 +105,14 @@ export class ChunckDataGeneratorPNG extends ChunckDataGenerator {
                                 let g = imageData[4 * index + 1];
                                 let b = imageData[4 * index + 2];
                                 //this._data[i + j * this.size] = this.rgbToHeight(r, g, b, this.stops);
-                                this._data[i + j * this.size] = (r + b + g) / 3;
+                                let h = (r + g + b) / 3;
+                                h = h / 255 * (150 - (-20)) - 20;
+                                this._data[i + j * this.size] = h;
                             }
                         }
                     }
 
-                    for (let n = 0; n < 2; n++) {
+                    for (let n = 0; n < 1; n++) {
                         let dataClone = [];
                         for (let ii = 0; ii < this.size; ii++) {
                             for (let jj = 0; jj < this.size; jj++) {

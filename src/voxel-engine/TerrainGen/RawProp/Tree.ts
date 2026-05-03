@@ -10,8 +10,8 @@ export class Oak extends RawProp {
 
     constructor(public height: number = 10) {
         super();
-        this._trunk = new RawShapeBox(3, this.height, 3, - 1, - 1, 0);
-        this._leaves = new RawShapeSphere(this.height * 0.5 + 0.5, 0, 0, this.height * 1.5);
+        this._trunk = new RawShapeBox(1, this.height, 1, 0, 0, 0);
+        this._leaves = new RawShapeSphere(this.height * 0.4, this.height * 0.3, this.height * 0.4, 0, 0, Math.round(this.height * 1.3));
     }
 
     public draw(i: number, j: number, k: number, chunck: Chunck): void {

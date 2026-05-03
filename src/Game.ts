@@ -10,6 +10,7 @@ import { BlockType } from "./voxel-engine/BlockType";
 import { GeoConverter } from "./map/Geo";
 import { TessademAPIKey } from "./APIKey";
 import { Minimap } from "./map/MiniMap";
+import { generateTreeData } from "./data/TreeData";
 
 export class Game {
 
@@ -64,23 +65,30 @@ export class Game {
             }
         });
         */
+       
+        //generateTreeData(this);
 
         let miniMap: Minimap = document.createElement("mini-map") as Minimap;
         document.body.appendChild(miniMap);
         miniMap.setGame(this);
 
+
         ChunckVertexData.InitializeData("meshes/chunck-parts.gltf", this.scene).then(async () => {
+
+            let treeDatas = await fetch("trees.json").then(res => res.json());
             let textureSize = 1024;
             let squareSize = 32;
             let chunckLengthIJ = 32;
             let chunckCountIJ = textureSize * squareSize / chunckLengthIJ;
+            console.log("chunckCountIJ: " + chunckCountIJ);
             this.terrain = new Terrain({
                 generatorProps: {
-                    type: GeneratorType.PNG,
-                    url: "heightMap_Blue.png",
+                    type: GeneratorType.DataSets,
+                    url: "heightMap_-20_150.png",
                     //url: "map_2.png",
                     noiseUrl: "noise.png",
-                    squareSize: squareSize
+                    squareSize: squareSize,
+                    treeTiles: treeDatas
                 },
                 maxDisplayedLevel: 0,
                 blockSizeIJ_m: 1,

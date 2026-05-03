@@ -6,6 +6,7 @@ import { ChunckDataGeneratorEmpty } from "./ChunckDataGeneratorEmpty";
 import { ChunckDataGeneratorFlat } from "./ChunckDataGeneratorFlat";
 import { ChunckDataGeneratorPNG } from "./ChunckDataGeneratorPNG";
 import { IsVeryFinite } from "../../Number";
+import { ITreeTile } from "./ChunckDataGeneratorDataSets";
 
 export enum GeneratorType {
     NotAGenerator,
@@ -13,6 +14,7 @@ export enum GeneratorType {
     Map,
     MapSimple,
     PNG,
+    DataSets,
     Empty
 }
 
@@ -24,6 +26,7 @@ export interface IChunckGeneratorProperties {
     squareSize?: number;
     url?: string;
     noiseUrl?: string;
+    treeTiles?: ITreeTile[];
 }
 
 export abstract class ChunckDataGenerator {

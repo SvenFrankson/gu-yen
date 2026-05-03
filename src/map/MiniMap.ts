@@ -4,6 +4,7 @@ import { Game } from "../Game";
 export class Minimap extends HTMLElement {
 
     public background?: HTMLImageElement;
+    public treesLayer?: HTMLImageElement;
     public currentPositionMarker?: HTMLDivElement;
 
     public game?: Game;
@@ -21,25 +22,35 @@ export class Minimap extends HTMLElement {
         this.style.position = "fixed";
         this.style.left = "10px";
         this.style.top = "10px";
-        this.style.width = "256px";
-        this.style.height = "256px";
+        this.style.width = "512px";
+        this.style.height = "512px";
         
         this.background = document.createElement("img");
-        this.background.src = "heightMap_Blue.png";
+        this.background.src = "heightMap_-20_150.png";
         this.background.style.width = "100%";
         this.background.style.height = "100%";
         this.background.style.position = "absolute";
         this.background.style.left = "0px";
         this.background.style.bottom = "0px";
-        this.background.style.zIndex = "100";
+        this.background.style.zIndex = "10";
         this.appendChild(this.background);
+        
+        this.treesLayer = document.createElement("img");
+        this.treesLayer.src = "trees_map.png";
+        this.treesLayer.style.width = "100%";
+        this.treesLayer.style.height = "100%";
+        this.treesLayer.style.position = "absolute";
+        this.treesLayer.style.left = "0px";
+        this.treesLayer.style.bottom = "0px";
+        this.treesLayer.style.zIndex = "20";
+        this.appendChild(this.treesLayer);
 
         this.currentPositionMarker = document.createElement("div");
         this.currentPositionMarker.style.width = "4px";
         this.currentPositionMarker.style.height = "4px";
         this.currentPositionMarker.style.backgroundColor = "red";
         this.currentPositionMarker.style.position = "absolute";
-        this.currentPositionMarker.style.zIndex = "101";
+        this.currentPositionMarker.style.zIndex = "100";
         this.appendChild(this.currentPositionMarker);
 
         this.onclick = (e) => {
@@ -58,8 +69,8 @@ export class Minimap extends HTMLElement {
         if (this.currentPositionMarker) {
             if (this.game && this.game.camera && this.game.terrain) {
                 let position = this.game.camera.position;
-                let x = position.x / this.game.terrain.halfTerrainSizeIJ_m * 128 + 128;
-                let z = position.z / this.game.terrain.halfTerrainSizeIJ_m * 128 + 128;
+                let x = position.x / this.game.terrain.halfTerrainSizeIJ_m * 256 + 256;
+                let z = position.z / this.game.terrain.halfTerrainSizeIJ_m * 256 + 256;
                 this.currentPositionMarker.style.left = (x - 2) + "px";
                 this.currentPositionMarker.style.bottom = (z - 2) + "px";
             }

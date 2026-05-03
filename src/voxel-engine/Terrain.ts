@@ -13,6 +13,7 @@ import { ChunckDataGeneratorFromSave } from "./TerrainGen/ChunckDataGeneratorFro
 import { FloorPow2Exponent, Pow2 } from "../Number";
 import { BlockType } from "./BlockType";
 import { ChunckDataGeneratorFactory } from "./TerrainGen/ChunckDataGeneratorFactory";
+import { GeoConverter } from "../map/Geo";
 
 export interface ITerrainProperties {
     //randSeed?: Nabu.RandSeed,
@@ -68,6 +69,7 @@ export class Terrain {
     public generatorProps: GeneratorType = GeneratorType.NotAGenerator;
 
     public root: Chunck | undefined;
+    public geoConverter: GeoConverter;
     public chunckManager: ChunckManager;
     public chunckBuilder: ChunckMeshBuilder;
     public save: GameSave;
@@ -145,6 +147,8 @@ export class Terrain {
         if (prop.finiteEdges) {
             this.finiteEdges = true;
         }
+
+        this.geoConverter = new GeoConverter();
 
         this.materials = [
             new StandardMaterial("terrain-material-lod0", this.scene),
