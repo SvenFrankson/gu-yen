@@ -8,8 +8,12 @@ import { GeneratorType } from "./voxel-engine/TerrainGen/ChunckDataGenerator";
 import { Color4, HemisphericLight, MeshBuilder, StandardMaterial, Vector3 } from "@babylonjs/core";
 import { BlockType } from "./voxel-engine/BlockType";
 import { GeoConverter } from "./map/Geo";
+import { TessademAPIKey } from "./APIKey";
+import { Minimap } from "./map/MiniMap";
 
 export class Game {
+
+    public static Instance: Game;
 
     public engine: Engine;
     public scene: Scene;
@@ -18,6 +22,8 @@ export class Game {
     public geoConverter: GeoConverter = new GeoConverter();
 
     constructor(public canvas: HTMLCanvasElement) {
+        Game.Instance = this;
+
         this.engine = new Engine(canvas, true)
         this.scene = new Scene(this.engine);
         this.scene.clearColor.set(0, 0, 1, 1);
@@ -59,20 +65,29 @@ export class Game {
         });
         */
 
+        let miniMap: Minimap = document.createElement("mini-map") as Minimap;
+        document.body.appendChild(miniMap);
+        miniMap.setGame(this);
+
         ChunckVertexData.InitializeData("meshes/chunck-parts.gltf", this.scene).then(async () => {
+            let textureSize = 1024;
+            let squareSize = 32;
+            let chunckLengthIJ = 32;
+            let chunckCountIJ = textureSize * squareSize / chunckLengthIJ;
             this.terrain = new Terrain({
                 generatorProps: {
                     type: GeneratorType.PNG,
-                    url: "map_2.png",
+                    url: "heightMap_Blue.png",
+                    //url: "map_2.png",
                     noiseUrl: "noise.png",
-                    squareSize: 8
+                    squareSize: squareSize
                 },
                 maxDisplayedLevel: 0,
                 blockSizeIJ_m: 1,
                 blockSizeK_m: 1,
-                chunckLengthIJ: 32,
+                chunckLengthIJ: chunckLengthIJ,
                 chunckLengthK: 256,
-                chunckCountIJ: 256,
+                chunckCountIJ: chunckCountIJ,
                 useAnalytics: true
             });
 
@@ -100,4 +115,75 @@ export class Game {
     public onResize() {
         this.engine.resize();
     }
+
+    public async fetchElevation() {
+        let totalTextureSize = 1024;
+        let texturePartSize = 128;
+
+        let minH = -20;
+        let maxH = 150;
+
+        let count = totalTextureSize / texturePartSize;
+        
+        let dLat = Math.atan2(16384, this.geoConverter.radius) / Math.PI * 180;
+        let dLong = Math.atan2(16384, this.geoConverter.radius * Math.cos(this.geoConverter.latZero * Math.PI / 180)) / Math.PI * 180;
+
+        let lat0 = this.geoConverter.latZero - dLat;
+        let long0 = this.geoConverter.longZero - dLong;
+        let lat1 = this.geoConverter.latZero + dLat;
+        let long1 = this.geoConverter.longZero + dLong;
+
+        let latStep = (lat1 - lat0) / count;
+        let longStep = (long1 - long0) / count;
+
+        let canvas = document.createElement("canvas");
+        canvas.width = totalTextureSize;
+        canvas.height = totalTextureSize;
+        let ctx = canvas.getContext("2d")!;
+        ctx.fillStyle = "black";
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+        
+        let s = 1;
+        //for (let i = count / 2 - s; i < count / 2 + s; i++) {
+        //    for (let j = count / 2 - s; j < count / 2 + s; j++) {
+        for (let i = 0; i < count; i++) {
+            for (let j = 0; j < count; j++) {
+                let latMin = lat1 - (i + 1) * latStep;
+                let latMax = lat1 - i * latStep;
+                let longMin = long0 + j * longStep;
+                let longMax = long0 + (j + 1) * longStep;
+
+                let res = await fetch("https://tessadem.com/api/elevation?key=" + TessademAPIKey + "&mode=area&rows=128&columns=128&locations=" + latMin.toFixed(7) + "," + longMin.toFixed(7) + "|" + latMax.toFixed(7) + "," + longMax.toFixed(7) + "&format=json");
+                let data = await res.json();
+                let results = data["results"];
+
+                let imageData = new ImageData(texturePartSize, texturePartSize);
+                for (let ii = 0; ii < texturePartSize; ii++) {
+                    for (let jj = 0; jj < texturePartSize; jj++) {
+                        let h = results[ii][jj]["elevation"];
+                        let hNorm = (h - minH) / (maxH - minH);
+                        hNorm = Math.max(0, Math.min(1, hNorm));
+                        h = Math.floor(hNorm * 256);
+                        let index = (ii * texturePartSize + jj) * 4;
+                        imageData.data[index] = h;
+                        imageData.data[index + 1] = h;
+                        imageData.data[index + 2] = h;
+                        imageData.data[index + 3] = 255;
+                    }
+                }
+                ctx.putImageData(imageData, j * texturePartSize, i * texturePartSize);
+                console.log(i + ", " + j);
+            }
+        }
+        var tmpLink = document.createElement( 'a' );
+        tmpLink.download = "heightMap" + ".png";
+        tmpLink.href = canvas.toDataURL();  
+        
+        document.body.appendChild( tmpLink );
+        tmpLink.click(); 
+        document.body.removeChild( tmpLink );
+    }
 }
+
+window["Game"] = Game;
+customElements.define("mini-map", Minimap);

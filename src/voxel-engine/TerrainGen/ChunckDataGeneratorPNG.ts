@@ -1,7 +1,7 @@
 import { ChunckDataGenerator, IChunckGeneratorProperties, GeneratorType } from "./ChunckDataGenerator";
 import { Chunck, DRAW_CHUNCK_MARGIN } from "../Chunck";
 import { BlockType } from "../BlockType";
-import { BicubicInterpolate, MinMax } from "../../Number";
+import { BicubicInterpolate, BilinearInterpolate, MinMax } from "../../Number";
 
 export type Stop = { rgb: [number, number, number]; h: number };
 
@@ -104,10 +104,34 @@ export class ChunckDataGeneratorPNG extends ChunckDataGenerator {
                                 let r = imageData[4 * index];
                                 let g = imageData[4 * index + 1];
                                 let b = imageData[4 * index + 2];
-                                this._data[i + j * this.size] = this.rgbToHeight(r, g, b, this.stops);
+                                //this._data[i + j * this.size] = this.rgbToHeight(r, g, b, this.stops);
+                                this._data[i + j * this.size] = (r + b + g) / 3;
                             }
                         }
                     }
+
+                    for (let n = 0; n < 2; n++) {
+                        let dataClone = [];
+                        for (let ii = 0; ii < this.size; ii++) {
+                            for (let jj = 0; jj < this.size; jj++) {
+                                let v = 0;
+                                for (let di = -1; di <= 1; di++) {
+                                    for (let dj = -1; dj <= 1; dj++) {
+                                        let i = ii + di;
+                                        let j = jj + dj;
+                                        if (i < 0) i = 0;
+                                        if (i >= this.size) i = this.size - 1;
+                                        if (j < 0) j = 0;
+                                        if (j >= this.size) j = this.size - 1;
+                                        v += this._data[i + j * this.size]!;
+                                    }
+                                }
+                                dataClone[ii + jj * this.size] = v / 9;
+                            }
+                        }
+                        this._data = dataClone;
+                    }
+
                     resolve(this._data);
                 };
             });
@@ -117,7 +141,7 @@ export class ChunckDataGeneratorPNG extends ChunckDataGenerator {
     }
 
     private async _getNoiseData(): Promise<number[] | undefined> {
-        if (!this._noiseData && this.noiseUrl) {
+        if (!this._noiseData && this.noiseUrl && this.noiseUrl != "") {
             return new Promise<number[] | undefined>((resolve) => {
                 let image = document.createElement("img");
                 image.src = this.noiseUrl;
@@ -158,9 +182,6 @@ export class ChunckDataGeneratorPNG extends ChunckDataGenerator {
             }
 
             let noiseMap = await this._getNoiseData();
-            if (!noiseMap) {
-                return false;
-            }
 
             for (let i: number = -m; i < chunck.chunckLengthIJ + m; i++) {
                 for (let j: number = -m; j < chunck.chunckLengthIJ + m; j++) {
@@ -199,9 +220,8 @@ export class ChunckDataGeneratorPNG extends ChunckDataGenerator {
                     let v23 = heightmap[i2 + j3 * this.size];
                     let v33 = heightmap[i3 + j3 * this.size];
 
-                    let h = BicubicInterpolate(iGlobal - i1, jGlobal - j1, v00, v10, v20, v30, v01, v11, v21, v31, v02, v12, v22, v32, v03, v13, v23, v33);
-
-                    h += 10;
+                    //let h = BicubicInterpolate(iGlobal - i1, jGlobal - j1, v00, v10, v20, v30, v01, v11, v21, v31, v02, v12, v22, v32, v03, v13, v23, v33);
+                    let h = BilinearInterpolate(iGlobal - i1, jGlobal - j1, v11, v21, v12, v22);
 
                     let iGlobalNoise = Math.floor(i + chunck.chunckLengthIJ * chunck.iPos);
                     while (iGlobalNoise < 0) iGlobalNoise += this.noiseSize;
@@ -210,8 +230,10 @@ export class ChunckDataGeneratorPNG extends ChunckDataGenerator {
                     while (jGlobalNoise < 0) jGlobalNoise += this.noiseSize;
                     jGlobalNoise = jGlobalNoise % this.noiseSize;
 
-                    let noiseValue = noiseMap[iGlobalNoise + jGlobalNoise * this.noiseSize] / 255 - 0.5;
-                    h += noiseValue * 6;
+                    if (noiseMap) {
+                        let noiseValue = noiseMap[iGlobalNoise + jGlobalNoise * this.noiseSize] / 255 - 0.5;
+                        h += noiseValue * 4;
+                    }
 
                     let block = BlockType.Grass;
 

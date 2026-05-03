@@ -252,3 +252,10 @@ export function BicubicInterpolate(x: number, y: number, v00: number, v10: numbe
 
     return TERP(y, i0, i1, i2, i3);
 }
+
+export function BilinearInterpolate(x: number, y: number, v00: number, v10: number, v01: number, v11: number) {
+    let i0 = v00 * (1 - x) + v10 * x;
+    let i1 = v01 * (1 - x) + v11 * x;
+
+    return i0 * (1 - y) + i1 * y;
+}
