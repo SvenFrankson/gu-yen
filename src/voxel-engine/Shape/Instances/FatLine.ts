@@ -6,6 +6,7 @@ import { TerrainEditionMode } from "../../TerrainEditor/TerrainEditor";
 import { IsVeryFinite } from "../../../Number";
 import { UniqueList } from "../../../UniqueList";
 import { DistancePointSegment } from "babylonjs-geometry-kit";
+import { IDrawnBlocks } from "../Shape";
 
 export class FatLine {
 
@@ -31,7 +32,7 @@ export class FatLine {
         }
     }
 
-    public draw(block: BlockType, saveToLocalStorage?: boolean, skipChunckRedraw?: boolean) {
+    public draw(block: BlockType, saveToLocalStorage?: boolean, skipChunckRedraw?: boolean, drawnBlocks?: IDrawnBlocks[]): UniqueList<Chunck> {
         let affectedChuncks = new UniqueList<Chunck>();
         let chunck = this.terrain.getChunckAtPos(this.p0, 0);
         if (!chunck) {
@@ -57,6 +58,10 @@ export class FatLine {
                     if (DistancePointSegment(p, this.p0, this.p1) < this.size * 0.5) {
                         let chuncks = chunck.setData(block, i, j, k, true);
                         chuncks.forEach(c => { affectedChuncks.push(c); });
+                        if (drawnBlocks) {
+                            let globalIJK = chunck.IJKLocalToIJKGlobal(i, j, k);
+                            drawnBlocks.push({ blockType: block, i: globalIJK.i, j: globalIJK.j, k: globalIJK.k });
+                        }
                     }
                 }
             }

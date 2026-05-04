@@ -1,4 +1,4 @@
-import { Shape } from "../Shape";
+import { IDrawnBlocks, Shape } from "../Shape";
 import { Terrain } from "../../Terrain";
 import { Chunck } from "../../Chunck";
 import { BlockType } from "../../BlockType";
@@ -15,7 +15,7 @@ export class Line extends Shape {
         }
     }
 
-    public draw(chunck: Chunck, ijk0: IJK, ijk1: IJK, blockType: BlockType, mode: TerrainEditionMode, saveToLocalStorage?: boolean, skipChunckRedraw?: boolean) {
+    public draw(chunck: Chunck, ijk0: IJK, ijk1: IJK, blockType: BlockType, mode: TerrainEditionMode, saveToLocalStorage?: boolean, skipChunckRedraw?: boolean, drawnBlocks?: IDrawnBlocks[]) {
         let affectedChuncks = new UniqueList<Chunck>();
 
         let iDist = Math.abs(ijk0.i - ijk1.i);
@@ -32,6 +32,10 @@ export class Line extends Shape {
                     let jj = Math.round((1 - f) * ijk0.j + f * ijk1.j);
                     let kk = Math.round((1 - f) * ijk0.k + f * ijk1.k);
                     let chuncks = chunck.setData(blockType, ii, jj, kk);
+                    if (drawnBlocks) {
+                        let globalIJK = chunck.IJKLocalToIJKGlobal(ii, jj, kk);
+                        drawnBlocks.push({ blockType: blockType, i: globalIJK.i, j: globalIJK.j, k: globalIJK.k });
+                    }
                     chuncks.forEach((c) => {
                         affectedChuncks.push(c);
                     });
@@ -42,6 +46,10 @@ export class Line extends Shape {
                     let jj = Math.round((1 - f) * ijk1.j + f * ijk0.j);
                     let kk = Math.round((1 - f) * ijk1.k + f * ijk0.k);
                     let chuncks = chunck.setData(blockType, ii, jj, kk);
+                    if (drawnBlocks) {
+                        let globalIJK = chunck.IJKLocalToIJKGlobal(ii, jj, kk);
+                        drawnBlocks.push({ blockType: blockType, i: globalIJK.i, j: globalIJK.j, k: globalIJK.k });
+                    }
                     chuncks.forEach((c) => {
                         affectedChuncks.push(c);
                     });
@@ -55,6 +63,10 @@ export class Line extends Shape {
                     let ii = Math.round((1 - f) * ijk0.i + f * ijk1.i);
                     let kk = Math.round((1 - f) * ijk0.k + f * ijk1.k);
                     let chuncks = chunck.setData(blockType, ii, jj, kk);
+                    if (drawnBlocks) {
+                        let globalIJK = chunck.IJKLocalToIJKGlobal(ii, jj, kk);
+                        drawnBlocks.push({ blockType: blockType, i: globalIJK.i, j: globalIJK.j, k: globalIJK.k });
+                    }
                     chuncks.forEach((c) => {
                         affectedChuncks.push(c);
                     });
@@ -65,6 +77,10 @@ export class Line extends Shape {
                     let ii = Math.round((1 - f) * ijk1.i + f * ijk0.i);
                     let kk = Math.round((1 - f) * ijk1.k + f * ijk0.k);
                     let chuncks = chunck.setData(blockType, ii, jj, kk);
+                    if (drawnBlocks) {
+                        let globalIJK = chunck.IJKLocalToIJKGlobal(ii, jj, kk);
+                        drawnBlocks.push({ blockType: blockType, i: globalIJK.i, j: globalIJK.j, k: globalIJK.k });
+                    }
                     chuncks.forEach((c) => {
                         affectedChuncks.push(c);
                     });
@@ -78,6 +94,10 @@ export class Line extends Shape {
                     let ii = Math.round((1 - f) * ijk0.i + f * ijk1.i);
                     let jj = Math.round((1 - f) * ijk0.j + f * ijk1.j);
                     let chuncks = chunck.setData(blockType, ii, jj, kk);
+                    if (drawnBlocks) {
+                        let globalIJK = chunck.IJKLocalToIJKGlobal(ii, jj, kk);
+                        drawnBlocks.push({ blockType: blockType, i: globalIJK.i, j: globalIJK.j, k: globalIJK.k });
+                    }
                     chuncks.forEach((c) => {
                         affectedChuncks.push(c);
                     });
@@ -88,6 +108,10 @@ export class Line extends Shape {
                     let ii = Math.round((1 - f) * ijk1.i + f * ijk0.i);
                     let jj = Math.round((1 - f) * ijk1.j + f * ijk0.j);
                     let chuncks = chunck.setData(blockType, ii, jj, kk);
+                    if (drawnBlocks) {
+                        let globalIJK = chunck.IJKLocalToIJKGlobal(ii, jj, kk);
+                        drawnBlocks.push({ blockType: blockType, i: globalIJK.i, j: globalIJK.j, k: globalIJK.k });
+                    }
                     chuncks.forEach((c) => {
                         affectedChuncks.push(c);
                     });

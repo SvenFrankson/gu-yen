@@ -8,6 +8,8 @@ import { Line } from "../voxel-engine/Shape/Instances/Line";
 import { BlockType } from "../voxel-engine/BlockType";
 import { TerrainEditionMode } from "../voxel-engine/TerrainEditor/TerrainEditor";
 import { FatLine } from "../voxel-engine/Shape/Instances/FatLine";
+import { IDrawnBlocks } from "../voxel-engine/Shape/Shape";
+import { IVoxelDrawingData, IVoxelDrawingDataSerialized } from "../voxel-engine/TerrainGen/RawProp/VoxelDrawing";
 
 class TreeNode {
 
@@ -28,7 +30,6 @@ class TreeNode {
     public generateChildren(): void {
         if (this.depth < this.tree.maxDepth) {
             let count = this.tree.countByDepth(this.depth);
-            console.log("Generating " + count + " children for depth " + this.depth);
             for (let n = 0; n < count; n++) {
                 let childrenDir = this.direction.clone();
                 let length = this.tree.minLength + Math.random() * (this.tree.maxLength - this.tree.minLength);
@@ -54,20 +55,22 @@ class TreeNode {
         this.children.forEach(child => child.draw(root));
     }
     
-    public voxelDraw(terrain: Terrain): void {
+    public voxelDraw(terrain: Terrain, drawnBlocks?: IDrawnBlocks[]): void {
         if (this.parent) {
-            let chunckIJK0 = terrain.getChunckAndIJKAtPos(this.position, 0);
-            let IJK1 = terrain.worldPosToGlobalIJK(this.parent.position);
-            if (chunckIJK0 && chunckIJK0.chunck && IJK1) {
-                let localIJK1 = chunckIJK0.chunck.IJKGlobalToIJKLocal(IJK1);
-                console.log("Drawing line from " + JSON.stringify(chunckIJK0.ijk) + " to " + JSON.stringify(localIJK1) + " IJK1 global: " + JSON.stringify(IJK1));
-                //let line = new Line(terrain);
-                //line.draw(chunckIJK0.chunck, chunckIJK0.ijk, localIJK1, BlockType.Wood, TerrainEditionMode.Add);
+            if (this.radius > 0.5) {
                 let fatLine = new FatLine(terrain, this.position, this.parent.position, Math.max(this.radius * 2, 2));
-                fatLine.draw(BlockType.Wood);
+                fatLine.draw(BlockType.Wood, undefined, undefined, drawnBlocks);
+            }
+            else {
+                let line = new Line(terrain, { p0: this.position, p1: this.parent.position });
+                let ijk0 = terrain.getChunckAndIJKAtPos(this.position, 0);
+                let ijk1 = terrain.worldPosToGlobalIJK(this.parent.position);
+                if (ijk0 && ijk1) {
+                    line.draw(ijk0.chunck, ijk0.ijk, ijk0.chunck.IJKGlobalToIJKLocal(ijk1), BlockType.Wood, TerrainEditionMode.Add, undefined, undefined, drawnBlocks);
+                }
             }
         }
-        this.children.forEach(child => child.voxelDraw(terrain));
+        this.children.forEach(child => child.voxelDraw(terrain, drawnBlocks));
     }
 }
 
@@ -75,14 +78,14 @@ class Tree {
     public height = 10;
     public minLength: number = 4;
     public maxLength: number = 6;
-    public rootRadius: number = 2;
-    public endRadius: number = 1;
-    public maxDepth: number = 7;
+    public rootRadius: number = 1;
+    public endRadius: number = 0.1;
+    public maxDepth: number = 5;
     public countByDepth: (depth: number) => number = (depth) => {
-        return Math.min(Math.max(Math.floor((depth + 1) * Math.random()), 1), 2);
+        return Math.min(Math.max(Math.floor((depth + 2) * Math.random()), 1), 2);
     };
     public maxAngleByDepth: (depth: number) => number = (depth) => {
-        return Math.min(Math.PI * 0.1 * depth, Math.PI * 0.5);
+        return Math.min(Math.PI * 0.15 * depth, Math.PI * 0.5);
     }
 
     public root: TreeNode;
@@ -102,20 +105,63 @@ export class TreeGenerator {
         rootPos = game.camera.position.add(dir.scale(30));
 
         if (game.terrain) {
-            let ijk = game.terrain.worldPosToGlobalIJK(rootPos);
-            if (ijk) {
+            let ijkGlobal = game.terrain.worldPosToGlobalIJK(rootPos);
+            if (ijkGlobal) {
                 if (game.terrain.chunckDataGenerator instanceof ChunckDataGeneratorDataSets) {
-                    let height = await game.terrain.chunckDataGenerator.asyncEvaluateHeight(ijk.i, ijk.j);
+                    let height = await game.terrain.chunckDataGenerator.asyncEvaluateHeight(ijkGlobal.i, ijkGlobal.j);
                     rootPos.y = height;
                 }
             }
+
+            let tree = new Tree();
+            tree.minLength = 2 + Math.floor(Math.random() * 6);
+            tree.maxLength = tree.minLength + Math.floor(Math.random() * 6);
+            tree.rootRadius = 0.5 + Math.random() * 2.5;
+            tree.endRadius = 0.1 + Math.random() * 0.4;
+            tree.maxDepth = 3 + Math.floor(Math.random() * 5);
+            tree.root.position = rootPos;
+            tree.root.generateChildren();
+
+            let drawnBlocks: IDrawnBlocks[] = [];
+            tree.root.voxelDraw(game.terrain!, drawnBlocks);
+            let minI = Math.min(...drawnBlocks.map(b => b.i));
+            let maxI = Math.max(...drawnBlocks.map(b => b.i));
+            let minJ = Math.min(...drawnBlocks.map(b => b.j));
+            let maxJ = Math.max(...drawnBlocks.map(b => b.j));
+            let minK = Math.min(...drawnBlocks.map(b => b.k));
+            let maxK = Math.max(...drawnBlocks.map(b => b.k));
+            console.log("minI: " + minI + ", maxI: " + maxI);
+            console.log("minJ: " + minJ + ", maxJ: " + maxJ);
+            console.log("minK: " + minK + ", maxK: " + maxK);
+            drawnBlocks.forEach(b => {
+                b.i -= minI;
+                b.j -= minJ;
+                b.k -= minK;
+            });
+            let w = maxI - minI + 1;
+            let d = maxJ - minJ + 1;
+            let h = maxK - minK + 1;
+
+            let voxelDrawingData: IVoxelDrawingDataSerialized = {
+                offset: { i: minI - ijkGlobal.i, j: minJ - ijkGlobal.j, k: 0 },
+                wI: w,
+                dJ: d,
+                hK: h,
+                dataString: ""
+            };
+            let data: Uint8Array = new Uint8Array(w * d * h);
+            data.fill(BlockType.Unknown);
+            
+            drawnBlocks.forEach(b => {
+                data[b.i + b.j * w + b.k * w * d] = b.blockType;
+            });
+
+            voxelDrawingData.dataString = btoa(String.fromCharCode(...data));
+            data = new Uint8Array(0);
+
+            console.log("Tree height = " + h.toFixed(0));
+            console.log(voxelDrawingData);
+            //tree.root.draw(new Mesh("tree", game.scene));
         }
-
-        let tree = new Tree();
-        tree.root.position = rootPos;
-        tree.root.generateChildren();
-
-        tree.root.voxelDraw(game.terrain!);
-        //tree.root.draw(new Mesh("tree", game.scene));
     }
 }

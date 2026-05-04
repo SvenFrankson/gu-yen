@@ -1,8 +1,9 @@
 import { ChunckDataGenerator, IChunckGeneratorProperties, GeneratorType } from "./ChunckDataGenerator";
 import { Chunck, DRAW_CHUNCK_MARGIN } from "../Chunck";
 import { BlockType } from "../BlockType";
-import { BicubicInterpolate, BilinearInterpolate, MinMax } from "../../Number";
-import { Oak } from "./RawProp/Tree";
+import { BicubicInterpolate } from "../../Number";
+import { VoxelDrawing } from "./RawProp/VoxelDrawing";
+import { getTreeVoxelDrawingDataByHeight } from "./RawProp/Tree";
 
 export interface ITreeData {
     lat: number;
@@ -40,15 +41,16 @@ export class ChunckDataGeneratorDataSets extends ChunckDataGenerator {
     public long0: number = 0;
     public long1: number = 0;
 
-    private oaks: Oak[] = [];
-    public getOak(height: number): Oak {
+    private trees: VoxelDrawing[] = [];
+    public getTree(height: number): VoxelDrawing {
         let h = Math.floor(height);
-        let oak = this.oaks.find(o => o.height === h);
-        if (!oak) {
-            oak = new Oak(h);
-            this.oaks.push(oak);
+        let tree = this.trees[h];
+        if (!tree) {
+            let dataSerialized = getTreeVoxelDrawingDataByHeight(h);
+            tree = new VoxelDrawing(dataSerialized);
+            this.trees[h] = tree;
         }
-        return oak;
+        return tree;
     }
 
     private async _getData(): Promise<number[] | undefined> {
@@ -240,8 +242,11 @@ export class ChunckDataGeneratorDataSets extends ChunckDataGenerator {
                         for (let treeData of treeTile.trees) {
                             if (treeData.d > 10) {
                                 let k = Math.floor(this.evaluateHeight(heightMap, treeData.iGlobal, treeData.jGlobal));
-                                let oak = this.getOak(Math.floor(treeData.h));
-                                oak.draw(treeData.iGlobal - chunck.iPos * chunck.chunckLengthIJ, treeData.jGlobal - chunck.jPos * chunck.chunckLengthIJ, k, chunck);
+                                let voxelDrawing = this.getTree(treeData.h);
+                                voxelDrawing.mirrorX = treeData.iGlobal % 2 === 0;
+                                voxelDrawing.mirrorZ = treeData.jGlobal % 2 === 0;
+                                let ijk = chunck.IJKGlobalToIJKLocal(treeData.iGlobal, treeData.jGlobal, k);
+                                voxelDrawing.draw(ijk.i, ijk.j, ijk.k, chunck);
                             }
                         }
                     }

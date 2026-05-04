@@ -5,12 +5,10 @@ import "@babylonjs/core/Culling/ray";
 import { ChunckVertexData } from "./voxel-engine/ChunckVertexData";
 import { Terrain } from "./voxel-engine/Terrain";
 import { GeneratorType } from "./voxel-engine/TerrainGen/ChunckDataGenerator";
-import { Color4, HemisphericLight, MeshBuilder, StandardMaterial, Vector3 } from "@babylonjs/core";
-import { BlockType } from "./voxel-engine/BlockType";
+import { Color3, CubeTexture, HemisphericLight, Mesh, MeshBuilder, StandardMaterial, Texture, Vector3 } from "@babylonjs/core";
 import { GeoConverter } from "./map/Geo";
 import { TessademAPIKey } from "./APIKey";
 import { Minimap } from "./map/MiniMap";
-import { generateTreeData } from "./data/TreeData";
 import { TreeGenerator } from "./devtools/TreeGenerator";
 import { TerrainMaterial } from "./TerrainMaterial";
 
@@ -23,6 +21,7 @@ export class Game {
     public camera: MyCamera;
     public terrain: Terrain | undefined;
     public geoConverter: GeoConverter = new GeoConverter();
+    public skybox: Mesh;
 
     constructor(public canvas: HTMLCanvasElement) {
         Game.Instance = this;
@@ -71,6 +70,23 @@ export class Game {
        
         //generateTreeData(this);
 
+        let skyBoxHolder = new Mesh("skybox-holder");
+
+        this.skybox = MeshBuilder.CreateBox("skyBox", { size: 1500 }, this.scene);
+        this.skybox.parent = skyBoxHolder;
+        let skyboxMaterial: StandardMaterial = new StandardMaterial("skyBox", this.scene);
+        skyboxMaterial.backFaceCulling = false;
+        let skyTexture = new CubeTexture(
+            "skyboxes/cloud",
+            this.scene,
+            ["-px.jpg", "-py.jpg", "-pz.jpg", "-nx.jpg", "-ny.jpg", "-nz.jpg"]);
+        skyboxMaterial.reflectionTexture = skyTexture;
+        skyboxMaterial.reflectionTexture.coordinatesMode = Texture.SKYBOX_MODE;
+        skyboxMaterial.diffuseColor = new Color3(0, 0, 0);
+        skyboxMaterial.specularColor = new Color3(0, 0, 0);
+        skyboxMaterial.emissiveColor = Color3.FromHexString("#8d6b38").scaleInPlace(0.7);
+        this.skybox.material = skyboxMaterial;
+
         let treeGenerator = new TreeGenerator();
         this.canvas.addEventListener("keydown", (event) => {
             if (event.code === "Space") {
@@ -116,7 +132,7 @@ export class Game {
             console.log(mat.shaderPath);
             this.terrain.materials = [mat];
 
-            this.terrain.chunckManager.setDistance(400);
+            this.terrain.chunckManager.setDistance(200);
 
             //this.initializeTerrainEditor();
         });

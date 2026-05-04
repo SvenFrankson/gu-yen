@@ -562,6 +562,29 @@ export class Chunck {
         return { i: i, j: j, k: k };
     }
 
+    public IJKLocalToIJKGlobal(iLocal: number, jLocal: number, kLocal: number): IJK;
+    public IJKLocalToIJKGlobal(ijkLocal: IJK): IJK;
+    public IJKLocalToIJKGlobal(a: number | IJK, jLocal?: number, kLocal?: number): IJK {
+        let iLocal: number;
+        if (typeof(a) === "number") {
+            iLocal = a;
+        }
+        else {
+            iLocal = a.i;
+            jLocal = a.j;
+            kLocal = a.k;
+        }
+
+        if (jLocal === undefined || kLocal === undefined) {
+            return { i: 0, j: 0, k: 0 };
+        }
+        let iGlobal = iLocal * this.levelFactor + this.chunckLengthIJ * this.iPos;
+        let jGlobal = jLocal * this.levelFactor + this.chunckLengthIJ * this.jPos;
+        let kGlobal = kLocal * this.levelFactor;
+        
+        return { i: iGlobal, j: jGlobal, k: kGlobal };
+    }
+
     public IJKLocalToWorldPosToRef(iLocal: number, jLocal: number, kLocal: number, refV: Vector3): Vector3;
     public IJKLocalToWorldPosToRef(ijkLocal: IJK, refV: Vector3): Vector3;
     public IJKLocalToWorldPosToRef(a: number | IJK, b?: number | Vector3, kLocal?: number, refV?: Vector3): Vector3 {

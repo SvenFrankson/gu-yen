@@ -471,6 +471,7 @@ export class ChunckVertexData {
     }
 
     private static _LoadComposedChunckVertexDatas(lod: number, useXZAxisRotation: boolean): void {
+        /*
         let ref13 = 0b10000010;
         let baseData13A = ChunckVertexData.Get(lod, 0b10000000);
         let baseData13B = ChunckVertexData.Get(lod, 0b00000010);
@@ -481,6 +482,7 @@ export class ChunckVertexData {
             }
             ChunckVertexData._TryAddVariations(lod, ref13, data13, useXZAxisRotation);
         }
+        */
         
         let ref0 = 0b01111111;
         let baseData0 = ChunckVertexData.Get(lod, 0b10000000);
