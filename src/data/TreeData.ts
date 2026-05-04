@@ -2,6 +2,8 @@ import { Game } from "../Game";
 import { IsVeryFinite } from "../Number";
 
 export async function generateTreeData(game: Game) {
+    let NTreeTiles = 1024;
+    
     let dLat = Math.atan2(16384, game.geoConverter.radius) / Math.PI * 180;
     let dLong = Math.atan2(16384, game.geoConverter.radius * Math.cos(game.geoConverter.latZero * Math.PI / 180)) / Math.PI * 180;
 
@@ -30,8 +32,6 @@ export async function generateTreeData(game: Game) {
         }
         return false;
     });
-
-    let NTreeTiles = 512;
 
     let treeTiles: any[][][] = [];
     for (let i = 0; i < NTreeTiles; i++) {
@@ -66,13 +66,13 @@ export async function generateTreeData(game: Game) {
         ctx.fillRect(x * canvas.width, y * canvas.height, 1, 1);
     }
 
-    let sparseTreeTiles = [];
+    let sparseTreeTiles: { size: number, tiles: { i: number, j: number, trees: any[] }[] } = { size: NTreeTiles, tiles: [] };
     let maxTreesPerTile = 0;
     for (let i = 0; i < NTreeTiles; i++) {
         for (let j = 0; j < NTreeTiles; j++) {
             maxTreesPerTile = Math.max(maxTreesPerTile, treeTiles[i][j].length);
             if (treeTiles[i][j].length > 0) {
-                sparseTreeTiles.push({
+                sparseTreeTiles.tiles.push({
                     i: i,
                     j: j,
                     trees: treeTiles[i][j],

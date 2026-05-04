@@ -2,7 +2,7 @@ import { IsVeryFinite } from "../../Number";
 import { BlockType } from "../BlockType";
 import { Terrain } from "../Terrain";
 import { IChunckGeneratorProperties, ChunckDataGenerator, GeneratorType } from "./ChunckDataGenerator";
-import { ChunckDataGeneratorDataSets, ITreeTile } from "./ChunckDataGeneratorDataSets";
+import { ChunckDataGeneratorDataSets, ITreeTile, ITreeTiles } from "./ChunckDataGeneratorDataSets";
 import { ChunckDataGeneratorEmpty } from "./ChunckDataGeneratorEmpty";
 import { ChunckDataGeneratorFlat } from "./ChunckDataGeneratorFlat";
 import { ChunckDataGeneratorPNG } from "./ChunckDataGeneratorPNG";
@@ -48,7 +48,7 @@ export class ChunckDataGeneratorFactory {
             chunckDataGenerator.url = props.url as string;
             chunckDataGenerator.noiseUrl = props.noiseUrl as string;
             chunckDataGenerator.squareSize = props.squareSize as number;
-            chunckDataGenerator.treeTiles = props.treeTiles as ITreeTile[];
+            chunckDataGenerator.treeTiles = props.treeTiles as ITreeTiles;
 
             let dLat = Math.atan2(16384, terrain.geoConverter.radius) / Math.PI * 180;
             let dLong = Math.atan2(16384, terrain.geoConverter.radius * Math.cos(terrain.geoConverter.latZero * Math.PI / 180)) / Math.PI * 180;
@@ -58,7 +58,7 @@ export class ChunckDataGeneratorFactory {
             chunckDataGenerator.lat1 = terrain.geoConverter.latZero + dLat;
             chunckDataGenerator.long1 = terrain.geoConverter.longZero + dLong;
 
-            chunckDataGenerator.treeTiles.forEach(tile => {
+            chunckDataGenerator.treeTiles.tiles.forEach(tile => {
                 tile.trees.forEach(t => {
                     let x = (t.long - chunckDataGenerator.long0) / (chunckDataGenerator.long1 - chunckDataGenerator.long0);
                     let y = (t.lat - chunckDataGenerator.lat0) / (chunckDataGenerator.lat1 - chunckDataGenerator.lat0);

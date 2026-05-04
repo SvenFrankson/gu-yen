@@ -13,6 +13,8 @@
     "vite": "^8.0.4",
     "@babylonjs/core": "^9.2.1",
     "@babylonjs/inspector": "^9.2.0",
-    "@babylonjs/loaders": "^9.2.1"
+    "@babylonjs/loaders": "^9.2.1",
+    "babylonjs-extra-meshes-kit": "^0.0.1",
+    "babylonjs-geometry-kit": "^0.0.4"
   }
 }

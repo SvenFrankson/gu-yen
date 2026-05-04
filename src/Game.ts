@@ -11,6 +11,8 @@ import { GeoConverter } from "./map/Geo";
 import { TessademAPIKey } from "./APIKey";
 import { Minimap } from "./map/MiniMap";
 import { generateTreeData } from "./data/TreeData";
+import { TreeGenerator } from "./devtools/TreeGenerator";
+import { TerrainMaterial } from "./TerrainMaterial";
 
 export class Game {
 
@@ -31,6 +33,7 @@ export class Game {
         this.camera = new MyCamera(this);
         let light = new HemisphericLight("light", new Vector3(1, 3, -2), this.scene);
         light.intensity = 0.7;
+		Engine.ShadersRepository = "./public/shaders/";
 
         /*
         fetch("to_courb_l.json").then(async (res) => {
@@ -68,6 +71,14 @@ export class Game {
        
         //generateTreeData(this);
 
+        let treeGenerator = new TreeGenerator();
+        this.canvas.addEventListener("keydown", (event) => {
+            if (event.code === "Space") {
+                console.log("Generating tree...");
+                treeGenerator.runTest(this);
+            }
+        });
+
         let miniMap: Minimap = document.createElement("mini-map") as Minimap;
         document.body.appendChild(miniMap);
         miniMap.setGame(this);
@@ -99,12 +110,13 @@ export class Game {
                 useAnalytics: true
             });
 
+            this.terrain.initialize();
 
-            let mat = new StandardMaterial("mat", this.scene);
+            let mat = new TerrainMaterial("terrain", this.scene);
+            console.log(mat.shaderPath);
             this.terrain.materials = [mat];
 
-            this.terrain.initialize();
-            this.terrain.chunckManager.setDistance(200);
+            this.terrain.chunckManager.setDistance(400);
 
             //this.initializeTerrainEditor();
         });

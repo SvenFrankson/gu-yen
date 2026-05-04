@@ -356,7 +356,7 @@ export class ChunckMeshBuilder {
             }
 
             vertexData.positions = positions;
-            //vertexData.colors = colors;
+            vertexData.colors = colors;
             vertexData.normals = normals;
             vertexData.indices = indices;
             vertexData.uvs = uv1s;

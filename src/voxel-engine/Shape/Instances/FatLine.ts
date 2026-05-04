@@ -5,6 +5,7 @@ import { BlockType } from "../../BlockType";
 import { TerrainEditionMode } from "../../TerrainEditor/TerrainEditor";
 import { IsVeryFinite } from "../../../Number";
 import { UniqueList } from "../../../UniqueList";
+import { DistancePointSegment } from "babylonjs-geometry-kit";
 
 export class FatLine {
 
@@ -53,12 +54,10 @@ export class FatLine {
             for (let j = j0; j <= j1; j++) {
                 for (let k = k0; k <= k1; k++) {
                     let p = chunck.getPosAtIJK(i, j, k);
-                    /*
-                    if (Mummu.DistancePointSegment(p, this.p0, this.p1) < this.size * 0.5) {
+                    if (DistancePointSegment(p, this.p0, this.p1) < this.size * 0.5) {
                         let chuncks = chunck.setData(block, i, j, k, true);
                         chuncks.forEach(c => { affectedChuncks.push(c); });
                     }
-                    */
                 }
             }
         }
@@ -99,11 +98,9 @@ export class FatLine {
             for (let j = j0; j <= j1; j++) {
                 for (let k = k0; k <= k1; k++) {
                     let p = chunck.getPosAtIJK(i, j, k);
-                    /*
-                    if (Mummu.DistancePointSegment(p, this.p0, this.p1) < this.size * 0.5) {
+                    if (DistancePointSegment(p, this.p0, this.p1) < this.size * 0.5) {
                         chunck.setRawDataSafe(block, i + m, j + m, k + m);
                     }
-                    */
                 }
             }
         }

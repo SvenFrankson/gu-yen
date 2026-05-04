@@ -19,6 +19,11 @@ export interface ITreeTile {
     trees: ITreeData[];
 }
 
+export interface ITreeTiles {
+    size: number;
+    tiles: ITreeTile[];
+}
+
 export class ChunckDataGeneratorDataSets extends ChunckDataGenerator {
 
     public size: number = 1024;
@@ -28,7 +33,7 @@ export class ChunckDataGeneratorDataSets extends ChunckDataGenerator {
     public noiseUrl: string = "";
     private _data: number[] | undefined = undefined;
     private _noiseData: number[] | undefined = undefined;
-    public treeTiles: ITreeTile[] = [];
+    public treeTiles: ITreeTiles = { size: 1024, tiles: [] };
 
     public lat0: number = 0;
     public lat1: number = 0
@@ -205,28 +210,32 @@ export class ChunckDataGeneratorDataSets extends ChunckDataGenerator {
                     while (jGlobalNoise < 0) jGlobalNoise += this.noiseSize;
                     jGlobalNoise = jGlobalNoise % this.noiseSize;
 
+                    let noiseValue = 0;
                     if (noiseMap) {
-                        let noiseValue = noiseMap[iGlobalNoise + jGlobalNoise * this.noiseSize] / 255 - 0.5;
-                        h += noiseValue * 4;
+                        noiseValue = noiseMap[iGlobalNoise + jGlobalNoise * this.noiseSize] / 255 - 0.5;
+                        noiseValue = noiseValue * 6;
                     }
 
-                    let block = BlockType.Grass;
-
+                    let maxRock = h + Math.min(0, noiseValue) - 0.5;
+                    let maxDirt = h + noiseValue;
+                    maxRock = Math.max(maxRock, 1);
                     for (let k: number = 0; k <= chunck.chunckLengthK; k++) {
                         let kGlobal = k * chunck.levelFactor;
-
-                        if (kGlobal < h) {
-                            chunck.setRawData(block, i + m, j + m, k);
+                        if (kGlobal <= maxRock) {
+                            chunck.setRawData(BlockType.Rock, i + m, j + m, k);
+                        }
+                        else if (kGlobal <= maxDirt) {
+                            chunck.setRawData(BlockType.Dirt, i + m, j + m, k);
                         }
                     }
                 }
             }
 
-            let treeTileI = Math.floor(chunck.iPos / this.terrain.chunckCountIJ * 512);
-            let treeTileJ = Math.floor(chunck.jPos / this.terrain.chunckCountIJ * 512);
+            let treeTileI = Math.floor(chunck.iPos / this.terrain.chunckCountIJ * this.treeTiles.size);
+            let treeTileJ = Math.floor(chunck.jPos / this.terrain.chunckCountIJ * this.treeTiles.size);
             for (let i = treeTileI - 1; i <= treeTileI + 1; i++) {
                 for (let j = treeTileJ - 1; j <= treeTileJ + 1; j++) {
-                    let treeTile = this.treeTiles.find(t => t.i === i && t.j === j);
+                    let treeTile = this.treeTiles.tiles.find(tile => tile.i === i && tile.j === j);
                     if (treeTile) {
                         for (let treeData of treeTile.trees) {
                             if (treeData.d > 10) {
