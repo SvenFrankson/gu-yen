@@ -104,7 +104,7 @@ export class Game {
             this.terrain.materials = [mat];
 
             this.terrain.initialize();
-            this.terrain.chunckManager.setDistance(400);
+            this.terrain.chunckManager.setDistance(200);
 
             //this.initializeTerrainEditor();
         });

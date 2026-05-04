@@ -224,6 +224,13 @@ export class Terrain {
         }
     }
 
+    public worldPosToGlobalIJK(pos: Vector3): { i: number, j: number, k: number } {
+        let i = Math.floor((pos.x + this.halfTerrainSizeIJ_m) / this.blockSizeIJ_m);
+        let j = Math.floor((pos.z + this.halfTerrainSizeIJ_m) / this.blockSizeIJ_m);
+        let k = Math.floor((pos.y + this.halfTerrainSizeK_m) / this.blockSizeK_m);
+        return { i, j, k };
+    }
+
     public saveToLocalStorage(): void {
         window.localStorage.setItem("saved-terrain", this.save.serialize());
     }

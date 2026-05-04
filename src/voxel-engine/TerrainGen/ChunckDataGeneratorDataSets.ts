@@ -138,12 +138,53 @@ export class ChunckDataGeneratorDataSets extends ChunckDataGenerator {
         }
     }
 
+    public async asyncEvaluateHeight(iGlobal: number, jGlobal: number): Promise<number> {
+        let heightMap = await this._getData();
+        if (heightMap) {
+            return this.evaluateHeight(heightMap, iGlobal, jGlobal);
+        }
+        return 0;
+    }
+
+    public evaluateHeight(heightMap: number[], iGlobal: number, jGlobal: number): number {
+        let i1 = Math.floor(iGlobal / this.squareSize);
+        let i0 = i1 - 1;
+        let i2 = i1 + 1;
+        let i3 = i1 + 2;
+
+        let j1 = Math.floor(jGlobal / this.squareSize);
+        let j0 = j1 - 1;
+        let j2 = j1 + 1;
+        let j3 = j1 + 2;
+
+        let v00 = heightMap[i0 + j0 * this.size];
+        let v10 = heightMap[i1 + j0 * this.size];
+        let v20 = heightMap[i2 + j0 * this.size];
+        let v30 = heightMap[i3 + j0 * this.size];
+        let v01 = heightMap[i0 + j1 * this.size];
+        let v11 = heightMap[i1 + j1 * this.size];
+        let v21 = heightMap[i2 + j1 * this.size];
+        let v31 = heightMap[i3 + j1 * this.size];
+        let v02 = heightMap[i0 + j2 * this.size];
+        let v12 = heightMap[i1 + j2 * this.size];
+        let v22 = heightMap[i2 + j2 * this.size];
+        let v32 = heightMap[i3 + j2 * this.size];
+        let v03 = heightMap[i0 + j3 * this.size];
+        let v13 = heightMap[i1 + j3 * this.size];
+        let v23 = heightMap[i2 + j3 * this.size];
+        let v33 = heightMap[i3 + j3 * this.size];
+
+        let h = BicubicInterpolate(iGlobal / this.squareSize - i1, jGlobal / this.squareSize - j1, v00, v10, v20, v30, v01, v11, v21, v31, v02, v12, v22, v32, v03, v13, v23, v33);
+
+        return h;
+    }
+
     public async initializeData(chunck: Chunck): Promise<boolean> {
         let m = DRAW_CHUNCK_MARGIN;
 
         if (!chunck.dataInitialized) {
-            let heightmap = await this._getData();
-            if (!heightmap) {
+            let heightMap = await this._getData();
+            if (!heightMap) {
                 return false;
             }
 
@@ -151,43 +192,11 @@ export class ChunckDataGeneratorDataSets extends ChunckDataGenerator {
 
             for (let i: number = -m; i < chunck.chunckLengthIJ + m; i++) {
                 for (let j: number = -m; j < chunck.chunckLengthIJ + m; j++) {
-                    let iGlobal = (i + chunck.chunckLengthIJ * chunck.iPos) / this.squareSize;
-                    while (iGlobal < 0) iGlobal += this.size;
-                    while (iGlobal >= this.size) iGlobal -= this.size;
+                    let iGlobal = (i + chunck.chunckLengthIJ * chunck.iPos);
                     
-                    let jGlobal = (j + chunck.chunckLengthIJ * chunck.jPos) / this.squareSize;
-                    while (jGlobal < 0) jGlobal += this.size;
-                    while (jGlobal >= this.size) jGlobal -= this.size;
+                    let jGlobal = (j + chunck.chunckLengthIJ * chunck.jPos);
 
-                    let i1 = Math.floor(iGlobal);
-                    let i0 = i1 - 1;
-                    let i2 = i1 + 1;
-                    let i3 = i1 + 2;
-
-                    let j1 = Math.floor(jGlobal);
-                    let j0 = j1 - 1;
-                    let j2 = j1 + 1;
-                    let j3 = j1 + 2;
-
-                    let v00 = heightmap[i0 + j0 * this.size];
-                    let v10 = heightmap[i1 + j0 * this.size];
-                    let v20 = heightmap[i2 + j0 * this.size];
-                    let v30 = heightmap[i3 + j0 * this.size];
-                    let v01 = heightmap[i0 + j1 * this.size];
-                    let v11 = heightmap[i1 + j1 * this.size];
-                    let v21 = heightmap[i2 + j1 * this.size];
-                    let v31 = heightmap[i3 + j1 * this.size];
-                    let v02 = heightmap[i0 + j2 * this.size];
-                    let v12 = heightmap[i1 + j2 * this.size];
-                    let v22 = heightmap[i2 + j2 * this.size];
-                    let v32 = heightmap[i3 + j2 * this.size];
-                    let v03 = heightmap[i0 + j3 * this.size];
-                    let v13 = heightmap[i1 + j3 * this.size];
-                    let v23 = heightmap[i2 + j3 * this.size];
-                    let v33 = heightmap[i3 + j3 * this.size];
-
-                    //let h = BicubicInterpolate(iGlobal - i1, jGlobal - j1, v00, v10, v20, v30, v01, v11, v21, v31, v02, v12, v22, v32, v03, v13, v23, v33);
-                    let h = BilinearInterpolate(iGlobal - i1, jGlobal - j1, v11, v21, v12, v22);
+                    let h = this.evaluateHeight(heightMap, iGlobal, jGlobal);
 
                     let iGlobalNoise = Math.floor(i + chunck.chunckLengthIJ * chunck.iPos);
                     while (iGlobalNoise < 0) iGlobalNoise += this.noiseSize;
@@ -221,7 +230,7 @@ export class ChunckDataGeneratorDataSets extends ChunckDataGenerator {
                     if (treeTile) {
                         for (let treeData of treeTile.trees) {
                             if (treeData.d > 10) {
-                                let k = Math.floor(heightmap[Math.floor(treeData.iGlobal / this.squareSize) + Math.floor(treeData.jGlobal / this.squareSize) * this.size]);
+                                let k = Math.floor(this.evaluateHeight(heightMap, treeData.iGlobal, treeData.jGlobal));
                                 let oak = this.getOak(Math.floor(treeData.h));
                                 oak.draw(treeData.iGlobal - chunck.iPos * chunck.chunckLengthIJ, treeData.jGlobal - chunck.jPos * chunck.chunckLengthIJ, k, chunck);
                             }

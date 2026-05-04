@@ -33,7 +33,7 @@ export class MyCamera extends FreeCamera {
             this.position = Vector3.Lerp(this.position, this.targetPosition, 0.001);
             let direction = this.targetPosition.subtract(this.position);
             let dist = direction.length();
-            this.targetSpeed = Math.max(16, Math.min(32, dist / 10));
+            this.targetSpeed = Math.max(12, Math.min(128));
             this.currentSpeed = this.currentSpeed * 0.99 + this.targetSpeed * 0.01;
             direction.scaleInPlace(1 / dist);
             if (dist < this.currentSpeed * dt) {
