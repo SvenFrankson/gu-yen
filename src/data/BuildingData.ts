@@ -5,9 +5,9 @@ import { ChunckDataGeneratorDataSets, IDataTile, IDataTilesCollection, IRoadData
 import { UniqueList } from "../UniqueList";
 import { CapsuleRectCheck } from "../Math2D";
 
-export async function generateOverpassData(game: Game) {
-    let NRoadTiles = 1024;
-    let RoadTileLengthIJ = game.terrain ? game.terrain.terrainLengthIJ / NRoadTiles : 32;
+export async function generateBuildingData(game: Game) {
+    let NBuildingTiles = 1024;
+    let BuildingTileLengthIJ = game.terrain ? game.terrain.terrainLengthIJ / NBuildingTiles : 32;
     let NRoadFetchTiles = 8;
     
     let dLat = Math.atan2(16384, game.geoConverter.radius) / Math.PI * 180;
@@ -24,9 +24,9 @@ export async function generateOverpassData(game: Game) {
 
 
     let roadTiles: IRoadData[][][] = [];
-    for (let i = 0; i < NRoadTiles; i++) {
+    for (let i = 0; i < NBuildingTiles; i++) {
         roadTiles[i] = [];
-        for (let j = 0; j < NRoadTiles; j++) {
+        for (let j = 0; j < NBuildingTiles; j++) {
             roadTiles[i][j] = [];
         }
     }
@@ -110,20 +110,20 @@ export async function generateOverpassData(game: Game) {
                 roadGlobalJMin -= 4;
                 roadGlobalJMax += 4;
 
-                let i0 = Math.floor(roadGlobalIMin / RoadTileLengthIJ);
-                let i1 = Math.floor(roadGlobalIMax / RoadTileLengthIJ);
-                let j0 = Math.floor(roadGlobalJMin / RoadTileLengthIJ);
-                let j1 = Math.floor(roadGlobalJMax / RoadTileLengthIJ);
+                let i0 = Math.floor(roadGlobalIMin / BuildingTileLengthIJ);
+                let i1 = Math.floor(roadGlobalIMax / BuildingTileLengthIJ);
+                let j0 = Math.floor(roadGlobalJMin / BuildingTileLengthIJ);
+                let j1 = Math.floor(roadGlobalJMax / BuildingTileLengthIJ);
 
                 let tileMin = Vector2.Zero();
                 let tileMax = Vector2.Zero();
                 for (let ii = i0; ii <= i1; ii++) {
                     for (let jj = j0; jj <= j1; jj++) {
-                        if (ii >= 0 && ii < NRoadTiles && jj >= 0 && jj < NRoadTiles) {
-                            tileMin.x = ii * RoadTileLengthIJ;
-                            tileMin.y = jj * RoadTileLengthIJ;
-                            tileMax.x = (ii + 1) * RoadTileLengthIJ;
-                            tileMax.y = (jj + 1) * RoadTileLengthIJ;
+                        if (ii >= 0 && ii < NBuildingTiles && jj >= 0 && jj < NBuildingTiles) {
+                            tileMin.x = ii * BuildingTileLengthIJ;
+                            tileMin.y = jj * BuildingTileLengthIJ;
+                            tileMax.x = (ii + 1) * BuildingTileLengthIJ;
+                            tileMax.y = (jj + 1) * BuildingTileLengthIJ;
                             
                             for (let n = 0; n < road.ijGlobals.length - 2; n += 2) {
                                 let p0 = new Vector2(road.ijGlobals[n], road.ijGlobals[n + 1]);
@@ -144,10 +144,10 @@ export async function generateOverpassData(game: Game) {
 
     console.log(tags.array);
 
-    let sparseRoadTiles: IDataTilesCollection<IDataTile<IRoadData>> = { size: NRoadTiles, tiles: [] };
+    let sparseRoadTiles: IDataTilesCollection<IDataTile<IRoadData>> = { size: NBuildingTiles, tiles: [] };
     let maxRoadsPerTile = 0;
-    for (let i = 0; i < NRoadTiles; i++) {
-        for (let j = 0; j < NRoadTiles; j++) {
+    for (let i = 0; i < NBuildingTiles; i++) {
+        for (let j = 0; j < NBuildingTiles; j++) {
             maxRoadsPerTile = Math.max(maxRoadsPerTile, roadTiles[i][j].length);
             if (roadTiles[i][j].length > 0) {
                 sparseRoadTiles.tiles.push({

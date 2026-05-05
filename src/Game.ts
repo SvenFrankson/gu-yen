@@ -12,7 +12,7 @@ import { Minimap } from "./map/MiniMap";
 import { TreeGenerator } from "./devtools/TreeGenerator";
 import { TerrainMaterial } from "./TerrainMaterial";
 import { generateTreeData } from "./data/TreeData";
-import { generateOverpassData } from "./data/OverpassData";
+import { generateRoadData } from "./data/RoadData";
 import { CubicNoiseTexture } from "./CubicNoiseTexture";
 
 export class Game {
@@ -102,7 +102,7 @@ export class Game {
                 treeGenerator.runTest(this);
             }
             else if (event.code === "Numpad1") {
-                generateOverpassData(this);
+                generateRoadData(this);
             }
         });
 
@@ -116,7 +116,7 @@ export class Game {
             let treeDatas = await fetch("trees.json").then(res => res.json());
             let roadDatas = await fetch("roads.json").then(res => res.json());
             let textureSize = 1024;
-            let squareSize = 32;
+            let squareSize = 64;
             let chunckLengthIJ = 32;
             let chunckCountIJ = textureSize * squareSize / chunckLengthIJ;
             console.log("chunckCountIJ: " + chunckCountIJ);
@@ -131,8 +131,8 @@ export class Game {
                     roadTiles: roadDatas
                 },
                 maxDisplayedLevel: 0,
-                blockSizeIJ_m: 1,
-                blockSizeK_m: 1,
+                blockSizeIJ_m: 0.5,
+                blockSizeK_m: 0.5,
                 chunckLengthIJ: chunckLengthIJ,
                 chunckLengthK: 256,
                 chunckCountIJ: chunckCountIJ,
@@ -140,7 +140,7 @@ export class Game {
             });
 
             this.terrain.initialize();
-            this.terrain.chunckManager.setDistance(400);
+            this.terrain.chunckManager.setDistance(200);
 
             let noiseTexture = new CubicNoiseTexture(this.scene);
             noiseTexture.double();

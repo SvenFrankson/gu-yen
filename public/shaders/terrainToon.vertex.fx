@@ -1,7 +1,7 @@
 #version 300 es
 precision highp float;
 
-uniform vec3 terrainColors[14];
+uniform vec3 terrainColors[18];
 
 in vec3 position;
 in vec3 normal;

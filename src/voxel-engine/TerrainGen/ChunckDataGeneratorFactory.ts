@@ -99,6 +99,8 @@ export class ChunckDataGeneratorFactory {
                 for (let roadTile of chunckDataGenerator.roadTiles.tiles) {
                     for (let roadData of roadTile.dataArray) {
                         roadData.w = widthByType[roadData.type] ?? 2;
+                        roadData.w *= 2;
+                        roadData.ijGlobals = roadData.ijGlobals.map(ijGlobal => { return ijGlobal * 2; });
                         tags.push(...roadData.type);
                     }
                 }

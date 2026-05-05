@@ -112,7 +112,7 @@ export class ChunckDataGeneratorDataSets extends ChunckDataGenerator {
                                 let b = imageData[4 * index + 2];
                                 //this._data[i + j * this.size] = this.rgbToHeight(r, g, b, this.stops);
                                 let h = (r + g + b) / 3;
-                                h = h / 255 * (150 - (-20)) - 20;
+                                h = h / 255 * (300 - (-40)) - 40;
                                 this._data[i + j * this.size] = h;
                             }
                         }
@@ -223,7 +223,6 @@ export class ChunckDataGeneratorDataSets extends ChunckDataGenerator {
 
     public async initializeData(chunck: Chunck): Promise<boolean> {
         let m = DRAW_CHUNCK_MARGIN;
-        let S = chunck.chunckLengthIJ + 2 * m;
 
         if (!chunck.dataInitialized) {
             let heightMap = await this._getData();
@@ -237,11 +236,11 @@ export class ChunckDataGeneratorDataSets extends ChunckDataGenerator {
             let roadTileJ = Math.floor(chunck.jPos / this.terrain.chunckCountIJ * this.roadTiles.size);
             let roadTiles = this.roadTiles.tiles.filter(tile => Math.abs(tile.i - roadTileI) <= 1 && Math.abs(tile.j - roadTileJ) <= 1);
 
-            let roadMap: boolean[][] = [];
+            let roadMap: number[][] = [];
             for (let i: number = -m; i < chunck.chunckLengthIJ + m; i++) {
                 roadMap[i + m] = [];
                 for (let j: number = -m; j < chunck.chunckLengthIJ + m; j++) {
-                    roadMap[i + m][j + m] = false;
+                    roadMap[i + m][j + m] = 0;
                 }
             }
 
@@ -265,8 +264,12 @@ export class ChunckDataGeneratorDataSets extends ChunckDataGenerator {
 
                             for (let x = x0; x < x1; x++) {
                                 for (let y = y0; y < y1; y++) {
-                                    if (DistancePointSegmentVec2(new Vector2(x, y), new Vector2(ptIGlobal0, ptJGlobal0), new Vector2(ptIGlobal1, ptJGlobal1)) <= roadData.w * 0.5) {
-                                        roadMap[Math.floor(x) + m][Math.floor(y) + m] = true;
+                                    let d = DistancePointSegmentVec2(new Vector2(x, y), new Vector2(ptIGlobal0, ptJGlobal0), new Vector2(ptIGlobal1, ptJGlobal1));
+                                    if (roadData.w >= 8 && d <= 0.5) {
+                                        roadMap[Math.floor(x) + m][Math.floor(y) + m] = 2;
+                                    }
+                                    else if (d <= roadData.w * 0.5) {
+                                        roadMap[Math.floor(x) + m][Math.floor(y) + m] = 1;
                                     }
                                 }
                             }
@@ -302,7 +305,7 @@ export class ChunckDataGeneratorDataSets extends ChunckDataGenerator {
                     if (isRoad) {
                         maxRock -= 0.5;
                         maxDirt -= 0.5;
-                        if (this.randomMap[iGlobal % this.randomMapSize][jGlobal % this.randomMapSize] > 0.2) {
+                        if (this.randomMap[iGlobal % this.randomMapSize][jGlobal % this.randomMapSize] > 0.05) {
                             maxDirt = 0;
                         }
                     }
@@ -311,7 +314,13 @@ export class ChunckDataGeneratorDataSets extends ChunckDataGenerator {
                     for (let k: number = 0; k <= chunck.chunckLengthK; k++) {
                         let kGlobal = k * chunck.levelFactor;
                         if (kGlobal <= maxRock) {
-                            let blockType = isRoad ? BlockType.Asphalt : BlockType.Rock;
+                            let blockType = BlockType.Rock;
+                            if (isRoad === 1) {
+                                blockType = BlockType.Asphalt;
+                            }
+                            else if (isRoad === 2) {
+                                blockType = BlockType.WhiteAsphalt;
+                            }
                             chunck.setRawData(blockType, i + m, j + m, k);
                         }
                         else if (kGlobal <= maxDirt) {

@@ -29,7 +29,7 @@ export class TerrainMaterial extends ShaderMaterial {
                     "blockHeight_m"
                 ]
             }
-        );
+            );
 
         let w = 2;
         let h = 2;
@@ -44,9 +44,10 @@ export class TerrainMaterial extends ShaderMaterial {
 
         this.setLightInvDir(Vector3.One().normalize());
         
-        this.setFloat("blockSize_m", 1);
-        this.setFloat("blockHeight_m", 1);
+        this.setFloat("blockSize_m", 0.5);
+        this.setFloat("blockHeight_m", 0.5);
         
+        console.log("Passing " + BlockTypeColors.length + " terrain colors to shader");
         this.setColor3Array("terrainColors", BlockTypeColors);
         
         this.setTexture("barkTexture", new Texture("textures/bark.png"));

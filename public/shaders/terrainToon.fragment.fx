@@ -2,7 +2,7 @@
 precision highp float;
 precision mediump sampler3D;
  
-uniform vec3 terrainColors[14];
+uniform vec3 terrainColors[18];
 uniform vec3 lightInvDirW;
 uniform int level;
 uniform float blockSize_m;
@@ -201,19 +201,6 @@ void main() {
       }
    }
 
-   // show triangles
-   /*
-   if (baryPos.r < 0.001) {
-      color = vec3(0., 0., 0.);
-   }
-   if (baryPos.g < 0.001) {
-      color = vec3(0., 0., 0.);
-   }
-   if (baryPos.b < 0.001) {
-      color = vec3(0., 0., 0.);
-   }
-   */
-
    // show Chunck Parts
    /*
    float dh = blockSize_m * 0.5;
@@ -300,6 +287,19 @@ void main() {
    else if (colorIndex == 15) {
       color = texture(rustTexture, diffuseUV * 0.4).rgb;
    }
+   
+   /*
+   // show triangles
+   if (baryPos.r < 0.001) {
+      color = vec3(0., 1., 0.);
+   }
+   if (baryPos.g < 0.001) {
+      color = vec3(0., 1., 0.);
+   }
+   if (baryPos.b < 0.001) {
+      color = vec3(0., 1., 0.);
+   }
+   */
    
    vec3 uvr = vec3(vPositionL.x / 26. / blockSize_m, vPositionL.z / 26. / blockSize_m, vPositionL.y / 257. / blockHeight_m);
    float gi = texture(lightTexture, uvr).r;
