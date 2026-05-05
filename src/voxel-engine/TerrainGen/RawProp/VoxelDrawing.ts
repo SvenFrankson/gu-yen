@@ -23,6 +23,55 @@ export interface IVoxelDrawingData {
     data: Uint8Array;
 }
 
+export function crunchDataString(dataString: string): string {
+    let compressed = "";
+    let count = 0;
+    let lastValue = "";
+    for (let n = 0; n < dataString.length / 4; n++) {
+        let v = dataString.substring(n * 4, n * 4 + 4);
+        if (v === lastValue) {
+            count++;
+        }
+        else {
+            if (count > 1) {
+                compressed += "[" + count.toString(16) + "]";
+                compressed += lastValue;
+            }
+            else {
+                compressed += lastValue;
+            }
+            count = 1;
+            lastValue = v;
+        }
+    }
+    if (count > 0) {
+        compressed += "[" + count.toString(16) + "]";
+        compressed += lastValue;
+    }
+    return compressed;
+}
+
+export function uncrunchDataString(compressed: string): string {
+    let dataString = "";
+    let i = 0;
+    while (i < compressed.length) {
+        if (compressed[i] === "[") {
+            let endIndex = compressed.indexOf("]", i);
+            let count = parseInt(compressed.substring(i + 1, endIndex), 16);
+            i = endIndex + 1;
+            let value = compressed.substring(i, i + 4);
+            for (let j = 0; j < count; j++) {
+                dataString += value;
+            }
+            i += 4;
+        } else {
+            dataString += compressed[i];
+            i++;
+        }
+    }
+    return dataString;
+}
+
 export class VoxelDrawing extends RawProp {
     private data: IVoxelDrawingData | null = null;
 
@@ -36,7 +85,7 @@ export class VoxelDrawing extends RawProp {
             wI: serializedData.wI,
             dJ: serializedData.dJ,
             hK: serializedData.hK,
-            data: Uint8Array.from(atob(serializedData.dataString), c => c.charCodeAt(0))
+            data: Uint8Array.from(atob(uncrunchDataString(serializedData.dataString)), c => c.charCodeAt(0))
         }
     }
 

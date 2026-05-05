@@ -9,7 +9,7 @@ import { BlockType } from "../voxel-engine/BlockType";
 import { TerrainEditionMode } from "../voxel-engine/TerrainEditor/TerrainEditor";
 import { FatLine } from "../voxel-engine/Shape/Instances/FatLine";
 import { IDrawnBlocks } from "../voxel-engine/Shape/Shape";
-import { IVoxelDrawingData, IVoxelDrawingDataSerialized } from "../voxel-engine/TerrainGen/RawProp/VoxelDrawing";
+import { crunchDataString, IVoxelDrawingData, IVoxelDrawingDataSerialized } from "../voxel-engine/TerrainGen/RawProp/VoxelDrawing";
 
 class TreeNode {
 
@@ -114,9 +114,9 @@ export class TreeGenerator {
             }
 
             let tree = new Tree();
-            tree.minLength = 2 + Math.floor(Math.random() * 6);
+            tree.minLength = 1 + Math.floor(Math.random() * 6);
             tree.maxLength = tree.minLength + Math.floor(Math.random() * 6);
-            tree.rootRadius = 0.5 + Math.random() * 2.5;
+            tree.rootRadius = 0.1 + Math.random() * 2.5;
             tree.endRadius = 0.1 + Math.random() * 0.4;
             tree.maxDepth = 3 + Math.floor(Math.random() * 5);
             tree.root.position = rootPos;
@@ -156,7 +156,7 @@ export class TreeGenerator {
                 data[b.i + b.j * w + b.k * w * d] = b.blockType;
             });
 
-            voxelDrawingData.dataString = btoa(String.fromCharCode(...data));
+            voxelDrawingData.dataString = crunchDataString(btoa(String.fromCharCode(...data)));
             data = new Uint8Array(0);
 
             console.log("Tree height = " + h.toFixed(0));

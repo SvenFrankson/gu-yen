@@ -1,28 +1,36 @@
 import { ChunckDataGenerator, IChunckGeneratorProperties, GeneratorType } from "./ChunckDataGenerator";
 import { Chunck, DRAW_CHUNCK_MARGIN } from "../Chunck";
 import { BlockType } from "../BlockType";
-import { BicubicInterpolate } from "../../Number";
+import { BicubicInterpolate, IsVeryFinite } from "../../Number";
 import { VoxelDrawing } from "./RawProp/VoxelDrawing";
-import { getTreeVoxelDrawingDataByHeight } from "./RawProp/Tree";
+import { getTreeVoxelDrawingDataByHeight, getTreeVoxelDrawingDataByIndex } from "./RawProp/Tree";
+import { DistancePointSegment as DistancePointSegmentVec2 } from "../../Math2D";
+import { Vector2 } from "@babylonjs/core/Maths/math.vector";
 
 export interface ITreeData {
     lat: number;
     long: number;
-    iGlobal: number;
-    jGlobal: number;
+    iGlobal?: number;
+    jGlobal?: number;
     h: number;
     d: number;
+    n?: number;
 }
 
-export interface ITreeTile {
+export interface IRoadData {
+    w: number;
+    ijGlobals: number[];
+}
+
+export interface IDataTile<T> {
     i: number;
     j: number;
-    trees: ITreeData[];
+    dataArray: T[];
 }
 
-export interface ITreeTiles {
+export interface IDataTilesCollection<T> {
     size: number;
-    tiles: ITreeTile[];
+    tiles: T[];
 }
 
 export class ChunckDataGeneratorDataSets extends ChunckDataGenerator {
@@ -34,7 +42,8 @@ export class ChunckDataGeneratorDataSets extends ChunckDataGenerator {
     public noiseUrl: string = "";
     private _data: number[] | undefined = undefined;
     private _noiseData: number[] | undefined = undefined;
-    public treeTiles: ITreeTiles = { size: 1024, tiles: [] };
+    public treeTiles: IDataTilesCollection<IDataTile<ITreeData>> = { size: 1024, tiles: [] };
+    public roadTiles: IDataTilesCollection<IDataTile<IRoadData>> = { size: 1024, tiles: [] };
 
     public lat0: number = 0;
     public lat1: number = 0
@@ -49,6 +58,18 @@ export class ChunckDataGeneratorDataSets extends ChunckDataGenerator {
             let dataSerialized = getTreeVoxelDrawingDataByHeight(h);
             tree = new VoxelDrawing(dataSerialized);
             this.trees[h] = tree;
+        }
+        return tree;
+    }
+    public getTreeByIndex(n: number): VoxelDrawing {
+        if (!IsVeryFinite(n)) {
+            n = 0;
+        }
+        let tree = this.trees[n];
+        if (!tree) {
+            let dataSerialized = getTreeVoxelDrawingDataByIndex(n);
+            tree = new VoxelDrawing(dataSerialized);
+            this.trees[n] = tree;
         }
         return tree;
     }
@@ -197,11 +218,34 @@ export class ChunckDataGeneratorDataSets extends ChunckDataGenerator {
 
             let noiseMap = await this._getNoiseData();
 
+            let roadTileI = Math.floor(chunck.iPos / this.terrain.chunckCountIJ * this.roadTiles.size);
+            let roadTileJ = Math.floor(chunck.jPos / this.terrain.chunckCountIJ * this.roadTiles.size);
+            let roadTiles = this.roadTiles.tiles.filter(tile => Math.abs(tile.i - roadTileI) <= 1 && Math.abs(tile.j - roadTileJ) <= 1);
+
             for (let i: number = -m; i < chunck.chunckLengthIJ + m; i++) {
                 for (let j: number = -m; j < chunck.chunckLengthIJ + m; j++) {
                     let iGlobal = (i + chunck.chunckLengthIJ * chunck.iPos);
-                    
                     let jGlobal = (j + chunck.chunckLengthIJ * chunck.jPos);
+
+                    let isRoad = false;
+
+                    if (roadTiles.length > 0) {
+                        for (let roadTile of roadTiles) {
+                            roadTile.dataArray.forEach(roadData => {
+                                for (let n = 0; n < roadData.ijGlobals.length - 2; n += 2) {
+                                    let ptIGlobal0 = roadData.ijGlobals[n];
+                                    let ptJGlobal0 = roadData.ijGlobals[n + 1];
+                                    let ptIGlobal1 = roadData.ijGlobals[n + 2];
+                                    let ptJGlobal1 = roadData.ijGlobals[n + 3];
+
+                                    if (DistancePointSegmentVec2(new Vector2(iGlobal, jGlobal), new Vector2(ptIGlobal0, ptJGlobal0), new Vector2(ptIGlobal1, ptJGlobal1)) <= roadData.w) {
+                                        isRoad = true;
+                                    }
+                                }
+                            });
+                        }
+                    }
+
 
                     let h = this.evaluateHeight(heightMap, iGlobal, jGlobal);
 
@@ -220,11 +264,17 @@ export class ChunckDataGeneratorDataSets extends ChunckDataGenerator {
 
                     let maxRock = h + Math.min(0, noiseValue) - 0.5;
                     let maxDirt = h + noiseValue;
+                    
+                    if (isRoad) {
+                        maxDirt = 0;
+                    }
+
                     maxRock = Math.max(maxRock, 1);
                     for (let k: number = 0; k <= chunck.chunckLengthK; k++) {
                         let kGlobal = k * chunck.levelFactor;
                         if (kGlobal <= maxRock) {
-                            chunck.setRawData(BlockType.Rock, i + m, j + m, k);
+                            let blockType = isRoad ? BlockType.Basalt : BlockType.Rock;
+                            chunck.setRawData(blockType, i + m, j + m, k);
                         }
                         else if (kGlobal <= maxDirt) {
                             chunck.setRawData(BlockType.Dirt, i + m, j + m, k);
@@ -239,13 +289,13 @@ export class ChunckDataGeneratorDataSets extends ChunckDataGenerator {
                 for (let j = treeTileJ - 1; j <= treeTileJ + 1; j++) {
                     let treeTile = this.treeTiles.tiles.find(tile => tile.i === i && tile.j === j);
                     if (treeTile) {
-                        for (let treeData of treeTile.trees) {
-                            if (treeData.d > 10) {
-                                let k = Math.floor(this.evaluateHeight(heightMap, treeData.iGlobal, treeData.jGlobal));
-                                let voxelDrawing = this.getTree(treeData.h);
-                                voxelDrawing.mirrorX = treeData.iGlobal % 2 === 0;
-                                voxelDrawing.mirrorZ = treeData.jGlobal % 2 === 0;
-                                let ijk = chunck.IJKGlobalToIJKLocal(treeData.iGlobal, treeData.jGlobal, k);
+                        for (let treeData of treeTile.dataArray) {
+                            if (treeData.d > 10 && treeData.h > 0) {
+                                let k = Math.floor(this.evaluateHeight(heightMap, treeData.iGlobal!, treeData.jGlobal!));
+                                let voxelDrawing = this.getTreeByIndex(treeData.n!);
+                                voxelDrawing.mirrorX = treeData.iGlobal! % 2 === 0;
+                                voxelDrawing.mirrorZ = treeData.jGlobal! % 2 === 0;
+                                let ijk = chunck.IJKGlobalToIJKLocal(treeData.iGlobal!, treeData.jGlobal!, k);
                                 voxelDrawing.draw(ijk.i, ijk.j, ijk.k, chunck);
                             }
                         }

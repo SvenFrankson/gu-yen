@@ -11,6 +11,8 @@ import { TessademAPIKey } from "./APIKey";
 import { Minimap } from "./map/MiniMap";
 import { TreeGenerator } from "./devtools/TreeGenerator";
 import { TerrainMaterial } from "./TerrainMaterial";
+import { generateTreeData } from "./data/TreeData";
+import { generateOverpassData } from "./data/OverpassData";
 
 export class Game {
 
@@ -69,11 +71,9 @@ export class Game {
         */
        
         //generateTreeData(this);
-
-        let skyBoxHolder = new Mesh("skybox-holder");
+        //generateOverpassData(this);
 
         this.skybox = MeshBuilder.CreateBox("skyBox", { size: 1500 }, this.scene);
-        this.skybox.parent = skyBoxHolder;
         let skyboxMaterial: StandardMaterial = new StandardMaterial("skyBox", this.scene);
         skyboxMaterial.backFaceCulling = false;
         let skyTexture = new CubeTexture(
@@ -87,11 +87,20 @@ export class Game {
         skyboxMaterial.emissiveColor = Color3.FromHexString("#8d6b38").scaleInPlace(0.7);
         this.skybox.material = skyboxMaterial;
 
+        this.scene.onBeforeRenderObservable.add(() => {
+            this.skybox.position.x = this.camera.position.x;
+            this.skybox.position.z = this.camera.position.z;
+            this.skybox.rotation.y += 0.00005;
+        });
+
         let treeGenerator = new TreeGenerator();
         this.canvas.addEventListener("keydown", (event) => {
             if (event.code === "Space") {
                 console.log("Generating tree...");
                 treeGenerator.runTest(this);
+            }
+            else if (event.code === "Numpad1") {
+                generateOverpassData(this);
             }
         });
 
@@ -103,6 +112,7 @@ export class Game {
         ChunckVertexData.InitializeData("meshes/chunck-parts.gltf", this.scene).then(async () => {
 
             let treeDatas = await fetch("trees.json").then(res => res.json());
+            let roadDatas = await fetch("roads.json").then(res => res.json());
             let textureSize = 1024;
             let squareSize = 32;
             let chunckLengthIJ = 32;
@@ -115,7 +125,8 @@ export class Game {
                     //url: "map_2.png",
                     noiseUrl: "noise.png",
                     squareSize: squareSize,
-                    treeTiles: treeDatas
+                    treeTiles: treeDatas,
+                    roadTiles: roadDatas
                 },
                 maxDisplayedLevel: 0,
                 blockSizeIJ_m: 1,

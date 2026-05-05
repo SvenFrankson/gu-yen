@@ -1,5 +1,6 @@
 import { Game } from "../Game";
 import { IsVeryFinite } from "../Number";
+import { IDataTile, IDataTilesCollection, ITreeData } from "../voxel-engine/TerrainGen/ChunckDataGeneratorDataSets";
 
 export async function generateTreeData(game: Game) {
     let NTreeTiles = 1024;
@@ -33,7 +34,7 @@ export async function generateTreeData(game: Game) {
         return false;
     });
 
-    let treeTiles: any[][][] = [];
+    let treeTiles: ITreeData[][][] = [];
     for (let i = 0; i < NTreeTiles; i++) {
         treeTiles[i] = [];
         for (let j = 0; j < NTreeTiles; j++) {
@@ -46,13 +47,11 @@ export async function generateTreeData(game: Game) {
         let lat = point["lat"];
         let long = point["lon"];
 
-        let x = (long - long0) / (long1 - long0);
-        let y = (lat1 - lat) / (lat1 - lat0);
 
         let i = Math.floor((long - long0) / (long1 - long0) * NTreeTiles);
         let j = Math.floor((lat - lat0) / (lat1 - lat0) * NTreeTiles);
 
-        let tree = {
+        let tree: ITreeData = {
             lat: lat,
             long: long,
             h: p["hauteur"],
@@ -62,20 +61,32 @@ export async function generateTreeData(game: Game) {
             treeTiles[i][j].push(tree);
         }
 
-        ctx.fillStyle = "lime";
-        ctx.fillRect(x * canvas.width, y * canvas.height, 1, 1);
     }
 
-    let sparseTreeTiles: { size: number, tiles: { i: number, j: number, trees: any[] }[] } = { size: NTreeTiles, tiles: [] };
+    let sparseTreeTiles: IDataTilesCollection<IDataTile<ITreeData>> = { size: NTreeTiles, tiles: [] };
     let maxTreesPerTile = 0;
     for (let i = 0; i < NTreeTiles; i++) {
         for (let j = 0; j < NTreeTiles; j++) {
             maxTreesPerTile = Math.max(maxTreesPerTile, treeTiles[i][j].length);
+            while (treeTiles[i][j].length > 2) {
+                treeTiles[i][j].splice(Math.floor(Math.random() * treeTiles[i][j].length), 1);
+            }
             if (treeTiles[i][j].length > 0) {
+                for (let n = 0; n < treeTiles[i][j].length; n++) {
+                    let tree = treeTiles[i][j][n];
+                    let lat = tree.lat;
+                    let long = tree.long;
+
+                    let x = (long - long0) / (long1 - long0);
+                    let y = (lat1 - lat) / (lat1 - lat0);
+                    
+                    ctx.fillStyle = "lime";
+                    ctx.fillRect(x * canvas.width, y * canvas.height, 1, 1);
+                }
                 sparseTreeTiles.tiles.push({
                     i: i,
                     j: j,
-                    trees: treeTiles[i][j],
+                    dataArray: treeTiles[i][j],
                 });
             }
         }

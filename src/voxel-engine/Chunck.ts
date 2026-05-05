@@ -695,6 +695,7 @@ export class Chunck {
                     if (vertexData) {
                         if (!this.mesh) {
                             this.mesh = new Mesh(this.name + "-mesh");
+                            //this.mesh.scaling.copyFromFloats(0.99, 0.99, 0.99)
                         }
                         vertexData.applyToMesh(this.mesh);
                         this.mesh.position.copyFrom(this.position);

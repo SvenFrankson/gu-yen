@@ -1,9 +1,28 @@
+import { Vector2 } from "@babylonjs/core";
+
 export interface Intersection2DResult {
     x: number;
     y: number;
     nX: number;
     nY: number;
     penetration: number;
+}
+
+var TmpVec3 = [Vector2.Zero(), Vector2.Zero(), Vector2.Zero(), Vector2.Zero(), Vector2.Zero()];
+
+export function DistancePointSegment(point: Vector2, segA: Vector2, segB: Vector2): number {
+    let AP = TmpVec3[0];
+    let dir = TmpVec3[1];
+    let projP = TmpVec3[2];
+    AP.copyFrom(point).subtractInPlace(segA);
+    dir.copyFrom(segB).subtractInPlace(segA);
+    let l = dir.length();
+    dir.scaleInPlace(1 / l);
+    let dist = Vector2.Dot(AP, dir);
+    dist = Math.max(Math.min(dist, l), 0);
+    projP.copyFrom(dir).scaleInPlace(dist).addInPlace(segA);
+    let PprojP = projP.subtractInPlace(point);
+    return PprojP.length();
 }
 
 export function CircleSquareIntersection(circleX: number, circleY: number, radius: number, squareX: number, squareY: number, squareSize: number): Intersection2DResult | null {
