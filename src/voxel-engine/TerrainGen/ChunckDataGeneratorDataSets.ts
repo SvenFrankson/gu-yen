@@ -315,7 +315,12 @@ export class ChunckDataGeneratorDataSets extends ChunckDataGenerator {
                             chunck.setRawData(blockType, i + m, j + m, k);
                         }
                         else if (kGlobal <= maxDirt) {
-                            chunck.setRawData(BlockType.Dirt, i + m, j + m, k);
+                            if (noiseValue > 0.1) {
+                                chunck.setRawData(BlockType.SparseGrass, i + m, j + m, k);
+                            }
+                            else {
+                                chunck.setRawData(BlockType.Dirt, i + m, j + m, k);
+                            }
                         }
                     }
                 }
