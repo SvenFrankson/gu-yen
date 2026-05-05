@@ -6,6 +6,7 @@ import { VoxelDrawing } from "./RawProp/VoxelDrawing";
 import { getTreeVoxelDrawingDataByHeight, getTreeVoxelDrawingDataByIndex } from "./RawProp/Tree";
 import { DistancePointSegment as DistancePointSegmentVec2 } from "../../Math2D";
 import { Vector2 } from "@babylonjs/core/Maths/math.vector";
+import { Terrain } from "../Terrain";
 
 export interface ITreeData {
     lat: number;
@@ -36,6 +37,8 @@ export interface IDataTilesCollection<T> {
 
 export class ChunckDataGeneratorDataSets extends ChunckDataGenerator {
 
+    private randomMap: number[][] = [];
+    private randomMapSize: number = 97;
     public size: number = 1024;
     public noiseSize: number = 1024;
     public squareSize: number = 2;
@@ -50,6 +53,16 @@ export class ChunckDataGeneratorDataSets extends ChunckDataGenerator {
     public lat1: number = 0
     public long0: number = 0;
     public long1: number = 0;
+
+    constructor(terrain: Terrain) { 
+        super(terrain);
+        for (let i = 0; i < this.randomMapSize; i++) {
+            this.randomMap[i] = [];
+            for (let j = 0; j < this.randomMapSize; j++) {
+                this.randomMap[i][j] = Math.random();
+            }
+        }
+    }
 
     private trees: VoxelDrawing[] = [];
     public getTree(height: number): VoxelDrawing {
@@ -282,21 +295,23 @@ export class ChunckDataGeneratorDataSets extends ChunckDataGenerator {
                     let noiseValue = 0;
                     if (noiseMap) {
                         noiseValue = noiseMap[iGlobalNoise + jGlobalNoise * this.noiseSize] / 255 - 0.5;
-                        noiseValue = noiseValue * 6;
                     }
 
                     let maxRock = h + Math.min(0, noiseValue) - 0.5;
-                    let maxDirt = h + noiseValue;
-                    
+                    let maxDirt = h + noiseValue * 6;
                     if (isRoad) {
-                        maxDirt = 0;
+                        maxRock -= 0.5;
+                        maxDirt -= 0.5;
+                        if (this.randomMap[iGlobal % this.randomMapSize][jGlobal % this.randomMapSize] > 0.2) {
+                            maxDirt = 0;
+                        }
                     }
-
+                    
                     maxRock = Math.max(maxRock, 1);
                     for (let k: number = 0; k <= chunck.chunckLengthK; k++) {
                         let kGlobal = k * chunck.levelFactor;
                         if (kGlobal <= maxRock) {
-                            let blockType = isRoad ? BlockType.Basalt : BlockType.Rock;
+                            let blockType = isRoad ? BlockType.Asphalt : BlockType.Rock;
                             chunck.setRawData(blockType, i + m, j + m, k);
                         }
                         else if (kGlobal <= maxDirt) {

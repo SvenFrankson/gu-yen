@@ -13,6 +13,7 @@ import { TreeGenerator } from "./devtools/TreeGenerator";
 import { TerrainMaterial } from "./TerrainMaterial";
 import { generateTreeData } from "./data/TreeData";
 import { generateOverpassData } from "./data/OverpassData";
+import { CubicNoiseTexture } from "./CubicNoiseTexture";
 
 export class Game {
 
@@ -33,6 +34,7 @@ export class Game {
         this.scene.clearColor.set(0, 0, 1, 1);
         this.camera = new MyCamera(this);
         let light = new HemisphericLight("light", new Vector3(1, 3, -2), this.scene);
+        light.direction = (new Vector3(2, 1, -1.5)).normalize();
         light.intensity = 0.7;
 		Engine.ShadersRepository = "./public/shaders/";
 
@@ -138,14 +140,26 @@ export class Game {
             });
 
             this.terrain.initialize();
+            this.terrain.chunckManager.setDistance(400);
+
+            let noiseTexture = new CubicNoiseTexture(this.scene);
+            noiseTexture.double();
+            noiseTexture.double();
+            noiseTexture.double();
+            noiseTexture.double();
+            noiseTexture.double();
+            noiseTexture.double();
+            noiseTexture.double();
+            noiseTexture.randomize();
+            noiseTexture.smooth();
+
+            console.log(noiseTexture.size);
+            let cubicTex = noiseTexture.get3DTexture();
 
             let mat = new TerrainMaterial("terrain", this.scene);
-            console.log(mat.shaderPath);
+            mat.setTexture("noiseTexture", cubicTex);
+            mat.setLightInvDir(light.direction);
             this.terrain.materials = [mat];
-
-            this.terrain.chunckManager.setDistance(200);
-
-            //this.initializeTerrainEditor();
         });
 
         window.addEventListener("resize", () => {

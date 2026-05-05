@@ -254,7 +254,7 @@ export class ChunckMeshBuilder {
                                 if (colorA != colorB && colorA != colorD) {
                                     alternativeTriangulation = 1;
                                 }
-                                if (colorC != colorB && colorC != colorD) {
+                                else if (colorC != colorB && colorC != colorD) {
                                     alternativeTriangulation = 1;
                                 }
                             }
