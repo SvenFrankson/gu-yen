@@ -59,3 +59,15 @@ export function CircleSquareIntersection(circleX: number, circleY: number, radiu
     }
     return null;
 }
+
+export function CapsuleRectCheck(segA: Vector2, segB: Vector2, radius: number,  squareMin: Vector2, squareMax: Vector2): boolean {
+    let capsMinX = Math.min(segA.x, segB.x) - radius;
+    let capsMaxX = Math.max(segA.x, segB.x) + radius;
+    let capsMinY = Math.min(segA.y, segB.y) - radius;
+    let capsMaxY = Math.max(segA.y, segB.y) + radius;
+
+    if (capsMaxX < squareMin.x || capsMinX > squareMax.x || capsMaxY < squareMin.y || capsMinY > squareMax.y) {
+        return false;
+    }
+    return true;
+}

@@ -20,6 +20,7 @@ export interface ITreeData {
 export interface IRoadData {
     w: number;
     ijGlobals: number[];
+    type: string;
 }
 
 export interface IDataTile<T> {
@@ -209,6 +210,7 @@ export class ChunckDataGeneratorDataSets extends ChunckDataGenerator {
 
     public async initializeData(chunck: Chunck): Promise<boolean> {
         let m = DRAW_CHUNCK_MARGIN;
+        let S = chunck.chunckLengthIJ + 2 * m;
 
         if (!chunck.dataInitialized) {
             let heightMap = await this._getData();
@@ -222,29 +224,50 @@ export class ChunckDataGeneratorDataSets extends ChunckDataGenerator {
             let roadTileJ = Math.floor(chunck.jPos / this.terrain.chunckCountIJ * this.roadTiles.size);
             let roadTiles = this.roadTiles.tiles.filter(tile => Math.abs(tile.i - roadTileI) <= 1 && Math.abs(tile.j - roadTileJ) <= 1);
 
+            let roadMap: boolean[][] = [];
+            for (let i: number = -m; i < chunck.chunckLengthIJ + m; i++) {
+                roadMap[i + m] = [];
+                for (let j: number = -m; j < chunck.chunckLengthIJ + m; j++) {
+                    roadMap[i + m][j + m] = false;
+                }
+            }
+
+            if (roadTiles.length > 0) {
+                for (let roadTile of roadTiles) {
+                    for (let roadData of roadTile.dataArray) {
+                        for (let n = 0; n < roadData.ijGlobals.length - 2; n += 2) {
+                            let ptIGlobal0 = roadData.ijGlobals[n] - chunck.iPos * chunck.chunckLengthIJ;
+                            let ptJGlobal0 = roadData.ijGlobals[n + 1] - chunck.jPos * chunck.chunckLengthIJ;
+                            let ptIGlobal1 = roadData.ijGlobals[n + 2] - chunck.iPos * chunck.chunckLengthIJ;
+                            let ptJGlobal1 = roadData.ijGlobals[n + 3] - chunck.jPos * chunck.chunckLengthIJ;
+
+                            let x0 = Math.min(ptIGlobal0, ptIGlobal1) - roadData.w * 0.5;
+                            let x1 = Math.max(ptIGlobal0, ptIGlobal1) + roadData.w * 0.5;
+                            let y0 = Math.min(ptJGlobal0, ptJGlobal1) - roadData.w * 0.5;
+                            let y1 = Math.max(ptJGlobal0, ptJGlobal1) + roadData.w * 0.5;
+                            x0 = Math.max(x0, -m);
+                            x1 = Math.min(x1, chunck.chunckLengthIJ + m);
+                            y0 = Math.max(y0, -m);
+                            y1 = Math.min(y1, chunck.chunckLengthIJ + m);
+
+                            for (let x = x0; x < x1; x++) {
+                                for (let y = y0; y < y1; y++) {
+                                    if (DistancePointSegmentVec2(new Vector2(x, y), new Vector2(ptIGlobal0, ptJGlobal0), new Vector2(ptIGlobal1, ptJGlobal1)) <= roadData.w * 0.5) {
+                                        roadMap[Math.floor(x) + m][Math.floor(y) + m] = true;
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+
             for (let i: number = -m; i < chunck.chunckLengthIJ + m; i++) {
                 for (let j: number = -m; j < chunck.chunckLengthIJ + m; j++) {
                     let iGlobal = (i + chunck.chunckLengthIJ * chunck.iPos);
                     let jGlobal = (j + chunck.chunckLengthIJ * chunck.jPos);
 
-                    let isRoad = false;
-
-                    if (roadTiles.length > 0) {
-                        for (let roadTile of roadTiles) {
-                            roadTile.dataArray.forEach(roadData => {
-                                for (let n = 0; n < roadData.ijGlobals.length - 2; n += 2) {
-                                    let ptIGlobal0 = roadData.ijGlobals[n];
-                                    let ptJGlobal0 = roadData.ijGlobals[n + 1];
-                                    let ptIGlobal1 = roadData.ijGlobals[n + 2];
-                                    let ptJGlobal1 = roadData.ijGlobals[n + 3];
-
-                                    if (DistancePointSegmentVec2(new Vector2(iGlobal, jGlobal), new Vector2(ptIGlobal0, ptJGlobal0), new Vector2(ptIGlobal1, ptJGlobal1)) <= roadData.w) {
-                                        isRoad = true;
-                                    }
-                                }
-                            });
-                        }
-                    }
+                    let isRoad = roadMap[i + m][j + m];
 
 
                     let h = this.evaluateHeight(heightMap, iGlobal, jGlobal);
@@ -291,7 +314,7 @@ export class ChunckDataGeneratorDataSets extends ChunckDataGenerator {
                     if (treeTile) {
                         for (let treeData of treeTile.dataArray) {
                             if (treeData.d > 10 && treeData.h > 0) {
-                                let k = Math.floor(this.evaluateHeight(heightMap, treeData.iGlobal!, treeData.jGlobal!));
+                                let k = Math.floor(this.evaluateHeight(heightMap, treeData.iGlobal!, treeData.jGlobal!) - 1);
                                 let voxelDrawing = this.getTreeByIndex(treeData.n!);
                                 voxelDrawing.mirrorX = treeData.iGlobal! % 2 === 0;
                                 voxelDrawing.mirrorZ = treeData.jGlobal! % 2 === 0;
