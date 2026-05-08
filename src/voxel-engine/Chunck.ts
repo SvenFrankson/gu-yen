@@ -8,6 +8,10 @@ import { IJK, Pow2 } from "../Number";
 import { IActionAffectedBlocks } from "./TerrainEditor/TerrainEditor";
 import { MeshBuilder } from "@babylonjs/core/Meshes/meshBuilder";
 import { Compress, Decompress } from "../Compress";
+import { RawTexture3D } from "@babylonjs/core/Materials/Textures/rawTexture3D";
+import { ShaderMaterial } from "@babylonjs/core/Materials/shaderMaterial";
+import { Texture } from "@babylonjs/core/Materials/Textures/texture";
+import { Constants } from "@babylonjs/core/Engines/constants";
 
 export var DRAW_CHUNCK_MARGIN: number = 2;
 
@@ -868,7 +872,6 @@ export class Chunck {
             }
         }
 
-        /*
         for (let n = 0; n < 2; n++) {
             let clonedData = new Uint8ClampedArray(width * height * depth);
             for (let k = 0; k < height; k++) {
@@ -910,9 +913,7 @@ export class Chunck {
             }
             this._currentGlobalLightData = clonedData;
         }
-        */
         
-        /*
         let globalLight3DTexture = new RawTexture3D(this._currentGlobalLightData, width, depth, height, Constants.TEXTUREFORMAT_R, this.mesh._scene, false, false, Texture.TRILINEAR_SAMPLINGMODE, Engine.TEXTURETYPE_UNSIGNED_BYTE);
         globalLight3DTexture.wrapU = 1;
         globalLight3DTexture.wrapV = 1;
@@ -923,7 +924,6 @@ export class Chunck {
         }
 
         this._updatingGlobalLight = false;
-        */
         this.terrain.scene.onBeforeRenderObservable.removeCallback(this.updateGlobalLight3DTexture);
     }
 
@@ -978,6 +978,9 @@ export class Chunck {
     }
 
     public collapseChildren(): Chunck {
+            if (!this._subdivided) {
+            return this;
+        }
         for (let i = 0; i < this.children.length; i++) {
             let child = this.children[i];
             if (child.children.length > 0) {

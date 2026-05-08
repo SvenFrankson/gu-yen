@@ -236,7 +236,7 @@ export class ChunckManager {
             return;
         }
 
-        this._doGlobalLightUpdateStep();
+        //this._doGlobalLightUpdateStep();
 
         if (this.fullRenderMode) {
             return;
@@ -295,7 +295,7 @@ export class ChunckManager {
         }
 
         let newDuration = count * 5;
-        newDuration = Math.min(Math.max(1, newDuration), 5);
+        newDuration = Math.min(Math.max(1, newDuration), 3);
         this._checkDuration = this._checkDuration * 0.8 + newDuration * 0.2;
         this._updating = false;
     }

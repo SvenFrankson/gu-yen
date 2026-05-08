@@ -2,7 +2,7 @@ import { Terrain } from "../Terrain";
 import { Chunck } from "../Chunck";
 import { BlockType } from "../BlockType";
 import { MapAttribute } from "../Save/GameSave";
-import { IDataTile, IDataTilesCollection, IRoadData, ITreeData } from "./ChunckDataGeneratorDataSets";
+import { IBuildingData, IDataTile, IDataTilesCollection, IRoadData, ITreeData } from "./ChunckDataGeneratorDataSets";
 
 export enum GeneratorType {
     NotAGenerator,
@@ -24,6 +24,7 @@ export interface IChunckGeneratorProperties {
     noiseUrl?: string;
     treeTiles?: IDataTilesCollection<IDataTile<ITreeData>>;
     roadTiles?: IDataTilesCollection<IDataTile<IRoadData>>;
+    buildingTiles?: IDataTilesCollection<IDataTile<IBuildingData>>;
 }
 
 export abstract class ChunckDataGenerator {

@@ -24,6 +24,13 @@ export interface IRoadData {
     type: string;
 }
 
+export interface IBuildingData {
+    ijGlobals: number[];
+    type: string;
+    c?: number;
+    h?: number;
+}
+
 export interface IDataTile<T> {
     i: number;
     j: number;
@@ -48,6 +55,7 @@ export class ChunckDataGeneratorDataSets extends ChunckDataGenerator {
     private _noiseData: number[] | undefined = undefined;
     public treeTiles: IDataTilesCollection<IDataTile<ITreeData>> = { size: 1024, tiles: [] };
     public roadTiles: IDataTilesCollection<IDataTile<IRoadData>> = { size: 1024, tiles: [] };
+    public buildingTiles: IDataTilesCollection<IDataTile<IBuildingData>> = { size: 1024, tiles: [] };
 
     public lat0: number = 0;
     public lat1: number = 0
@@ -277,6 +285,43 @@ export class ChunckDataGeneratorDataSets extends ChunckDataGenerator {
                     }
                 }
             }
+            
+            let buildingTileI = Math.floor(chunck.iPos / this.terrain.chunckCountIJ * this.buildingTiles.size);
+            let buildingTileJ = Math.floor(chunck.jPos / this.terrain.chunckCountIJ * this.buildingTiles.size); 
+            let buildingTiles = this.buildingTiles.tiles.filter(tile => Math.abs(tile.i - buildingTileI) <= 1 && Math.abs(tile.j - buildingTileJ) <= 1);
+
+            let buildingMap: number[][] = [];
+            for (let i: number = -m; i < chunck.chunckLengthIJ + m; i++) {
+                buildingMap[i + m] = [];
+                for (let j: number = -m; j < chunck.chunckLengthIJ + m; j++) {
+                    buildingMap[i + m][j + m] = 0;
+                }
+            }
+
+            if (buildingTiles.length > 0) {
+                for (let buildingTile of buildingTiles) {
+                    for (let buildingData of buildingTile.dataArray) {
+                        for (let n = 0; n < buildingData.ijGlobals.length - 2; n += 2) {
+                            let i0 = buildingData.ijGlobals[n] - chunck.iPos * chunck.chunckLengthIJ;
+                            let j0 = buildingData.ijGlobals[n + 1] - chunck.jPos * chunck.chunckLengthIJ;
+                            let i1 = buildingData.ijGlobals[n + 2] - chunck.iPos * chunck.chunckLengthIJ;
+                            let j1 = buildingData.ijGlobals[n + 3] - chunck.jPos * chunck.chunckLengthIJ;
+
+                            let l = Math.max(Math.abs(i1 - i0), Math.abs(j1 - j0));
+                            for (let i = 0; i <= l; i++) {
+                                let x = Math.floor(i0 + (i1 - i0) * i / l);
+                                if (x >= -m && x < chunck.chunckLengthIJ + m) {
+                                    let y = Math.floor(j0 + (j1 - j0) * i / l);
+                                    if (y >= -m && y < chunck.chunckLengthIJ + m) {
+                                        roadMap[x + m][y + m] = 3 + (buildingData.c !== undefined ? buildingData.c! : 0);
+                                        buildingMap[x + m][y + m] = (buildingData.h !== undefined ? buildingData.h! : 4);
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
 
             for (let i: number = -m; i < chunck.chunckLengthIJ + m; i++) {
                 for (let j: number = -m; j < chunck.chunckLengthIJ + m; j++) {
@@ -311,25 +356,41 @@ export class ChunckDataGeneratorDataSets extends ChunckDataGenerator {
                     }
                     
                     maxRock = Math.max(maxRock, 1);
+
+                    maxDirt = 0;
+                    let maxAsphalt = 0;
+                    maxRock = h;
+                    let maxConcrete = 0;
+                    if (isRoad === 0) {
+                        maxRock = h + Math.min(noiseValue * 8, 0);
+                        maxDirt = h + noiseValue * 8;
+                    }
+                    else if (isRoad >= 1 && isRoad <= 2) {
+                        maxRock -= 2;
+                        maxAsphalt = h - 1;
+                    }
+                    else if (isRoad >= 3) {
+                        maxConcrete = h + noiseValue * 10 + buildingMap[i + m][j + m];
+                    }
                     for (let k: number = 0; k <= chunck.chunckLengthK; k++) {
                         let kGlobal = k * chunck.levelFactor;
                         if (kGlobal <= maxRock) {
-                            let blockType = BlockType.Rock;
-                            if (isRoad === 1) {
-                                blockType = BlockType.Asphalt;
-                            }
-                            else if (isRoad === 2) {
-                                blockType = BlockType.WhiteAsphalt;
-                            }
-                            chunck.setRawData(blockType, i + m, j + m, k);
+                            chunck.setRawData(BlockType.Rock, i + m, j + m, k);
                         }
                         else if (kGlobal <= maxDirt) {
-                            if (noiseValue > 0.1) {
-                                chunck.setRawData(BlockType.SparseGrass, i + m, j + m, k);
+                            chunck.setRawData(BlockType.Dirt, i + m, j + m, k);
+                        }
+                        else if (kGlobal <= maxAsphalt) {
+                            if (isRoad === 1) {
+                                chunck.setRawData(BlockType.Asphalt, i + m, j + m, k);
                             }
-                            else {
-                                chunck.setRawData(BlockType.Dirt, i + m, j + m, k);
+                            else if (isRoad === 2) {
+                                chunck.setRawData(BlockType.WhiteAsphalt, i + m, j + m, k);
                             }
+                        }
+                        else if (kGlobal <= maxConcrete) {
+                            let blockType = BlockType.WhiteConcrete + isRoad - 3;
+                            chunck.setRawData(blockType, i + m, j + m, k);
                         }
                     }
                 }

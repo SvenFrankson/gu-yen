@@ -1,14 +1,14 @@
 import { Color4, MeshBuilder, Vector2, Vector3 } from "@babylonjs/core";
 import { Game } from "../Game";
 import { IsVeryFinite } from "../Number";
-import { ChunckDataGeneratorDataSets, IDataTile, IDataTilesCollection, IRoadData } from "../voxel-engine/TerrainGen/ChunckDataGeneratorDataSets";
+import { ChunckDataGeneratorDataSets, IBuildingData, IDataTile, IDataTilesCollection, IRoadData } from "../voxel-engine/TerrainGen/ChunckDataGeneratorDataSets";
 import { UniqueList } from "../UniqueList";
 import { CapsuleRectCheck } from "../Math2D";
 
 export async function generateBuildingData(game: Game) {
     let NBuildingTiles = 1024;
     let BuildingTileLengthIJ = game.terrain ? game.terrain.terrainLengthIJ / NBuildingTiles : 32;
-    let NRoadFetchTiles = 8;
+    let NBuildingFetchTiles = 16;
     
     let dLat = Math.atan2(16384, game.geoConverter.radius) / Math.PI * 180;
     let dLong = Math.atan2(16384, game.geoConverter.radius * Math.cos(game.geoConverter.latZero * Math.PI / 180)) / Math.PI * 180;
@@ -19,26 +19,26 @@ export async function generateBuildingData(game: Game) {
     let long1 = game.geoConverter.longZero + dLong;
 
     
-    let latStep = (lat1 - lat0) / NRoadFetchTiles;
-    let longStep = (long1 - long0) / NRoadFetchTiles;
+    let latStep = (lat1 - lat0) / NBuildingFetchTiles;
+    let longStep = (long1 - long0) / NBuildingFetchTiles;
 
 
-    let roadTiles: IRoadData[][][] = [];
+    let buildingTiles: IBuildingData[][][] = [];
     for (let i = 0; i < NBuildingTiles; i++) {
-        roadTiles[i] = [];
+        buildingTiles[i] = [];
         for (let j = 0; j < NBuildingTiles; j++) {
-            roadTiles[i][j] = [];
+            buildingTiles[i][j] = [];
         }
     }
 
     let tags: UniqueList<string> = new UniqueList<string>();
 
     let s = 0;
-    let min = NRoadFetchTiles / 2 - s;
-    let max = NRoadFetchTiles / 2 + s;
+    let min = NBuildingFetchTiles / 2 - s;
+    let max = NBuildingFetchTiles / 2 + s;
     if (s === 0) {
-        min = NRoadFetchTiles / 2 - 0.5;
-        max = NRoadFetchTiles / 2 + 0.5;
+        min = NBuildingFetchTiles / 2 - 0.5;
+        max = NBuildingFetchTiles / 2 + 0.5;
     }
     for (let i = min; i < max; i++) {
         for (let j = min; j < max; j++) {
@@ -55,7 +55,7 @@ export async function generateBuildingData(game: Game) {
                 [out:json]
                 [timeout:90]
                 ;
-                way(${latMin.toFixed(7)}, ${longMin.toFixed(7)}, ${latMax.toFixed(7)}, ${longMax.toFixed(7)})[highway];
+                way(${latMin.toFixed(7)}, ${longMin.toFixed(7)}, ${latMax.toFixed(7)}, ${longMax.toFixed(7)})[building];
                 out geom;
             `;
 
@@ -70,15 +70,14 @@ export async function generateBuildingData(game: Game) {
             console.log(data);
 
             for (let e of data.elements) {
-                let road: IRoadData = {
-                    w: 4,
+                let building: IBuildingData = {
                     ijGlobals: [],
                     type: "",
                 }
 
-                if (e.tags && e.tags["highway"]) {
-                    tags.push(e.tags["highway"]);
-                    road.type = e.tags["highway"];
+                if (e.tags && e.tags["building"]) {
+                    tags.push(e.tags["building"]);
+                    building.type = e.tags["building"];
                 }
                 
                 let line: Vector3[] = [];
@@ -96,7 +95,7 @@ export async function generateBuildingData(game: Game) {
                     if (globalIJK && game.terrain?.chunckDataGenerator instanceof ChunckDataGeneratorDataSets) {
                         let height = await game.terrain.chunckDataGenerator.asyncEvaluateHeight(globalIJK.i, globalIJK.j);
                         position.y = height + 3;
-                        road.ijGlobals.push(globalIJK.i, globalIJK.j);
+                        building.ijGlobals.push(globalIJK.i, globalIJK.j);
                         roadGlobalIMin = Math.min(roadGlobalIMin, globalIJK.i);
                         roadGlobalIMax = Math.max(roadGlobalIMax, globalIJK.i);
                         roadGlobalJMin = Math.min(roadGlobalJMin, globalIJK.j);
@@ -125,11 +124,11 @@ export async function generateBuildingData(game: Game) {
                             tileMax.x = (ii + 1) * BuildingTileLengthIJ;
                             tileMax.y = (jj + 1) * BuildingTileLengthIJ;
                             
-                            for (let n = 0; n < road.ijGlobals.length - 2; n += 2) {
-                                let p0 = new Vector2(road.ijGlobals[n], road.ijGlobals[n + 1]);
-                                let p1 = new Vector2(road.ijGlobals[n + 2], road.ijGlobals[n + 3]);
-                                if (CapsuleRectCheck(p0, p1, road.w, tileMin, tileMax)) {
-                                    roadTiles[ii][jj].push(road);
+                            for (let n = 0; n < building.ijGlobals.length - 2; n += 2) {
+                                let p0 = new Vector2(building.ijGlobals[n], building.ijGlobals[n + 1]);
+                                let p1 = new Vector2(building.ijGlobals[n + 2], building.ijGlobals[n + 3]);
+                                if (CapsuleRectCheck(p0, p1, 1, tileMin, tileMax)) {
+                                    buildingTiles[ii][jj].push(building);
                                     break;
                                 }
                             }
@@ -144,21 +143,21 @@ export async function generateBuildingData(game: Game) {
 
     console.log(tags.array);
 
-    let sparseRoadTiles: IDataTilesCollection<IDataTile<IRoadData>> = { size: NBuildingTiles, tiles: [] };
-    let maxRoadsPerTile = 0;
+    let sparseBuildingTiles: IDataTilesCollection<IDataTile<IBuildingData>> = { size: NBuildingTiles, tiles: [] };
+    let maxBuildingsPerTile = 0;
     for (let i = 0; i < NBuildingTiles; i++) {
         for (let j = 0; j < NBuildingTiles; j++) {
-            maxRoadsPerTile = Math.max(maxRoadsPerTile, roadTiles[i][j].length);
-            if (roadTiles[i][j].length > 0) {
-                sparseRoadTiles.tiles.push({
+            maxBuildingsPerTile = Math.max(maxBuildingsPerTile, buildingTiles[i][j].length);
+            if (buildingTiles[i][j].length > 0) {
+                sparseBuildingTiles.tiles.push({
                     i: i,
                     j: j,
-                    dataArray: roadTiles[i][j],
+                    dataArray: buildingTiles[i][j],
                 });
             }
         }
     }
 
-    console.log(sparseRoadTiles);
-    console.log("maxRoadsPerTile: " + maxRoadsPerTile);
+    console.log(sparseBuildingTiles);
+    console.log("maxBuildingsPerTile: " + maxBuildingsPerTile);
 }

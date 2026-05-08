@@ -14,6 +14,8 @@ import { TerrainMaterial } from "./TerrainMaterial";
 import { generateTreeData } from "./data/TreeData";
 import { generateRoadData } from "./data/RoadData";
 import { CubicNoiseTexture } from "./CubicNoiseTexture";
+import { generateBuildingData } from "./data/BuildingData";
+import { Chunck } from "./voxel-engine/Chunck";
 
 export class Game {
 
@@ -79,7 +81,7 @@ export class Game {
         let skyboxMaterial: StandardMaterial = new StandardMaterial("skyBox", this.scene);
         skyboxMaterial.backFaceCulling = false;
         let skyTexture = new CubeTexture(
-            "skyboxes/cloud",
+            "skyboxes/cloudcompass",
             this.scene,
             ["-px.jpg", "-py.jpg", "-pz.jpg", "-nx.jpg", "-ny.jpg", "-nz.jpg"]);
         skyboxMaterial.reflectionTexture = skyTexture;
@@ -89,20 +91,26 @@ export class Game {
         skyboxMaterial.emissiveColor = Color3.FromHexString("#8d6b38").scaleInPlace(0.7);
         this.skybox.material = skyboxMaterial;
 
+        let skyBoxGround = MeshBuilder.CreateGround("skyBoxGround", { width: 1500, height: 1500 }, this.scene);
+        let skyBoxGroundMat = new StandardMaterial("skyBoxGround", this.scene);
+        skyBoxGroundMat.diffuseColor.copyFromFloats(0, 0, 0);
+        skyBoxGroundMat.emissiveColor = Color3.FromInts(141, 107, 56);
+        skyBoxGroundMat.specularColor.copyFromFloats(0, 0, 0);
+        skyBoxGround.material = skyBoxGroundMat;
+        skyBoxGround.parent = this.skybox;
+
         this.scene.onBeforeRenderObservable.add(() => {
             this.skybox.position.x = this.camera.position.x;
             this.skybox.position.z = this.camera.position.z;
-            this.skybox.rotation.y += 0.00005;
         });
 
         let treeGenerator = new TreeGenerator();
         this.canvas.addEventListener("keydown", (event) => {
-            if (event.code === "Space") {
-                console.log("Generating tree...");
-                treeGenerator.runTest(this);
-            }
-            else if (event.code === "Numpad1") {
+            if (event.code === "Numpad1") {
                 generateRoadData(this);
+            }
+            else if (event.code === "Numpad2") {
+                generateBuildingData(this);
             }
         });
 
@@ -115,6 +123,7 @@ export class Game {
 
             let treeDatas = await fetch("trees.json").then(res => res.json());
             let roadDatas = await fetch("roads.json").then(res => res.json());
+            let buildingDatas = await fetch("buildings.json").then(res => res.json());
             let textureSize = 1024;
             let squareSize = 64;
             let chunckLengthIJ = 32;
@@ -128,7 +137,8 @@ export class Game {
                     noiseUrl: "noise.png",
                     squareSize: squareSize,
                     treeTiles: treeDatas,
-                    roadTiles: roadDatas
+                    roadTiles: roadDatas,
+                    buildingTiles: buildingDatas
                 },
                 maxDisplayedLevel: 0,
                 blockSizeIJ_m: 0.5,
@@ -140,7 +150,8 @@ export class Game {
             });
 
             this.terrain.initialize();
-            this.terrain.chunckManager.setDistance(200);
+            this.terrain.chunckManager.setDistance(100);
+            this.terrain.sunDir.copyFrom(light.direction);
 
             let noiseTexture = new CubicNoiseTexture(this.scene);
             noiseTexture.double();
@@ -160,6 +171,23 @@ export class Game {
             mat.setTexture("noiseTexture", cubicTex);
             mat.setLightInvDir(light.direction);
             this.terrain.materials = [mat];
+
+            /*
+            this.terrain.customChunckMaterialSet = (chunck: Chunck) => {
+                if (chunck.mesh && !(chunck.mesh.material instanceof TerrainMaterial)) {
+                    let mat = new TerrainMaterial("terrain", this.scene);
+                    mat.setLightInvDir(light.direction);
+                    mat.setTexture("noiseTexture", cubicTex);
+                    chunck.mesh.material = mat;
+                }
+                this.terrain!.chunckManager.requestGlobalLightUpdate(chunck);
+                chunck.adjacents.forEach(adj => {
+                    if (adj) {
+                        this.terrain!.chunckManager.requestGlobalLightUpdate(adj);
+                    }
+                })
+            }
+            */
         });
 
         window.addEventListener("resize", () => {

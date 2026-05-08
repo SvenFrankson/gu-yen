@@ -26,7 +26,8 @@ export class TerrainMaterial extends ShaderMaterial {
                     "lightTexture",
                     "debugColor",
                     "blockSize_m",
-                    "blockHeight_m"
+                    "blockHeight_m",
+                    "cameraPosition",
                 ]
             }
             );
@@ -61,6 +62,20 @@ export class TerrainMaterial extends ShaderMaterial {
         this.setTexture("rustTexture", new Texture("textures/rust.png"));
 
         this.updateDebugColor();
+
+        this.getScene().onBeforeRenderObservable.add(this._update);
+    }
+
+    public dispose(forceDisposeEffect?: boolean, forceDisposeTextures?: boolean, notBoundToMesh?: boolean): void {
+        super.dispose(forceDisposeEffect, forceDisposeTextures, notBoundToMesh);
+        this.getScene().onBeforeRenderObservable.removeCallback(this._update);
+    }
+
+    private _update = () => {
+        let camera = this.getScene().activeCamera;
+        if (camera) {
+            this.setVector3("cameraPosition", camera.position);
+        }
     }
 
     public getLightInvDir(): Vector3 {

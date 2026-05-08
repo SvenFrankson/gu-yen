@@ -2,7 +2,7 @@
 precision highp float;
 precision mediump sampler3D;
  
-uniform vec3 terrainColors[18];
+uniform vec3 terrainColors[22];
 uniform vec3 lightInvDirW;
 uniform int level;
 uniform float blockSize_m;
@@ -21,6 +21,7 @@ uniform sampler2D rustTexture;
 uniform sampler3D noiseTexture;
 uniform sampler3D lightTexture;
 uniform vec3 debugColor;
+uniform vec3 cameraPosition;
 
 in vec3 vPositionL;
 in vec3 vPositionW;
@@ -287,6 +288,9 @@ void main() {
    else if (colorIndex == 15) {
       color = texture(rustTexture, diffuseUV * 0.4).rgb;
    }
+   else if (colorIndex >= 18 && colorIndex <= 21) {
+      color = color * texture(rockTexture, diffuseUV).rgb;
+   }
    
    /*
    // show triangles
@@ -335,6 +339,14 @@ void main() {
    }
    */
 
-   
-   outColor = vec4(color * debugColor * lightFactor, 1.);
+   float depthX = vPositionW.x - cameraPosition.x;
+   float depthZ = vPositionW.z - cameraPosition.z;
+   float depth = sqrt(depthX * depthX + depthZ * depthZ) / 150.;
+   depth = max(min(depth, 1.), 0.);
+   depth = depth * depth;
+   color *= debugColor * lightFactor;
+   color *= (1. - depth);
+   color += vec3(141. / 255., 107. / 255., 56. / 255.) * depth;
+   //color += vec3(60. / 255., 60. / 255., 60. / 255.) * depth;
+   outColor = vec4(color, 1);
 }

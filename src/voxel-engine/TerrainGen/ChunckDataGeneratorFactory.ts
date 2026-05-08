@@ -3,7 +3,7 @@ import { UniqueList } from "../../UniqueList";
 import { BlockType } from "../BlockType";
 import { Terrain } from "../Terrain";
 import { IChunckGeneratorProperties, ChunckDataGenerator, GeneratorType } from "./ChunckDataGenerator";
-import { ChunckDataGeneratorDataSets, IDataTile, IDataTilesCollection, IRoadData, ITreeData } from "./ChunckDataGeneratorDataSets";
+import { ChunckDataGeneratorDataSets, IBuildingData, IDataTile, IDataTilesCollection, IRoadData, ITreeData } from "./ChunckDataGeneratorDataSets";
 import { ChunckDataGeneratorEmpty } from "./ChunckDataGeneratorEmpty";
 import { ChunckDataGeneratorFlat } from "./ChunckDataGeneratorFlat";
 import { ChunckDataGeneratorPNG } from "./ChunckDataGeneratorPNG";
@@ -105,6 +105,18 @@ export class ChunckDataGeneratorFactory {
                     }
                 }
                 console.log("road tags: " + tags.array.join(", "));
+            }
+            if (props.buildingTiles) {
+                chunckDataGenerator.buildingTiles = props.buildingTiles as IDataTilesCollection<IDataTile<IBuildingData>>;
+                for (let buildingTile of chunckDataGenerator.buildingTiles.tiles) {
+                    for (let buildingData of buildingTile.dataArray) {
+                        buildingData.c = Math.floor(4 * Math.random());
+                        buildingData.h = Math.floor(10 * Math.random());
+                        if (buildingData.ijGlobals.length > 20) {
+                            buildingData.ijGlobals = buildingData.ijGlobals.slice(0, 20);
+                        }
+                    }
+                }
             }
 
             return chunckDataGenerator;

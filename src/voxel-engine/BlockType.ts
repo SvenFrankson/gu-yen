@@ -26,6 +26,10 @@ export enum BlockType {
     Rust,
     Unknown,
     WhiteAsphalt,
+    WhiteConcrete,
+    YellowConcrete,
+    GrayConcrete,
+    BlackConcrete
 }
 
 export var BlockTypeColors: Color3[] = [];
@@ -47,3 +51,7 @@ BlockTypeColors[BlockType.Asphalt] = Color3.FromHexString("#1f1916");
 BlockTypeColors[BlockType.Rust] = new Color3(0.839, 0.431, 0.02);
 BlockTypeColors[BlockType.Unknown] = new Color3(0, 1, 0);
 BlockTypeColors[BlockType.WhiteAsphalt] = Color3.FromHexString("#ffffff");
+BlockTypeColors[BlockType.WhiteConcrete] = Color3.FromHexString("#d6c5c5");
+BlockTypeColors[BlockType.YellowConcrete] = Color3.FromHexString("#e6d784");
+BlockTypeColors[BlockType.GrayConcrete] = Color3.FromHexString("#b1aea6");
+BlockTypeColors[BlockType.BlackConcrete] = Color3.FromHexString("#6b635a");

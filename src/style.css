@@ -23,3 +23,26 @@ body {
 	-ms-user-select: none; /* IE10+/Edge */
 	user-select: none; /* Standard */
 }
+
+#add-concrete,
+#remove-block {
+  position: absolute;
+  left: 10px;
+  z-index: 10;
+  width: 100px;
+  padding: 10px 20px;
+  background: rgba(255, 255, 255, 0.8);
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+  font-size: 16px;
+  margin-right: 10px;
+}
+
+#add-concrete {
+  top: 280px;
+}
+
+#remove-block {
+  top: 320px;
+}

@@ -68,6 +68,7 @@ export class Minimap extends HTMLElement {
                     console.log(ijk);
                     if (this.game.terrain.chunckDataGenerator instanceof ChunckDataGeneratorDataSets) {
                         let height = await this.game.terrain.chunckDataGenerator.asyncEvaluateHeight(ijk.i, ijk.j);
+                        height *= this.game.terrain.blockSizeK_m;
                         console.log("height: " + height);
                         this.game.camera.targetPosition = undefined;
                         this.game.camera.position = new Vector3(x, height + 4, z);
