@@ -224,6 +224,13 @@ export class Terrain {
         }
     }
 
+    public globalIJKToWorldPos(iGlobal: number, jGlobal: number, kGlobal: number): Vector3 {
+        let x = iGlobal * this.blockSizeIJ_m - this.halfTerrainSizeIJ_m;
+        let y = kGlobal * this.blockSizeK_m;
+        let z = jGlobal * this.blockSizeIJ_m - this.halfTerrainSizeIJ_m;
+        return new Vector3(x, y, z);
+    }
+
     public worldPosToGlobalIJK(pos: Vector3): { i: number, j: number, k: number } {
         let i = Math.floor((pos.x + this.halfTerrainSizeIJ_m) / this.blockSizeIJ_m);
         let j = Math.floor((pos.z + this.halfTerrainSizeIJ_m) / this.blockSizeIJ_m);

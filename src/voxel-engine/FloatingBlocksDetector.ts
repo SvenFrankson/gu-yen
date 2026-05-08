@@ -1,6 +1,8 @@
 import { gaussianSplattingDepthVertexShader } from "@babylonjs/core/Shaders/gaussianSplattingDepth.vertex";
 import { Chunck } from "./Chunck";
 import { Terrain } from "./Terrain";
+import { Mesh } from "@babylonjs/core/Meshes/mesh";
+import { BlockType } from "./BlockType";
 
 export class FloatingBlocksDetector {
 
@@ -160,6 +162,91 @@ export class FloatingBlocksDetector {
             }
         }
 
-        console.log("Floating blocks groups found:", this.currentGroup - 1);
+        console.log("Blocks groups found:", this.currentGroup - 1);
+
+        let groundGroups: number[] = [];
+        let doThing = (ii: number, jj: number, kk: number) => {
+            let g = this.getGridValue(ii + FloatingBlocksDetector.maxRange, jj + FloatingBlocksDetector.maxRange, kk + FloatingBlocksDetector.maxRange);
+            if (g > 0 && !groundGroups.includes(g)) {
+                groundGroups.push(g);
+            }
+        }
+        let d = FloatingBlocksDetector.maxRange - 1;
+        for (let ii = -d; ii <= d; ii++) {
+            for (let jj = -d; jj <= d; jj++) {
+                for (let kk of [-d, d]) {
+                    doThing(ii, jj, kk);
+                }
+            }
+        }
+        for (let ii = -d; ii <= d; ii++) {
+            for (let jj of [-d, d]) {
+                for (let kk = - d + 1; kk <= d - 1; kk++) {
+                    doThing(ii, jj, kk);
+                }
+            }
+        }
+        for (let ii of [-d, d]) {
+            for (let jj = -d + 1; jj <= d - 1; jj++) {
+                for (let kk = - d + 1; kk <= d - 1; kk++) {
+                    doThing(ii, jj, kk);
+                }
+            }
+        }
+
+        console.log("Groups connected to the ground:", groundGroups);
+
+        let floatingGroups = [];
+        for (let g = 1; g < this.currentGroup; g++) {
+            if (!groundGroups.includes(g)) {
+                floatingGroups.push(g);
+            }
+        }
+
+        console.log("Floating groups:", floatingGroups);
+
+        for (let n = 0; n < floatingGroups.length; n++) {
+            let g = floatingGroups[n];
+            let floatingData = new Uint8Array(FloatingBlocksDetector.maxSize * FloatingBlocksDetector.maxSize * FloatingBlocksDetector.maxSize);
+            let i0 = Infinity;
+            let j0 = Infinity;
+            let k0 = Infinity;
+            let i1 = -Infinity;
+            let j1 = -Infinity;
+            let k1 = -Infinity;
+            for (let ii = 0; ii < FloatingBlocksDetector.maxSize; ii++) {
+                for (let jj = 0; jj < FloatingBlocksDetector.maxSize; jj++) {
+                    for (let kk = 0; kk < FloatingBlocksDetector.maxSize; kk++) {
+                        if (this.getGridValue(ii, jj, kk) === g) {
+                            i0 = Math.min(i0, ii);
+                            j0 = Math.min(j0, jj);
+                            k0 = Math.min(k0, kk);
+                            i1 = Math.max(i1, ii);
+                            j1 = Math.max(j1, jj);
+                            k1 = Math.max(k1, kk);
+                            floatingData[ii + jj * FloatingBlocksDetector.maxSize + kk * FloatingBlocksDetector.maxSize * FloatingBlocksDetector.maxSize] = BlockType.Dirt;
+                            console.log(".");
+                        }
+                    }
+                }
+            }
+
+            console.log(floatingData);
+
+            let vertexData = this.terrain.chunckBuilder.BuildFloatingMesh(this.terrain, floatingData, FloatingBlocksDetector.maxSize, i0, j0, k0, i1, j1, k1);
+            let testMesh = new Mesh("floatingBlockTestMesh" + n, this.terrain.scene);
+            vertexData.applyToMesh(testMesh);
+
+            console.log(vertexData);
+
+            testMesh.position = this.terrain.globalIJKToWorldPos(this.iGlobal0, this.jGlobal0, this.kGlobal0);
+            testMesh.position.x += (i0 - FloatingBlocksDetector.maxRange) * this.terrain.blockSizeIJ_m;
+            testMesh.position.y += (k0 - FloatingBlocksDetector.maxRange) * this.terrain.blockSizeK_m;
+            testMesh.position.z += (j0 - FloatingBlocksDetector.maxRange) * this.terrain.blockSizeIJ_m;
+
+            testMesh.position.y += 5;
+
+            console.log(testMesh);
+        }
     }
 }

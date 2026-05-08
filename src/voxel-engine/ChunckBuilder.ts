@@ -374,6 +374,186 @@ export class ChunckMeshBuilder {
         return vertexData;
     }
 
+    public BuildFloatingMesh(terrain: Terrain, data: Uint8Array, size: number, i0: number, j0: number, k0: number, i1: number, j1: number, k1: number): VertexData {
+        this._Vertices = [];
+        this._Normals = [];
+
+        let lod = 0;
+        let vertexData = new VertexData();
+        let positions: number[] = [];
+        let indices: number[] = [];
+        let normals: number[] = [];
+        let colors: number[] = [];
+        let uv1s: number[] = [];
+        let uv2s: number[] = [];
+
+        let xMin = 0;
+        let zMin = 0;
+        let xMax = this._BaseVerticesCountIJ;
+        let zMax = this._BaseVerticesCountIJ;
+
+        let getData: (ii: number, jj: number, kk: number) => number = (ii: number, jj: number, kk: number) => {
+            if (ii < i0 || ii > i1 || jj < j0 || jj > j1 || kk < k0 || kk > k1) {
+                return BlockType.None;
+            }
+            return data[ii + jj * size + kk * size * size];
+        }
+
+        let l = size + 1;
+        let references = new Uint8Array(l * l * l);
+        references.fill(0);
+        let profile_buildReferencesArray = () => {
+            for (let k = k0 - 1; k <= k1 + 1; k++) {
+                for (let j = j0 - 1; j <= j1 + 1; j++) {
+                    for (let i = i0 - 1; i <= i1 + 1; i++) {
+                        let data = getData(i, j, k);
+                        if (data > BlockType.Water) {
+                            console.log("hit");
+                            let ii = i;
+                            let jj = j;
+                            let kk = k;
+                            references[ii + jj * l + kk * l * l] |= 0b1 << 0;
+                            if (ii > 0) {
+                                references[(ii - 1) + jj * l + kk * l * l] |= 0b1 << 1;
+                                if (jj > 0) {
+                                    references[(ii - 1) + (jj - 1) * l + kk * l * l] |= 0b1 << 2;
+                                    if (kk > 0) {
+                                        references[(ii - 1) + (jj - 1) * l + (kk - 1) * l * l] |= 0b1 << 6;
+                                    }
+                                }
+                                if (kk > 0) {
+                                    references[(ii - 1) + jj * l + (kk - 1) * l * l] |= 0b1 << 5;
+                                }
+                            }
+                            if (jj > 0) {
+                                references[ii + (jj - 1) * l + kk * l * l] |= 0b1 << 3;
+                                if (kk > 0) {
+                                    references[ii + (jj - 1) * l + (kk - 1) * l * l] |= 0b1 << 7;
+                                }
+                            }
+                            if (kk > 0) {
+                                references[ii + jj * l + (kk - 1) * l * l] |= 0b1 << 4;
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        profile_buildReferencesArray();
+
+        let profile_fillVertexDataArrays = () => {
+            for (let k = k0 - 1; k <= k1 + 1; k++) {
+                for (let j = j0 - 1; j <= j1 + 1; j++) {
+                    for (let i = i0 - 1; i <= i1 + 1; i++) {
+                        let ii = i;
+                        let jj = j;
+                        let kk = k;
+                        let reference = references[ii + jj * l + kk * l * l];
+
+                        if (IsVeryFinite(reference) && reference != 0 && reference != 0b11111111) {
+                            let alternativeTriangulation = 0;
+                            let extendedpartVertexData = ChunckVertexData.Get(lod, reference, alternativeTriangulation);
+                            if (extendedpartVertexData) {
+                                let fastTriangles = extendedpartVertexData.triangles;
+                                let fastNormals = extendedpartVertexData.triangleNormals;
+                                let fastColorIndexes = extendedpartVertexData.fastColorIndex;
+                                for (let triIndex = 0; triIndex < fastTriangles.length; triIndex++) {
+                                    let triIndexes = [];
+                                    let colorsMap: number[] = [];
+                                    let addTri = true;
+                                    let sumX = 0;
+                                    let sumY = 0;
+                                    let sumZ = 0;
+                                    for (let vIndex = 0; vIndex < 3; vIndex++) {
+                                        let x = fastTriangles[triIndex][vIndex].x;
+                                        let y = fastTriangles[triIndex][vIndex].y;
+                                        let z = fastTriangles[triIndex][vIndex].z;
+
+                                        let cx = fastColorIndexes[triIndex][vIndex].x;
+                                        let cy = fastColorIndexes[triIndex][vIndex].y;
+                                        let cz = fastColorIndexes[triIndex][vIndex].z;
+
+                                        let xIndex = x + i * 2;
+                                        let yIndex = y + k * 2;
+                                        let zIndex = z + j * 2;
+
+                                        x = x * 0.5 + i;
+                                        y = y * 0.5 + k;
+                                        z = z * 0.5 + j;
+
+                                        sumX += x;
+                                        sumY += y;
+                                        sumZ += z;
+
+                                        let pIndex = positions.length / 3;
+                                        if (xIndex >= xMin && zIndex >= zMin && xIndex < xMax && zIndex < zMax) {
+                                            positions.push(x, y, z);
+                                            colors.push(vIndex === 0 ? 1 : 0, vIndex === 1 ? 1 : 0, vIndex === 2 ? 1 : 0, 1);
+                                            //let dataAtVertex = chunck.getRawData(i + cx + m, j + cz + m, k + cy);
+                                            //colorsMap.push(dataAtVertex);
+                                            
+                                            let n = this._GetNormal(xIndex, yIndex, zIndex);
+                                            n.x += fastNormals[triIndex].x;
+                                            n.y += fastNormals[triIndex].y;
+                                            n.z += fastNormals[triIndex].z;
+                                        }
+                                        else {
+                                            addTri = false;
+                                        }
+                                        triIndexes[vIndex] = pIndex;
+                                    }
+
+                                    for (let vIndex = 0; vIndex < colorsMap.length; vIndex++) {
+                                        uv1s.push(colorsMap[0] / 32 + 1 / 64, colorsMap[1] / 32 + 1 / 64);
+                                        uv2s.push(colorsMap[2] / 32 + 1 / 64, 0);
+                                    }
+
+                                    if (addTri) {
+                                        indices.push(...triIndexes);
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        profile_fillVertexDataArrays();
+
+        let profile_postProcessVertexDataArrays = () => {
+            if (positions.length === 0 || indices.length === 0) {
+                return;
+            }
+
+            for (let i = 0; i < positions.length / 3; i++) {
+                let xIndex = Math.floor(positions[3 * i] * 2);
+                let yIndex = Math.floor(positions[3 * i + 1] * 2);
+                let zIndex = Math.floor(positions[3 * i + 2] * 2);
+
+                let n = this._GetNormal(xIndex, yIndex, zIndex);
+                n.normalize();
+
+                normals[3 * i] = n.x;
+                normals[3 * i + 1] = n.y;
+                normals[3 * i + 2] = n.z;           
+
+                positions[3 * i] = (positions[3 * i] + 0.5) * terrain.blockSizeIJ_m;
+                positions[3 * i + 1] = (positions[3 * i + 1] + 0.5) * terrain.blockSizeK_m;
+                positions[3 * i + 2] = (positions[3 * i + 2] + 0.5) * terrain.blockSizeIJ_m;
+            }
+
+            vertexData.positions = positions;
+            vertexData.colors = colors;
+            vertexData.normals = normals;
+            vertexData.indices = indices;
+            vertexData.uvs = uv1s;
+            vertexData.uvs2 = uv2s;
+        }
+        profile_postProcessVertexDataArrays();
+        
+        return vertexData;
+    }
+
     public BuildGridMesh(chunck: Chunck, ijk: IJK, radius: number, color: Color3, alphaMax: number = 1): VertexData {
         let datas = new VertexData();
 
