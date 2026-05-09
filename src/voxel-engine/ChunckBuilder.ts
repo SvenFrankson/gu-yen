@@ -387,11 +387,6 @@ export class ChunckMeshBuilder {
         let uv1s: number[] = [];
         let uv2s: number[] = [];
 
-        let xMin = 0;
-        let zMin = 0;
-        let xMax = this._BaseVerticesCountIJ;
-        let zMax = this._BaseVerticesCountIJ;
-
         let getData: (ii: number, jj: number, kk: number) => number = (ii: number, jj: number, kk: number) => {
             if (ii < i0 || ii > i1 || jj < j0 || jj > j1 || kk < k0 || kk > k1) {
                 return BlockType.None;
@@ -472,33 +467,29 @@ export class ChunckMeshBuilder {
                                         let cy = fastColorIndexes[triIndex][vIndex].y;
                                         let cz = fastColorIndexes[triIndex][vIndex].z;
 
-                                        let xIndex = x + i * 2;
-                                        let yIndex = y + k * 2;
-                                        let zIndex = z + j * 2;
 
                                         x = x * 0.5 + i - i0;
                                         y = y * 0.5 + k - k0;
                                         z = z * 0.5 + j - j0;
+
+                                        let xIndex = Math.floor(x * 2);
+                                        let yIndex = Math.floor(y * 2);
+                                        let zIndex = Math.floor(z * 2);
 
                                         sumX += x;
                                         sumY += y;
                                         sumZ += z;
 
                                         let pIndex = positions.length / 3;
-                                        if (xIndex >= xMin && zIndex >= zMin && xIndex < xMax && zIndex < zMax) {
-                                            positions.push(x, y, z);
-                                            colors.push(vIndex === 0 ? 1 : 0, vIndex === 1 ? 1 : 0, vIndex === 2 ? 1 : 0, 1);
-                                            //let dataAtVertex = chunck.getRawData(i + cx + m, j + cz + m, k + cy);
-                                            //colorsMap.push(dataAtVertex);
-                                            
-                                            let n = this._GetNormal(xIndex, yIndex, zIndex);
-                                            n.x += fastNormals[triIndex].x;
-                                            n.y += fastNormals[triIndex].y;
-                                            n.z += fastNormals[triIndex].z;
-                                        }
-                                        else {
-                                            addTri = false;
-                                        }
+                                        positions.push(x, y, z);
+                                        colors.push(vIndex === 0 ? 1 : 0, vIndex === 1 ? 1 : 0, vIndex === 2 ? 1 : 0, 1);
+                                        let dataAtVertex = getData(i + cx, j + cz, k + cy);
+                                        colorsMap.push(dataAtVertex);
+                                        
+                                        let n = this._GetNormal(xIndex, yIndex, zIndex);
+                                        n.x += fastNormals[triIndex].x;
+                                        n.y += fastNormals[triIndex].y;
+                                        n.z += fastNormals[triIndex].z;
                                         triIndexes[vIndex] = pIndex;
                                     }
 
@@ -529,6 +520,8 @@ export class ChunckMeshBuilder {
                 let yIndex = Math.floor(positions[3 * i + 1] * 2);
                 let zIndex = Math.floor(positions[3 * i + 2] * 2);
 
+                console.log(xIndex, yIndex, zIndex);
+
                 let n = this._GetNormal(xIndex, yIndex, zIndex);
                 n.normalize();
 
@@ -542,8 +535,8 @@ export class ChunckMeshBuilder {
             }
 
             vertexData.positions = positions;
-            vertexData.colors = colors;
             vertexData.normals = normals;
+            vertexData.colors = colors;
             vertexData.indices = indices;
             vertexData.uvs = uv1s;
             vertexData.uvs2 = uv2s;

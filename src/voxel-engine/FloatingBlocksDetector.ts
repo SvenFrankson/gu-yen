@@ -1,4 +1,3 @@
-import { gaussianSplattingDepthVertexShader } from "@babylonjs/core/Shaders/gaussianSplattingDepth.vertex";
 import { Chunck } from "./Chunck";
 import { Terrain } from "./Terrain";
 import { Mesh } from "@babylonjs/core/Meshes/mesh";
@@ -12,7 +11,7 @@ import { PhysicsMotionType, PhysicsShapeConvexHull, PhysicsShapeCylinder, Physic
 
 export class FloatingBlocksDetector {
 
-    public static maxRange: number = 16;
+    public static maxRange: number = 32;
     public static maxSize: number = FloatingBlocksDetector.maxRange * 2 + 1;
     public currentGroup: number = 1;
 
@@ -27,11 +26,23 @@ export class FloatingBlocksDetector {
     public jGlobal0: number = 0
     public kGlobal0: number = 0;
 
-    public grid: Uint8Array = new Uint8Array(FloatingBlocksDetector.maxSize * FloatingBlocksDetector.maxSize * FloatingBlocksDetector.maxSize);
-    public getGridValue(i: number, j: number, k: number): number {
-        return this.grid[i + j * FloatingBlocksDetector.maxSize + k * FloatingBlocksDetector.maxSize * FloatingBlocksDetector.maxSize];
+    public grid: Uint16Array = new Uint16Array(FloatingBlocksDetector.maxSize * FloatingBlocksDetector.maxSize * FloatingBlocksDetector.maxSize);
+    public getMarkedValue(i: number, j: number, k: number): number {
+        return Math.floor(this.grid[i + j * FloatingBlocksDetector.maxSize + k * FloatingBlocksDetector.maxSize * FloatingBlocksDetector.maxSize] / 256);
     }
-    public markBlock(i: number, j: number, k: number) {
+    public getBlockTypeValue(i: number, j: number, k: number): number {
+        return this.grid[i + j * FloatingBlocksDetector.maxSize + k * FloatingBlocksDetector.maxSize * FloatingBlocksDetector.maxSize] % 256;
+    }
+    public setMarkedValue(group: number, i: number, j: number, k: number) {
+        let blockType = this.getBlockTypeValue(i, j, k);
+        this.grid[i + j * FloatingBlocksDetector.maxSize + k * FloatingBlocksDetector.maxSize * FloatingBlocksDetector.maxSize] = group * 256 + blockType;
+    }
+    public setBlockTypeValue(blockType: number, i: number, j: number, k: number) {
+        let group = this.getMarkedValue(i, j, k);
+        this.grid[i + j * FloatingBlocksDetector.maxSize + k * FloatingBlocksDetector.maxSize * FloatingBlocksDetector.maxSize] = group * 256 + blockType;
+    }
+
+    public markBlock(blockType: number,i: number, j: number, k: number) {
         let groupsFound: number[] = [];
         let group: number = 0;
 
@@ -49,7 +60,7 @@ export class FloatingBlocksDetector {
                     const i2 = ii;
                     const j2 = jj;
                     const k2 = kk;
-                    const g = this.getGridValue(i2, j2, k2);
+                    const g = this.getMarkedValue(i2, j2, k2);
                     if (g > 0) {
                         if (!groupsFound.includes(g)) {
                             groupsFound.push(g);
@@ -66,8 +77,8 @@ export class FloatingBlocksDetector {
                     for (let ii = this.i0; ii <= this.i1; ii++) {
                         for (let jj = this.j0; jj <= this.j1; jj++) {
                             for (let kk = this.k0; kk <= this.k1; kk++) {
-                                if (this.getGridValue(ii, jj, kk) === g) {
-                                    this.grid[ii + jj * FloatingBlocksDetector.maxSize + kk * FloatingBlocksDetector.maxSize * FloatingBlocksDetector.maxSize] = group;
+                                if (this.getMarkedValue(ii, jj, kk) === g) {
+                                    this.setMarkedValue(group, ii, jj, kk);
                                 }
                             }
                         }
@@ -83,7 +94,8 @@ export class FloatingBlocksDetector {
             group = this.currentGroup++;
         }
 
-        this.grid[i + j * FloatingBlocksDetector.maxSize + k * FloatingBlocksDetector.maxSize * FloatingBlocksDetector.maxSize] = group;
+        this.setBlockTypeValue(blockType, i, j, k);
+        this.setMarkedValue(group, i, j, k);
     }
 
     constructor(public terrain: Terrain) {
@@ -140,7 +152,7 @@ export class FloatingBlocksDetector {
                     let k = kGlobal - chunck.kGlobalOffset;
                     let blockType = chunck.getData(i, j, k);
                     if (blockType > 0) {
-                        this.markBlock(ii + FloatingBlocksDetector.maxRange, jj + FloatingBlocksDetector.maxRange, kk + FloatingBlocksDetector.maxRange);
+                        this.markBlock(blockType, ii + FloatingBlocksDetector.maxRange, jj + FloatingBlocksDetector.maxRange, kk + FloatingBlocksDetector.maxRange);
                     }
                 }
                 else {
@@ -179,7 +191,7 @@ export class FloatingBlocksDetector {
 
         let groundGroups: number[] = [];
         let doThing = (ii: number, jj: number, kk: number) => {
-            let g = this.getGridValue(ii + FloatingBlocksDetector.maxRange, jj + FloatingBlocksDetector.maxRange, kk + FloatingBlocksDetector.maxRange);
+            let g = this.getMarkedValue(ii + FloatingBlocksDetector.maxRange, jj + FloatingBlocksDetector.maxRange, kk + FloatingBlocksDetector.maxRange);
             if (g > 0 && !groundGroups.includes(g)) {
                 groundGroups.push(g);
             }
@@ -231,14 +243,14 @@ export class FloatingBlocksDetector {
             for (let ii = 0; ii < FloatingBlocksDetector.maxSize; ii++) {
                 for (let jj = 0; jj < FloatingBlocksDetector.maxSize; jj++) {
                     for (let kk = 0; kk < FloatingBlocksDetector.maxSize; kk++) {
-                        if (this.getGridValue(ii, jj, kk) === g) {
+                        if (this.getMarkedValue(ii, jj, kk) === g) {
                             i0 = Math.min(i0, ii);
                             j0 = Math.min(j0, jj);
                             k0 = Math.min(k0, kk);
                             i1 = Math.max(i1, ii);
                             j1 = Math.max(j1, jj);
                             k1 = Math.max(k1, kk);
-                            floatingData[ii + jj * FloatingBlocksDetector.maxSize + kk * FloatingBlocksDetector.maxSize * FloatingBlocksDetector.maxSize] = BlockType.Dirt;
+                            floatingData[ii + jj * FloatingBlocksDetector.maxSize + kk * FloatingBlocksDetector.maxSize * FloatingBlocksDetector.maxSize] = this.getBlockTypeValue(ii, jj, kk);
                             let chunks = chunk.setData(BlockType.None,
                                 ii + this.iGlobal0 - chunk.iGlobalOffset - FloatingBlocksDetector.maxRange,
                                 jj + this.jGlobal0 - chunk.jGlobalOffset - FloatingBlocksDetector.maxRange,
@@ -281,6 +293,7 @@ export class FloatingBlocksDetector {
                 }
             }
             let testMesh = new Mesh("floatingBlockTestMesh" + n, this.terrain.scene);
+            testMesh.material = this.terrain.getMaterial(0);
             vertexData.applyToMesh(testMesh);
 
             let cross = MeshBuilder.CreateLineSystem(
@@ -306,6 +319,9 @@ export class FloatingBlocksDetector {
             });
             body.shape = new PhysicsShapeConvexHull(testMesh, this.terrain.scene);
             body.shape.material = {friction: 0.8, restitution: 0};
+
+            let f = testMesh.position.subtract(this.terrain.scene.activeCamera?.position!).normalize().scale(0.2);
+            body.applyImpulse(f, testMesh.position);
 
             console.log(testMesh);
         }

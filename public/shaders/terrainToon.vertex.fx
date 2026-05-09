@@ -15,6 +15,7 @@ uniform vec3 lightInvDirW;
 
 out vec3 vPositionL;
 out vec3 vPositionW;
+out vec3 vNormalL;
 out vec3 vNormalW;
 out vec2 vUv;
 out vec2 vUv2;
@@ -34,6 +35,7 @@ void main()
 
   vPositionL = position;
   vPositionW = vec3(world * vec4(position, 1.0));
+  vNormalL = normal;
   vNormalW = normalize(vec3(world * vec4(normal, 0.0)));
   vColor = color;
 

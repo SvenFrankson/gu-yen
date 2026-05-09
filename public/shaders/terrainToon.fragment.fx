@@ -25,6 +25,7 @@ uniform vec3 cameraPosition;
 
 in vec3 vPositionL;
 in vec3 vPositionW;
+in vec3 vNormalL;
 in vec3 vNormalW;
 in vec2 vUv;
 in vec2 vUv2;
@@ -70,7 +71,7 @@ void main() {
    float ampli = 0.1;
    float outlineThreshold = 0.;
 
-   vec3 uvrNoise = vec3(vPositionW.x * 0.1, vPositionW.z * 0.1, vPositionW.y * 0.1);
+   vec3 uvrNoise = vec3(vPositionL.x * 0.1, vPositionL.z * 0.1, vPositionL.y * 0.1);
    float noise = 2. * (texture(noiseTexture, uvrNoise).r - 0.5);
 
    int cIndex1 = colorIndex1;
@@ -248,17 +249,17 @@ void main() {
    */
 
    vec2 diffuseUV = vec2(0., 0.);
-   if (abs(vNormalW.x) >= abs(vNormalW.y) && abs(vNormalW.x) >= abs(vNormalW.z)) {
-      diffuseUV.x = vPositionW.z * 1.;
-      diffuseUV.y = vPositionW.y * 1.;
+   if (abs(vNormalL.x) >= abs(vNormalL.y) && abs(vNormalL.x) >= abs(vNormalL.z)) {
+      diffuseUV.x = vPositionL.z * 1.;
+      diffuseUV.y = vPositionL.y * 1.;
    }
-   else if (abs(vNormalW.y) >= abs(vNormalW.z)) {
-      diffuseUV.x = vPositionW.x * 1.;
-      diffuseUV.y = vPositionW.z * 1.;
+   else if (abs(vNormalL.y) >= abs(vNormalL.z)) {
+      diffuseUV.x = vPositionL.x * 1.;
+      diffuseUV.y = vPositionL.z * 1.;
    }
    else {
-      diffuseUV.x = vPositionW.x * 1.;
-      diffuseUV.y = vPositionW.y * 1.;
+      diffuseUV.x = vPositionL.x * 1.;
+      diffuseUV.y = vPositionL.y * 1.;
    }
 
    if (colorIndex == 2) {
@@ -314,14 +315,14 @@ void main() {
 
    if (colorIndex >= 2 && colorIndex <= 4) {
       // Case dirt and grass > no tall flat surfaces
-      float dy = vPositionW.y / blockHeight_m - floor(vPositionW.y / blockHeight_m) + noise * 0.15;
+      float dy = vPositionL.y / blockHeight_m - floor(vPositionL.y / blockHeight_m) + noise * 0.15;
       if ((dy > 0.15 && dy < 0.85)) {
          lightFactor *= 0.7;
       }
    }
    else {
       // Case with potential tall flat surfaces
-      float dy = vPositionW.y / blockHeight_m - floor(vPositionW.y / blockHeight_m);
+      float dy = vPositionL.y / blockHeight_m - floor(vPositionL.y / blockHeight_m);
       if ((dy < 0.1 || dy > 0.9) && abs(vNormalW.y) > 0.6) {
          lightFactor *= 1.1;
       }
