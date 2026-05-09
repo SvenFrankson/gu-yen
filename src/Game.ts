@@ -5,7 +5,7 @@ import "@babylonjs/core/Culling/ray";
 import { ChunckVertexData } from "./voxel-engine/ChunckVertexData";
 import { Terrain } from "./voxel-engine/Terrain";
 import { GeneratorType } from "./voxel-engine/TerrainGen/ChunckDataGenerator";
-import { Color3, CubeTexture, HemisphericLight, Mesh, MeshBuilder, StandardMaterial, Texture, Vector3 } from "@babylonjs/core";
+import { Color3, CubeTexture, HavokPlugin, HemisphericLight, Mesh, MeshBuilder, StandardMaterial, Texture, Vector3 } from "@babylonjs/core";
 import { GeoConverter } from "./map/Geo";
 import { TessademAPIKey } from "./APIKey";
 import { Minimap } from "./map/MiniMap";
@@ -16,6 +16,7 @@ import { generateRoadData } from "./data/RoadData";
 import { CubicNoiseTexture } from "./CubicNoiseTexture";
 import { generateBuildingData } from "./data/BuildingData";
 import { Chunck } from "./voxel-engine/Chunck";
+import HavokPhysics from "@babylonjs/havok";
 
 export class Game {
 
@@ -120,7 +121,17 @@ export class Game {
 
 
         ChunckVertexData.InitializeData("meshes/chunck-parts.gltf", this.scene).then(async () => {
-
+            // initialize plugin
+            const havokInstance = await HavokPhysics({
+                locateFile: () => {
+                    return "havok/HavokPhysics.wasm"
+                }
+            });
+            // pass the engine to the plugin
+            const hk = new HavokPlugin(true, havokInstance);
+            // enable physics in the scene with a gravity
+            this.scene.enablePhysics(new Vector3(0, -9.8, 0), hk);
+        
             let treeDatas = await fetch("trees.json").then(res => res.json());
             let roadDatas = await fetch("roads.json").then(res => res.json());
             let buildingDatas = await fetch("buildings.json").then(res => res.json());

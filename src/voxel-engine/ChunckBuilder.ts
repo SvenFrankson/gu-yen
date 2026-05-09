@@ -399,7 +399,7 @@ export class ChunckMeshBuilder {
             return data[ii + jj * size + kk * size * size];
         }
 
-        let l = size + 1;
+        let l = size + 2;
         let references = new Uint8Array(l * l * l);
         references.fill(0);
         let profile_buildReferencesArray = () => {
@@ -408,7 +408,6 @@ export class ChunckMeshBuilder {
                     for (let i = i0 - 1; i <= i1 + 1; i++) {
                         let data = getData(i, j, k);
                         if (data > BlockType.Water) {
-                            console.log("hit");
                             let ii = i;
                             let jj = j;
                             let kk = k;
@@ -477,9 +476,9 @@ export class ChunckMeshBuilder {
                                         let yIndex = y + k * 2;
                                         let zIndex = z + j * 2;
 
-                                        x = x * 0.5 + i;
-                                        y = y * 0.5 + k;
-                                        z = z * 0.5 + j;
+                                        x = x * 0.5 + i - i0;
+                                        y = y * 0.5 + k - k0;
+                                        z = z * 0.5 + j - j0;
 
                                         sumX += x;
                                         sumY += y;

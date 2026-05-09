@@ -290,3 +290,18 @@ export function ColorizeVertexDataInPlace(data: VertexData, color: Color3, color
 
     return data;
 }
+
+export function GetBBoxFromVertexData(data: VertexData): { min: Vector3, max: Vector3 } {
+    let min = new Vector3(Number.POSITIVE_INFINITY, Number.POSITIVE_INFINITY, Number.POSITIVE_INFINITY);
+    let max = new Vector3(Number.NEGATIVE_INFINITY, Number.NEGATIVE_INFINITY, Number.NEGATIVE_INFINITY);
+    if (data.positions) {
+        for (let i = 0; i < data.positions.length / 3; i++) {
+            let x = data.positions[3 * i];
+            let y = data.positions[3 * i + 1];
+            let z = data.positions[3 * i + 2];
+            min.minimizeInPlaceFromFloats(x, y, z);
+            max.maximizeInPlaceFromFloats(x, y, z);
+        }
+    }
+    return { min, max };
+}

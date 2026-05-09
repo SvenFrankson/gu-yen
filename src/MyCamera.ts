@@ -69,6 +69,15 @@ export class MyCamera extends UniversalCamera {
                 this.pointer.scaling.copyFromFloats(1.05, 1.05, 1.05);
             }
         });
+
+        let lastPosString = localStorage.getItem("last-pos");
+        if (lastPosString) {
+            let lastPos = JSON.parse(lastPosString);
+            if (lastPos.length === 6) {
+                this.position = new Vector3(lastPos[0], lastPos[1], lastPos[2]);
+                this.rotation = new Vector3(lastPos[3], lastPos[4], lastPos[5]);
+            }
+        }
     }
 
     public _pointerDown = () => {
@@ -96,7 +105,10 @@ export class MyCamera extends UniversalCamera {
                         let chunck = ijk.chunck;
                         let affectedChuncks = chunck.setData(block, ijk.ijk.i, ijk.ijk.j, ijk.ijk.k);
                         if (this.editionMode === 2) {
-                            this.floatingBlocksDetector?.findFloatingBlocks(chunck.iPos * this.game.terrain!.chunckLengthIJ + ijk.ijk.i, chunck.jPos * this.game.terrain!.chunckLengthIJ + ijk.ijk.j, ijk.ijk.k);
+                            let floatingChunks = this.floatingBlocksDetector?.findFloatingBlocks(chunck.iPos * this.game.terrain!.chunckLengthIJ + ijk.ijk.i, chunck.jPos * this.game.terrain!.chunckLengthIJ + ijk.ijk.j, ijk.ijk.k);
+                            if (floatingChunks) {
+                                affectedChuncks.push(...floatingChunks.array);
+                            }
                         }
                         affectedChuncks.forEach(c => c.redrawMesh(true));
                     }
@@ -107,6 +119,8 @@ export class MyCamera extends UniversalCamera {
 
     private _update = () => {
         if (this.game.terrain) {
+            localStorage.setItem("last-pos", JSON.stringify([this.position.x, this.position.y, this.position.z, this.rotation.x, this.rotation.y, this.rotation.z]));
+
             let ray = new Ray(this.position.add(new Vector3(0, 1.8, 0)), Vector3.Down(), 500);
             if (!this.targetPosition) {
                 ray.direction.x += 0.1 * Math.random() - 0.05;
@@ -150,6 +164,13 @@ export class MyCamera extends UniversalCamera {
             }
         }
 
+        if (this.targetPosition && !this.fly) {
+            Vector3.LerpToRef(this.position, this.targetPosition, 0.1, this.position);
+            if (this.position.y < this.targetPosition.y - 0.5) {
+                this.position.y = this.targetPosition.y - 0.5;
+            }
+        }
+
         if (this.game.terrain && this.editionMode !== 0) {
             let ray = this._scene.createPickingRay(this._scene.pointerX, this._scene.pointerY, Matrix.Identity(), this);
             let pickInfos = ray.intersectsMeshes(this.chuncks.map(c => c.mesh!).filter(m => m));
@@ -172,12 +193,5 @@ export class MyCamera extends UniversalCamera {
             }
         }
         this.pointer.isVisible = false;
-
-        if (this.targetPosition && !this.fly) {
-            Vector3.LerpToRef(this.position, this.targetPosition, 0.1, this.position);
-            if (this.position.y < this.targetPosition.y - 0.5) {
-                this.position.y = this.targetPosition.y - 0.5;
-            }
-        }
     }
 }

@@ -12,6 +12,8 @@ import { RawTexture3D } from "@babylonjs/core/Materials/Textures/rawTexture3D";
 import { ShaderMaterial } from "@babylonjs/core/Materials/shaderMaterial";
 import { Texture } from "@babylonjs/core/Materials/Textures/texture";
 import { Constants } from "@babylonjs/core/Engines/constants";
+import { PhysicsBody } from "@babylonjs/core/Physics/v2/physicsBody";
+import { PhysicsMotionType, PhysicsShapeMesh } from "@babylonjs/core";
 
 export var DRAW_CHUNCK_MARGIN: number = 2;
 
@@ -63,12 +65,16 @@ export class Chunck {
 
     public position: Vector3;
     public barycenter: Vector3;
+    public iGlobalOffset: number = 0;
+    public jGlobalOffset: number = 0;
+    public kGlobalOffset: number = 0;
     public readonly level: number = 0;
     public readonly isWorldEdge: boolean = false;
     public levelFactor: number = 0;
     public adjacents: (Chunck | undefined)[] = [];
     public children: Chunck[] = [];
     public parent?: Chunck;
+    public physicBody: PhysicsBody | undefined;
 
     public getFillness(k: number): Fillness {
         if (k < 0) {
@@ -201,6 +207,8 @@ export class Chunck {
         if (this.iPos === 0 || this.jPos === 0 || this.iPos === this.terrain.chunckCountIJ - 1 || this.jPos === this.terrain.chunckCountIJ - 1) {
             this.isWorldEdge = true;
         }
+        this.iGlobalOffset = this.iPos * this.chunckLengthIJ;
+        this.jGlobalOffset = this.jPos * this.chunckLengthIJ;
         
         this._dataSizeIJ = 2 * DRAW_CHUNCK_MARGIN + this.chunckLengthIJ;
         this._dataSizeK = this.chunckLengthK;
@@ -703,6 +711,19 @@ export class Chunck {
                         }
                         vertexData.applyToMesh(this.mesh);
                         this.mesh.position.copyFrom(this.position);
+
+                        if (this.physicBody) {
+                            this.physicBody.dispose();
+                        }
+                        this.physicBody = new PhysicsBody(this.mesh, PhysicsMotionType.STATIC, false, this.terrain.scene);
+                        this.physicBody.setMassProperties({
+                            mass: 0
+                        });
+                        this.physicBody.shape = new PhysicsShapeMesh(
+                            this.mesh,
+                            this.terrain.scene
+                        );
+                        this.physicBody.shape.material = {friction: 0.8, restitution: 0.1};
 
                         if (this.terrain.customChunckMaterialSet) {
                             this.terrain.customChunckMaterialSet(this);

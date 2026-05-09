@@ -3,10 +3,16 @@ import { Chunck } from "./Chunck";
 import { Terrain } from "./Terrain";
 import { Mesh } from "@babylonjs/core/Meshes/mesh";
 import { BlockType } from "./BlockType";
+import { MeshBuilder } from "@babylonjs/core/Meshes/meshBuilder";
+import { Vector3 } from "@babylonjs/core/Maths/math.vector";
+import { UniqueList } from "../UniqueList";
+import { GetBBoxFromVertexData, TranslateVertexDataInPlace } from "../VertexDataUtils";
+import { PhysicsBody } from "@babylonjs/core/Physics/v2/physicsBody";
+import { PhysicsMotionType, PhysicsShapeConvexHull, PhysicsShapeCylinder, PhysicsShapeMesh } from "@babylonjs/core";
 
 export class FloatingBlocksDetector {
 
-    public static maxRange: number = 8;
+    public static maxRange: number = 16;
     public static maxSize: number = FloatingBlocksDetector.maxRange * 2 + 1;
     public currentGroup: number = 1;
 
@@ -95,7 +101,7 @@ export class FloatingBlocksDetector {
         this.currentGroup = 1;
     }
 
-    public findFloatingBlocks(iGlobal0: number, jGlobal0: number, kGlobal0: number) {
+    public findFloatingBlocks(iGlobal0: number, jGlobal0: number, kGlobal0: number): UniqueList<Chunck> | undefined {
         this.reset();
         this.iGlobal0 = iGlobal0;
         this.jGlobal0 = jGlobal0;
@@ -105,16 +111,19 @@ export class FloatingBlocksDetector {
         if (!chunk) return;
         let iPos0 = chunk.iPos;
         let jPos0 = chunk.jPos;
+        console.log("Center chunck position:", iPos0, jPos0);
+        let rChunks = 2;
         let chuncks: Chunck[][] = [];
-        for (let i = 0; i <= 2; i++) {
+        for (let i = 0; i < 2 * rChunks + 1; i++) {
             chuncks[i] = [];
-            for (let j = 0; j <= 2; j++) {
-                let c = this.terrain.getChunck(0, iPos0 + i - 1, jPos0 + j - 1);
+            for (let j = 0; j < 2 * rChunks + 1; j++) {
+                let c = this.terrain.getChunck(0, iPos0 + i - rChunks, jPos0 + j - rChunks);
                 if (c) {
                     chuncks[i][j] = c;
                 }
             }
         }
+        console.log(chuncks);
 
         for (let d = 1; d < FloatingBlocksDetector.maxRange; d++) {
             let doThing = (ii: number, jj: number, kk: number) => {
@@ -124,14 +133,18 @@ export class FloatingBlocksDetector {
 
                 let iPos = Math.floor(iGlobal / this.terrain.chunckLengthIJ);
                 let jPos = Math.floor(jGlobal / this.terrain.chunckLengthIJ);
-                let chunck = chuncks[iPos - iPos0]?.[jPos - jPos0];
+                let chunck = chuncks[iPos - iPos0 + rChunks]?.[jPos - jPos0 + rChunks];
                 if (chunck) {
-                    let i = iGlobal - chunck.iPos * this.terrain.chunckLengthIJ;
-                    let j = jGlobal - chunck.jPos * this.terrain.chunckLengthIJ;
-                    let blockType = chunck.getData(i, j, kGlobal);
+                    let i = iGlobal - chunck.iGlobalOffset;
+                    let j = jGlobal - chunck.jGlobalOffset;
+                    let k = kGlobal - chunck.kGlobalOffset;
+                    let blockType = chunck.getData(i, j, k);
                     if (blockType > 0) {
                         this.markBlock(ii + FloatingBlocksDetector.maxRange, jj + FloatingBlocksDetector.maxRange, kk + FloatingBlocksDetector.maxRange);
                     }
+                }
+                else {
+                    console.warn("Chunck not found at", iPos, jPos, "for d", d);
                 }
             }
 
@@ -205,6 +218,7 @@ export class FloatingBlocksDetector {
 
         console.log("Floating groups:", floatingGroups);
 
+        let affectedChunks = new UniqueList<Chunck>();
         for (let n = 0; n < floatingGroups.length; n++) {
             let g = floatingGroups[n];
             let floatingData = new Uint8Array(FloatingBlocksDetector.maxSize * FloatingBlocksDetector.maxSize * FloatingBlocksDetector.maxSize);
@@ -225,7 +239,12 @@ export class FloatingBlocksDetector {
                             j1 = Math.max(j1, jj);
                             k1 = Math.max(k1, kk);
                             floatingData[ii + jj * FloatingBlocksDetector.maxSize + kk * FloatingBlocksDetector.maxSize * FloatingBlocksDetector.maxSize] = BlockType.Dirt;
-                            console.log(".");
+                            let chunks = chunk.setData(BlockType.None,
+                                ii + this.iGlobal0 - chunk.iGlobalOffset - FloatingBlocksDetector.maxRange,
+                                jj + this.jGlobal0 - chunk.jGlobalOffset - FloatingBlocksDetector.maxRange,
+                                kk + this.kGlobal0 - chunk.kGlobalOffset - FloatingBlocksDetector.maxRange
+                            );
+                            affectedChunks.push(...chunks);
                         }
                     }
                 }
@@ -234,19 +253,62 @@ export class FloatingBlocksDetector {
             console.log(floatingData);
 
             let vertexData = this.terrain.chunckBuilder.BuildFloatingMesh(this.terrain, floatingData, FloatingBlocksDetector.maxSize, i0, j0, k0, i1, j1, k1);
+            TranslateVertexDataInPlace(
+                vertexData,
+                new Vector3(
+                    (i0 - FloatingBlocksDetector.maxRange) * this.terrain.blockSizeIJ_m,
+                    (k0 - FloatingBlocksDetector.maxRange) * this.terrain.blockSizeK_m,
+                    (j0 - FloatingBlocksDetector.maxRange) * this.terrain.blockSizeIJ_m
+                )
+            );
+            let bbox = GetBBoxFromVertexData(vertexData);
+            let center = bbox.min.add(bbox.max).scale(0.5);
+            let axis = Vector3.Cross(Vector3.Up(), center);
+            if (Math.abs(axis.x) > Math.abs(axis.z)) {
+                if (axis.x > 0) {
+                    axis = Vector3.Right();
+                }
+                else {
+                    axis = Vector3.Left();
+                }
+            }
+            else {
+                if (axis.z > 0) {
+                    axis = Vector3.Forward();
+                }
+                else {
+                    axis = Vector3.Backward();
+                }
+            }
             let testMesh = new Mesh("floatingBlockTestMesh" + n, this.terrain.scene);
             vertexData.applyToMesh(testMesh);
+
+            let cross = MeshBuilder.CreateLineSystem(
+                "cross",
+                {
+                    lines: [
+                        [new Vector3(0, 0, -1), new Vector3(0, 0, 1)],
+                        [new Vector3(0, -1, 0), new Vector3(0, 1, 0)],
+                        [new Vector3(-1, 0, 0), new Vector3(1, 0, 0)],
+                    ]
+                },
+                this.terrain.scene
+            );
+            cross.parent = testMesh;
 
             console.log(vertexData);
 
             testMesh.position = this.terrain.globalIJKToWorldPos(this.iGlobal0, this.jGlobal0, this.kGlobal0);
-            testMesh.position.x += (i0 - FloatingBlocksDetector.maxRange) * this.terrain.blockSizeIJ_m;
-            testMesh.position.y += (k0 - FloatingBlocksDetector.maxRange) * this.terrain.blockSizeK_m;
-            testMesh.position.z += (j0 - FloatingBlocksDetector.maxRange) * this.terrain.blockSizeIJ_m;
 
-            testMesh.position.y += 5;
+            const body = new PhysicsBody(testMesh, PhysicsMotionType.DYNAMIC, false, this.terrain.scene);
+            body.setMassProperties({
+                mass: 1
+            });
+            body.shape = new PhysicsShapeConvexHull(testMesh, this.terrain.scene);
+            body.shape.material = {friction: 0.8, restitution: 0};
 
             console.log(testMesh);
         }
+        return affectedChunks;
     }
 }
