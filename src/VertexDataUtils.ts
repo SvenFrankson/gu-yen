@@ -6,6 +6,14 @@ import { Mesh } from "@babylonjs/core/Meshes/mesh";
 import { VertexData } from "@babylonjs/core/Meshes/mesh.vertexData";
 import type { Scene } from "@babylonjs/core/scene";
 
+export interface IMeshData {
+    name: string;
+    vertexData: VertexData;
+    position: Vector3;
+    rotation: Vector3;
+    scaling: Vector3;
+}
+
 export async function GetGLTFVertexData(path: string, meshName: string, scene: Scene): Promise<VertexData | null> {
     const data = await ImportMeshAsync(path, scene);
     let mesh = data.meshes.find(m => m.name === meshName);
@@ -24,6 +32,31 @@ export async function GetGLTFVertexData(path: string, meshName: string, scene: S
     });
 
     return null;
+}
+
+export async function GetGLTFMeshDataArray(path: string, scene: Scene): Promise<IMeshData[] | null> {
+    const data = await ImportMeshAsync(path, scene);
+
+    let dataArray: IMeshData[] = [];
+    data.meshes.forEach(mesh => {
+        if (mesh instanceof Mesh) {
+        let vData = VertexData.ExtractFromMesh(mesh);
+        ColorizeVertexDataInPlace(vData, new Color3(1, 1, 1));
+        MirrorZVertexDataInPlace(vData);
+        TriFlipVertexDataInPlace(vData);
+
+        dataArray.push({
+            name: mesh.name,
+            vertexData: vData,
+            position: mesh.position.multiplyByFloats(1, 1, -1),
+            rotation: mesh.rotation.clone(),
+            scaling: mesh.scaling.clone()
+        });
+    }
+        mesh.dispose(true);
+    });
+
+    return dataArray;
 }
 
 export function CloneVertexData(data: VertexData): VertexData {

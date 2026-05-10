@@ -17,6 +17,7 @@ import { CubicNoiseTexture } from "./CubicNoiseTexture";
 import { generateBuildingData } from "./data/BuildingData";
 import { Chunck } from "./voxel-engine/Chunck";
 import HavokPhysics from "@babylonjs/havok";
+import { Pelleteuse } from "./vehicles/Pelleteuse";
 
 export class Game {
 
@@ -108,10 +109,16 @@ export class Game {
         let treeGenerator = new TreeGenerator();
         this.canvas.addEventListener("keydown", (event) => {
             if (event.code === "Numpad1") {
-                generateRoadData(this);
+                //generateRoadData(this);
             }
             else if (event.code === "Numpad2") {
-                generateBuildingData(this);
+                //generateBuildingData(this);
+            }
+            else if (event.code === "Numpad3") {
+                let pelleteuse = new Pelleteuse(this);
+                pelleteuse.instantiate();
+                pelleteuse.position = this.camera.position.add(this.camera.getForwardRay().direction.scale(5));
+                this.camera.pelleteuse = pelleteuse;
             }
         });
 
