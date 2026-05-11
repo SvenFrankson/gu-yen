@@ -118,9 +118,9 @@ export class Game {
                 //generateBuildingData(this);
             }
             else if (event.code === "Numpad3") {
+                console.log("Player position: ", this.player.absolutePosition.clone());
                 let pelleteuse = new Pelleteuse(this.player.absolutePosition.add(this.player.forward.scale(5)), this);
                 pelleteuse.instantiate();
-                this.player.pelleteuse = pelleteuse;
             }
         });
 

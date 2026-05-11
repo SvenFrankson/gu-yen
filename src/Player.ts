@@ -66,7 +66,7 @@ export class Player extends Mesh {
             else if (event.code === "Space") {
                 if (this.pelleteuse) {
                     this.position.copyFrom(this.pelleteuse.cabine.absolutePosition).addInPlace(this.pelleteuse.cabine.right.scale(-2));
-                    this.pelleteuse = undefined;
+                    this.pelleteuse.dropControl();
                 }
             }
         });
@@ -89,7 +89,7 @@ export class Player extends Mesh {
                     this.pelleteuse.digging = false;       
                 }
                 else if (this.aimedObject) {
-                    this.pelleteuse = this.aimedObject;
+                    this.aimedObject.takeControl(this);
                 }
             }
         });

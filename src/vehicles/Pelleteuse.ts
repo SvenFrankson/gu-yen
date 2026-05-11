@@ -9,6 +9,7 @@ import { FloatingBlocksDetector } from "../voxel-engine/FloatingBlocksDetector";
 import { MakeStandardMaterial } from "../MaterialUtils";
 import { IsVeryFinite, StepAngle } from "../Number";
 import { TerrainMaterial } from "../TerrainMaterial";
+import { Player } from "../Player";
 
 export interface IPelleteuse {
     pelleteuse: Pelleteuse;
@@ -41,14 +42,14 @@ export class Pelleteuse extends Mesh implements IPelleteuse {
     }
     
     public get throttle(): number {
-        if (this.game.player.pelleteuse === this) {
-            return this.game.player.forwardInput - this.game.player.backwardInput;
+        if (this.controler) {
+            return this.controler.forwardInput - this.controler.backwardInput;
         }
         return 0;
     }
     public get turn(): number {
-        if (this.game.player.pelleteuse === this) {
-            return this.game.player.rightInput - this.game.player.leftInput;
+        if (this.controler) {
+            return this.controler.rightInput - this.controler.leftInput;
         }
         return 0;
     }
@@ -69,6 +70,8 @@ export class Pelleteuse extends Mesh implements IPelleteuse {
     public red: StandardMaterial;
     public green: StandardMaterial;
 
+    public controler?: Player;
+
     constructor(position: Vector3, public game: Game) {
         super("pelleteuse", null);
         this.position.copyFrom(position);
@@ -76,14 +79,14 @@ export class Pelleteuse extends Mesh implements IPelleteuse {
         this.red = MakeStandardMaterial(new Color3(1, 0.2, 0.2));
         this.green = MakeStandardMaterial(new Color3(0.2, 1, 0.2));
 
-        this.material = MakeStandardMaterial(new Color3(0.1, 0.2, 0.1));
+        this.material = MakeStandardMaterial(new Color3(0.1, 0.1, 0.1));
 
         this.cabine = new PelleteusePart("pelleteuse_cabine", this);
         this.cabine.material = MakeStandardMaterial(new Color3(1, 0.8, 0.1));
         this.cabine.parent = this;
 
         this.head = MeshBuilder.CreateSphere("player-visual", { diameter: 0.1 }, game.scene);
-        this.head.position.copyFrom(this.absolutePosition);
+        this.head.position.copyFrom(this.position);
         this.head.position.y += 3.5 + this.cabine.position.y;
         this.head.rotation.y = this.cabine.rotation.y + AngleFromToAround(Vector3.Forward(), Vector3.Normalize(new Vector3(this.forward.x, 0, this.forward.z)), Vector3.Up());
         this.head.visibility = 0.5;
@@ -99,7 +102,7 @@ export class Pelleteuse extends Mesh implements IPelleteuse {
         this.bras1.rotation.x = Math.PI / 2;
 
         this.godet = new PelleteusePart("pelleteuse_godet", this);
-        this.godet.material = MakeStandardMaterial(new Color3(0.1, 0.2, 0.1));
+        this.godet.material = MakeStandardMaterial(new Color3(0.1, 0.1, 0.1));
         this.godet.parent = this.bras1;
     }
 
@@ -126,6 +129,18 @@ export class Pelleteuse extends Mesh implements IPelleteuse {
         }
 
         this.game.scene.onBeforeRenderObservable.add(this._update);
+    }
+
+    public takeControl(player: Player) {
+        this.controler = player;
+        player.pelleteuse = this;
+    }
+
+    public dropControl() {
+        if (this.controler) {
+            this.controler.pelleteuse = undefined;
+        }
+        this.controler = undefined;
     }
 
     private _update = () => {

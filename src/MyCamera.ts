@@ -104,6 +104,7 @@ export class MyCamera extends UniversalCamera {
     }
 
     private _update = () => {
+        console.log("Camera position: ", this.position.clone());
         if (this.player.pelleteuse) {
             this.position.copyFrom(this.player.pelleteuse.head.absolutePosition);
             this.position.subtractInPlace(this.player.pelleteuse.head.forward.scale(7));
