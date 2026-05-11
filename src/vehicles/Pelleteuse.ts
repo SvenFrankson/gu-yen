@@ -9,7 +9,7 @@ import { FloatingBlocksDetector } from "../voxel-engine/FloatingBlocksDetector";
 import { MakeStandardMaterial } from "../MaterialUtils";
 import { IsVeryFinite, StepAngle } from "../Number";
 import { TerrainMaterial } from "../TerrainMaterial";
-import { Player } from "../Player";
+import { Player } from "../player/Player";
 
 export interface IPelleteuse {
     pelleteuse: Pelleteuse;

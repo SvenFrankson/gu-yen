@@ -1,15 +1,19 @@
 import { Mesh } from "@babylonjs/core/Meshes/mesh";
-import { Game } from "./Game";
+import { Game } from "../Game";
 import { MeshBuilder } from "@babylonjs/core/Meshes/meshBuilder";
-import { IPelleteuse, Pelleteuse, PelleteusePart } from "./vehicles/Pelleteuse";
-import { Chunck } from "./voxel-engine/Chunck";
+import { IPelleteuse, Pelleteuse, PelleteusePart } from "../vehicles/Pelleteuse";
+import { Chunck } from "../voxel-engine/Chunck";
 import { Ray } from "@babylonjs/core/Culling/ray.core";
 import { Vector3, Matrix, TransformNode } from "@babylonjs/core";
+import { PlayerAction, PlayerActionDefault } from "./PlayerAction";
 
 export class Player extends Mesh {
 
     public canUsePointerLock: boolean = true;
     public isPointerLocked: boolean = false;
+
+    public action?: PlayerAction;
+    public defaultAction: PlayerActionDefault;
 
     public head: TransformNode;
     public pelleteuse: Pelleteuse | undefined;
@@ -25,6 +29,7 @@ export class Player extends Mesh {
     public rightInput: number = 0;
 
     public aimedObject: Pelleteuse | undefined;
+    public aimedIJK: { chunck: Chunck, ijk: { i: number, j: number, k: number } } | undefined;
 
     public get zInput(): number {
         return this.forwardInput - this.backwardInput;
@@ -36,6 +41,9 @@ export class Player extends Mesh {
 
     constructor(public game: Game) {
         super("player", null);
+
+        this.defaultAction = new PlayerActionDefault(this);
+        this.action = this.defaultAction;
 
         MeshBuilder.CreateSphere("player-visual", { diameter: 0.5 }, game.scene).parent = this;
         this.head = new TransformNode("player-head", game.scene);
@@ -67,6 +75,7 @@ export class Player extends Mesh {
                 if (this.pelleteuse) {
                     this.position.copyFrom(this.pelleteuse.cabine.absolutePosition).addInPlace(this.pelleteuse.cabine.right.scale(-2));
                     this.pelleteuse.dropControl();
+                    this.action = this.defaultAction;
                 }
                 else {
                     this.fly = !this.fly;
@@ -93,6 +102,7 @@ export class Player extends Mesh {
                 }
                 else if (this.aimedObject) {
                     this.aimedObject.takeControl(this);
+                    this.action = undefined;
                 }
             }
         });
@@ -147,17 +157,6 @@ export class Player extends Mesh {
                 }
                 this.position.addInPlace(this.right.scale(this.xInput * 0.1));
 
-                let aimRay = new Ray(this.head.absolutePosition, this.head.forward, 10);
-                let aimPickInfo = this.game.scene.pickWithRay(aimRay, (mesh) => {
-                    return mesh instanceof PelleteusePart;
-                });
-                if (aimPickInfo && aimPickInfo.pickedMesh instanceof PelleteusePart) {
-                    this.aimedObject = aimPickInfo.pickedMesh.pelleteuse;
-                }
-                else {
-                    this.aimedObject = undefined;
-                }
-
                 let ray = new Ray(this.position.add(new Vector3(0, 1.8, 0)), Vector3.Down(), 500);
                 if (!this.targetPosition) {
                     ray.direction.x += 0.1 * Math.random() - 0.05;
@@ -178,6 +177,10 @@ export class Player extends Mesh {
                     }
                 }
             }
+
+            if (this.action) {
+                this.action.update();
+            }
         }
     }
 
@@ -195,6 +198,9 @@ export class Player extends Mesh {
             }
         }
         this._pointerIsDown = true;
+        if (this.action) {
+            this.action.pointerDown(e);
+        }
     }
 
     private _pointerUp = (e: PointerEvent) => {
@@ -206,6 +212,9 @@ export class Player extends Mesh {
             }
         }
         this._pointerIsDown = false;
+        if (this.action) {
+            this.action.pointerUp(e);
+        }
     }
 
     private _pointerMove = (e: PointerEvent) => {
@@ -231,6 +240,9 @@ export class Player extends Mesh {
                 this.rotation.y += e.movementX * 0.004;
                 this.head.rotation.x += e.movementY * 0.004;
             }
+        }
+        if (this.action) {
+            this.action.pointerMove(e);
         }
     }
 }

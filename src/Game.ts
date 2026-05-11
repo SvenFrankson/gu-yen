@@ -18,7 +18,8 @@ import { generateBuildingData } from "./data/BuildingData";
 import { Chunck } from "./voxel-engine/Chunck";
 import HavokPhysics from "@babylonjs/havok";
 import { Pelleteuse } from "./vehicles/Pelleteuse";
-import { Player } from "./Player";
+import { Player } from "./player/Player";
+import { FloatingBlocksDetector } from "./voxel-engine/FloatingBlocksDetector";
 
 export class Game {
 
@@ -28,6 +29,7 @@ export class Game {
     public scene: Scene;
     public camera: MyCamera;
     public terrain: Terrain | undefined;
+    public floatingBlocksDetector: FloatingBlocksDetector | undefined;
     public player: Player;
     public geoConverter: GeoConverter = new GeoConverter();
     public skybox: Mesh;
@@ -192,6 +194,8 @@ export class Game {
             mat.setLightInvDir(light.direction);
             this.terrain.materials = [mat];
 
+            this.floatingBlocksDetector = new FloatingBlocksDetector(this.terrain);
+
             /*
             this.terrain.customChunckMaterialSet = (chunck: Chunck) => {
                 if (chunck.mesh && !(chunck.mesh.material instanceof TerrainMaterial)) {
@@ -294,5 +298,5 @@ export class Game {
     }
 }
 
-window["Game"] = Game;
+//window["Game"] = Game;
 customElements.define("mini-map", Minimap);

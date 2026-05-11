@@ -8,12 +8,10 @@ import { Chunck } from "./voxel-engine/Chunck";
 import { BlockType } from "./voxel-engine/BlockType";
 import { FloatingBlocksDetector } from "./voxel-engine/FloatingBlocksDetector";
 import { Pelleteuse } from "./vehicles/Pelleteuse";
-import { Player } from "./Player";
+import { Player } from "./player/Player";
 import { QuaternionFromZYAxis } from "babylonjs-geometry-kit";
 
 export class MyCamera extends UniversalCamera {
-
-    public floatingBlocksDetector?: FloatingBlocksDetector;
 
     public editionMode: number = 0;
 
@@ -61,42 +59,7 @@ export class MyCamera extends UniversalCamera {
     }
 
     public _pointerDown = () => {
-        if (this.game.terrain && this.editionMode !== 0) {
-            let ray = this._scene.createPickingRay(this._scene.pointerX, this._scene.pointerY, Matrix.Identity(), this);
-            let pickInfos = ray.intersectsMeshes(this.player.chuncks.map(c => c.mesh!).filter(m => m));
-            for (let pickInfo of pickInfos) {
-                if (pickInfo && pickInfo.hit && pickInfo.pickedPoint) {
-                    let p = pickInfo.pickedPoint;
-                    if (this.editionMode === 1) {
-                        p.addInPlace(pickInfo.getNormal(true)!.scale(0.2));
-                    }
-                    else if (this.editionMode === 2) {
-                        p.subtractInPlace(pickInfo.getNormal(true)!.scale(0.2));
-                    }
-                    let ijk = this.game.terrain.getChunckAndIJKAtPos(p, 0, false);
-                    if (ijk) {
-                        let block = BlockType.WhiteConcrete;
-                        if (this.editionMode === 2) {
-                            block = BlockType.None;
-                            if (!this.floatingBlocksDetector) {
-                                this.floatingBlocksDetector = new FloatingBlocksDetector(this.game.terrain!);
-                            }
-                        }
-                        let chunck = ijk.chunck;
-                        let affectedChuncks = chunck.setData(block, ijk.ijk.i, ijk.ijk.j, ijk.ijk.k);
-                        let floatingCount = 0;
-                        if (this.editionMode === 2) {
-                            let floatingChunks = this.floatingBlocksDetector?.findFloatingBlocks(chunck.iPos * this.game.terrain!.chunckLengthIJ + ijk.ijk.i, chunck.jPos * this.game.terrain!.chunckLengthIJ + ijk.ijk.j, ijk.ijk.k);
-                            if (floatingChunks) {
-                                floatingCount = floatingChunks.array.length;
-                                affectedChuncks.push(...floatingChunks.array);
-                            }
-                        }
-                        affectedChuncks.forEach(c => c.redrawMesh(true, floatingCount > 0));
-                    }
-                }
-            }
-        }
+        
     }
 
     private _update = () => {
