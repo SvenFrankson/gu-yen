@@ -118,9 +118,8 @@ export class Game {
                 //generateBuildingData(this);
             }
             else if (event.code === "Numpad3") {
-                let pelleteuse = new Pelleteuse(this);
+                let pelleteuse = new Pelleteuse(this.player.absolutePosition.add(this.player.forward.scale(5)), this);
                 pelleteuse.instantiate();
-                pelleteuse.position = this.player.position.add(this.player.forward.scale(5));
                 this.player.pelleteuse = pelleteuse;
             }
         });

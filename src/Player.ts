@@ -8,6 +8,9 @@ import { Vector3, Matrix, TransformNode } from "@babylonjs/core";
 
 export class Player extends Mesh {
 
+    public canUsePointerLock: boolean = true;
+    public isPointerLocked: boolean = false;
+
     public head: TransformNode;
     public pelleteuse: Pelleteuse | undefined;
     public chuncks: Chunck[] = [];
@@ -96,7 +99,7 @@ export class Player extends Mesh {
 
     private _update = () => {
         if (this.game.terrain) {
-            localStorage.setItem("last-pos", JSON.stringify([this.position.x, this.position.y, this.position.z, this.rotation.x, this.rotation.y, this.rotation.z]));
+            localStorage.setItem("last-pos", JSON.stringify([this.absolutePosition.x, this.absolutePosition.y, this.absolutePosition.z, this.rotation.x, this.rotation.y, this.rotation.z]));
 
             let ijk = this.game.terrain.getChunckAndIJKAtPos(this.position, 0, false);
             this.chuncks = [];
@@ -150,15 +153,33 @@ export class Player extends Mesh {
 
     private _pointerIsDown: boolean = false;
     private _pointerDown = (e: PointerEvent) => {
+        if (this.canUsePointerLock) {
+            this.game.canvas.requestPointerLock().then(() => {
+                this.isPointerLocked = true;
+            });
+            if (this.isPointerLocked) {
+                if (this.pelleteuse && !this.pelleteuse.digging) {
+                    this.pelleteuse.digging = true;
+                    this.pelleteuse.replacing = false;
+                }
+            }
+        }
         this._pointerIsDown = true;
     }
 
     private _pointerUp = (e: PointerEvent) => {
+        if (this.canUsePointerLock) {
+            if (this.isPointerLocked) {
+                if (this.pelleteuse) {
+                    this.pelleteuse.digging = false;
+                }
+            }
+        }
         this._pointerIsDown = false;
     }
 
     private _pointerMove = (e: PointerEvent) => {
-        if (this._pointerIsDown) {
+        if (this.isPointerLocked || this._pointerIsDown) {
             if (this.pelleteuse) {
                 if (this.pelleteuse.digging) {
                     this.pelleteuse.cabine.rotation.y += e.movementX * 0.0005;

@@ -712,6 +712,7 @@ export class Chunck {
                         vertexData.applyToMesh(this.mesh);
                         this.mesh.position.copyFrom(this.position);
 
+                        /*
                         if (this.physicBody) {
                             this.physicBody.dispose();
                         }
@@ -724,6 +725,7 @@ export class Chunck {
                             this.terrain.scene
                         );
                         this.physicBody.shape.material = {friction: 0.8, restitution: 0.1};
+                        */
 
                         if (this.terrain.customChunckMaterialSet) {
                             this.terrain.customChunckMaterialSet(this);

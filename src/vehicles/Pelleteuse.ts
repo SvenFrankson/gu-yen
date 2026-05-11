@@ -7,7 +7,7 @@ import { AngleFromToAround, Rotate, RotateInPlace } from "babylonjs-geometry-kit
 import { BlockType } from "../voxel-engine/BlockType";
 import { FloatingBlocksDetector } from "../voxel-engine/FloatingBlocksDetector";
 import { MakeStandardMaterial } from "../MaterialUtils";
-import { StepAngle } from "../Number";
+import { IsVeryFinite, StepAngle } from "../Number";
 import { TerrainMaterial } from "../TerrainMaterial";
 
 export class Pelleteuse extends Mesh {
@@ -17,9 +17,13 @@ export class Pelleteuse extends Mesh {
     public bras0: Mesh;
     public l0: number = 3;
     public targetX0: number = - Math.PI / 3;
+    public minX0: number = - Math.PI / 2;
+    public maxX0: number = 0;
     public bras1: Mesh;
     public l1: number = 3;
     public targetX1: number = Math.PI / 2;
+    public minX1: number = 0;
+    public maxX1: number = 0.9 * Math.PI;
     public godet: Mesh;
     
     public throttle: number = 0;
@@ -41,30 +45,37 @@ export class Pelleteuse extends Mesh {
     public red: StandardMaterial;
     public green: StandardMaterial;
 
-    constructor(public game: Game) {
+    constructor(position: Vector3, public game: Game) {
         super("pelleteuse", null);
+        this.position.copyFrom(position);
 
         this.red = MakeStandardMaterial(new Color3(1, 0.2, 0.2));
         this.green = MakeStandardMaterial(new Color3(0.2, 1, 0.2));
 
+        this.material = MakeStandardMaterial(new Color3(0.1, 0.2, 0.1));
+
         this.cabine = new Mesh("pelleteuse_cabine", null);
-        this.cabine.material = MakeStandardMaterial(new Color3(0.8, 0.8, 0.2));
+        this.cabine.material = MakeStandardMaterial(new Color3(1, 0.8, 0.1));
         this.cabine.parent = this;
 
         this.head = MeshBuilder.CreateSphere("player-visual", { diameter: 0.1 }, game.scene);
+        this.head.position.copyFrom(this.absolutePosition);
+        this.head.position.y += 3.5 + this.cabine.position.y;
+        this.head.rotation.y = this.cabine.rotation.y + AngleFromToAround(Vector3.Forward(), Vector3.Normalize(new Vector3(this.forward.x, 0, this.forward.z)), Vector3.Up());
         this.head.visibility = 0.5;
 
         this.bras0 = new Mesh("pelleteuse_bras0", null);
-        this.bras0.material = MakeStandardMaterial(new Color3(0.8, 0.8, 0.2));
+        this.bras0.material = MakeStandardMaterial(new Color3(1, 0.8, 0.1));
         this.bras0.parent = this.cabine;
         this.bras0.rotation.x = - Math.PI / 3;
 
         this.bras1 = new Mesh("pelleteuse_bras1", null);
-        this.bras1.material = MakeStandardMaterial(new Color3(0.8, 0.8, 0.2));
+        this.bras1.material = MakeStandardMaterial(new Color3(1, 0.8, 0.1));
         this.bras1.parent = this.bras0;
         this.bras1.rotation.x = Math.PI / 2;
 
         this.godet = new Mesh("pelleteuse_godet", null);
+        this.godet.material = MakeStandardMaterial(new Color3(0.1, 0.2, 0.1));
         this.godet.parent = this.bras1;
                 
         this.game.canvas.addEventListener("keydown", (event) => {
@@ -125,14 +136,14 @@ export class Pelleteuse extends Mesh {
 
     private _update = () => {
         if (this.game.terrain) {
-
             this.head.position.copyFrom(this.absolutePosition);
-            this.head.position.y += 3.5 + this.cabine.position.y;
+            this.head.position.y += 2.5 + this.cabine.position.y;
             this.head.rotation.y = this.cabine.rotation.y + AngleFromToAround(Vector3.Forward(), Vector3.Normalize(new Vector3(this.forward.x, 0, this.forward.z)), Vector3.Up());
 
             let material = this.game.terrain.getMaterial(0) as TerrainMaterial;
             material.setRangePosition(this.cabine.absolutePosition);
             material.setRangeRadius(this.l0 + this.l1);
+
             let targetY = this.position.y;       
             let ijk = this.game.terrain.getChunckAndIJKAtPos(this.position, 0, false);
             let chuncks: Chunck[] = []
@@ -228,12 +239,6 @@ export class Pelleteuse extends Mesh {
             this.rZSpeed *= 0.96;
 
             if (this.game.player.pelleteuse === this) {
-                if (this.digging && !this.replacing) {
-                    this.godet.material = this.green;
-                }
-                else {
-                    this.godet.material = this.red;
-                }
                 let ray = new Ray(this.head.absolutePosition, this.head.forward, 500);
                 let pickedPoint: Vector3 | null = null;
                 let pickedNormal: Vector3 | null = null;
@@ -289,8 +294,13 @@ export class Pelleteuse extends Mesh {
                         let a1 = Math.acos((this.l0 * this.l0 + this.l1 * this.l1 - d * d) / (2 * this.l0 * this.l1));
 
                         //console.log(alpha0 / Math.PI * 180, a0 / Math.PI * 180, a1 / Math.PI * 180);
-                        this.targetX0 = - (a0 - alpha0);
-                        this.targetX1 = Math.PI - a1;
+                        let tX0 = - (a0 - alpha0);
+                        let tX1 = Math.PI - a1;
+
+                        if (IsVeryFinite(tX0) && IsVeryFinite(tX1)) {
+                            this.targetX0 = Math.max(this.minX0, Math.min(this.maxX0, tX0));
+                            this.targetX1 = Math.max(this.minX1, Math.min(this.maxX1, tX1));
+                        }
 
                         if (this.digging && !this.replacing) {
                             let affectedChuncks: Chunck[] = [];
@@ -303,12 +313,19 @@ export class Pelleteuse extends Mesh {
                                         let block = BlockType.None;
                                         let chunck = ijk.chunck;
                                         if (chunck.getData(ijk.ijk.i, ijk.ijk.j, ijk.ijk.k) !== BlockType.None) {
-                                            let newAffectedChuncks = chunck.setData(block, ijk.ijk.i, ijk.ijk.j, ijk.ijk.k);
-                                            //let floatingChunks = this.floatingBlocksDetector?.findFloatingBlocks(chunck.iPos * this.game.terrain!.chunckLengthIJ + ijk.ijk.i, chunck.jPos * this.game.terrain!.chunckLengthIJ + ijk.ijk.j, ijk.ijk.k);
-                                            //if (floatingChunks) {
-                                            //    newAffectedChuncks.push(...floatingChunks.array);
-                                            //}
-                                            affectedChuncks.push(...newAffectedChuncks);
+                                            if (y === 2) {
+                                                this.digging = false;
+                                                x = w;
+                                                y = 3;
+                                            }
+                                            else {
+                                                let newAffectedChuncks = chunck.setData(block, ijk.ijk.i, ijk.ijk.j, ijk.ijk.k);
+                                                //let floatingChunks = this.floatingBlocksDetector?.findFloatingBlocks(chunck.iPos * this.game.terrain!.chunckLengthIJ + ijk.ijk.i, chunck.jPos * this.game.terrain!.chunckLengthIJ + ijk.ijk.j, ijk.ijk.k);
+                                                //if (floatingChunks) {
+                                                //    newAffectedChuncks.push(...floatingChunks.array);
+                                                //}
+                                                affectedChuncks.push(...newAffectedChuncks);
+                                            }
                                         }
                                     }
                                 }
