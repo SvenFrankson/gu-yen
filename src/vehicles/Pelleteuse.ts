@@ -10,24 +10,48 @@ import { MakeStandardMaterial } from "../MaterialUtils";
 import { IsVeryFinite, StepAngle } from "../Number";
 import { TerrainMaterial } from "../TerrainMaterial";
 
-export class Pelleteuse extends Mesh {
+export interface IPelleteuse {
+    pelleteuse: Pelleteuse;
+}
+
+export class PelleteusePart extends Mesh implements IPelleteuse {
+    constructor(name: string, public pelleteuse: Pelleteuse) {
+        super(name, pelleteuse.game.scene);
+    }
+}
+
+export class Pelleteuse extends Mesh implements IPelleteuse {
     
     public head: Mesh;
-    public cabine: Mesh;
-    public bras0: Mesh;
+    public cabine: PelleteusePart;
+    public bras0: PelleteusePart;
     public l0: number = 3;
     public targetX0: number = - Math.PI / 3;
     public minX0: number = - Math.PI / 2;
     public maxX0: number = 0;
-    public bras1: Mesh;
+    public bras1: PelleteusePart;
     public l1: number = 3;
     public targetX1: number = Math.PI / 2;
     public minX1: number = 0;
     public maxX1: number = 0.9 * Math.PI;
-    public godet: Mesh;
+    public godet: PelleteusePart;
+
+    public get pelleteuse(): Pelleteuse {
+        return this;
+    }
     
-    public throttle: number = 0;
-    public turn: number = 0;
+    public get throttle(): number {
+        if (this.game.player.pelleteuse === this) {
+            return this.game.player.forwardInput - this.game.player.backwardInput;
+        }
+        return 0;
+    }
+    public get turn(): number {
+        if (this.game.player.pelleteuse === this) {
+            return this.game.player.rightInput - this.game.player.leftInput;
+        }
+        return 0;
+    }
     public rXSpeed: number = 0;
     public rZSpeed: number = 0;
 
@@ -54,7 +78,7 @@ export class Pelleteuse extends Mesh {
 
         this.material = MakeStandardMaterial(new Color3(0.1, 0.2, 0.1));
 
-        this.cabine = new Mesh("pelleteuse_cabine", null);
+        this.cabine = new PelleteusePart("pelleteuse_cabine", this);
         this.cabine.material = MakeStandardMaterial(new Color3(1, 0.8, 0.1));
         this.cabine.parent = this;
 
@@ -64,49 +88,19 @@ export class Pelleteuse extends Mesh {
         this.head.rotation.y = this.cabine.rotation.y + AngleFromToAround(Vector3.Forward(), Vector3.Normalize(new Vector3(this.forward.x, 0, this.forward.z)), Vector3.Up());
         this.head.visibility = 0.5;
 
-        this.bras0 = new Mesh("pelleteuse_bras0", null);
+        this.bras0 = new PelleteusePart("pelleteuse_bras0", this);
         this.bras0.material = MakeStandardMaterial(new Color3(1, 0.8, 0.1));
         this.bras0.parent = this.cabine;
         this.bras0.rotation.x = - Math.PI / 3;
 
-        this.bras1 = new Mesh("pelleteuse_bras1", null);
+        this.bras1 = new PelleteusePart("pelleteuse_bras1", this);
         this.bras1.material = MakeStandardMaterial(new Color3(1, 0.8, 0.1));
         this.bras1.parent = this.bras0;
         this.bras1.rotation.x = Math.PI / 2;
 
-        this.godet = new Mesh("pelleteuse_godet", null);
+        this.godet = new PelleteusePart("pelleteuse_godet", this);
         this.godet.material = MakeStandardMaterial(new Color3(0.1, 0.2, 0.1));
         this.godet.parent = this.bras1;
-                
-        this.game.canvas.addEventListener("keydown", (event) => {
-            if (event.code === "KeyW") {
-                this.throttle = 1;
-            }
-            else if (event.code === "KeyS") {
-                this.throttle = -1;
-            }
-            else if (event.code === "KeyA") {
-                this.turn = -1;
-            }
-            else if (event.code === "KeyD") {
-                this.turn = 1;
-            }
-        });
-        
-        this.game.canvas.addEventListener("keyup", (event) => {
-            if (event.code === "KeyW") {
-                this.throttle = 0;
-            }
-            else if (event.code === "KeyS") {
-                this.throttle = 0;
-            }
-            else if (event.code === "KeyA") {
-                this.turn = 0;
-            }
-            else if (event.code === "KeyD") {
-                this.turn = 0;
-            }
-        });
     }
 
     public async instantiate(): Promise<void> {
@@ -137,7 +131,7 @@ export class Pelleteuse extends Mesh {
     private _update = () => {
         if (this.game.terrain) {
             this.head.position.copyFrom(this.absolutePosition);
-            this.head.position.y += 2.5 + this.cabine.position.y;
+            this.head.position.y += 3.5 + this.cabine.position.y;
             this.head.rotation.y = this.cabine.rotation.y + AngleFromToAround(Vector3.Forward(), Vector3.Normalize(new Vector3(this.forward.x, 0, this.forward.z)), Vector3.Up());
 
             let material = this.game.terrain.getMaterial(0) as TerrainMaterial;
@@ -304,7 +298,7 @@ export class Pelleteuse extends Mesh {
 
                         if (this.digging && !this.replacing) {
                             let affectedChuncks: Chunck[] = [];
-                            let w = 2;
+                            let w = 4;
                             for (let x = 0; x < w; x++) {
                                 for (let y = 0; y < 3; y++) {
                                     let p = pickedPoint.add(this.diggingRight.scale((x - (w - 1) * 0.5) * 0.5)).add(this.diggingNormal.scale(- 0.2 + y * 0.5));

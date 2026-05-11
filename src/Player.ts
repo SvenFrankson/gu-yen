@@ -1,7 +1,7 @@
 import { Mesh } from "@babylonjs/core/Meshes/mesh";
 import { Game } from "./Game";
 import { MeshBuilder } from "@babylonjs/core/Meshes/meshBuilder";
-import { Pelleteuse } from "./vehicles/Pelleteuse";
+import { IPelleteuse, Pelleteuse, PelleteusePart } from "./vehicles/Pelleteuse";
 import { Chunck } from "./voxel-engine/Chunck";
 import { Ray } from "@babylonjs/core/Culling/ray.core";
 import { Vector3, Matrix, TransformNode } from "@babylonjs/core";
@@ -23,6 +23,8 @@ export class Player extends Mesh {
     public backwardInput: number = 0;
     public leftInput: number = 0;
     public rightInput: number = 0;
+
+    public aimedObject: Pelleteuse | undefined;
 
     public get zInput(): number {
         return this.forwardInput - this.backwardInput;
@@ -61,6 +63,12 @@ export class Player extends Mesh {
                     this.pelleteuse.replacing = false;
                 }
             }
+            else if (event.code === "Space") {
+                if (this.pelleteuse) {
+                    this.position.copyFrom(this.pelleteuse.cabine.absolutePosition).addInPlace(this.pelleteuse.cabine.right.scale(-2));
+                    this.pelleteuse = undefined;
+                }
+            }
         });
         
         this.game.canvas.addEventListener("keyup", (event) => {
@@ -79,6 +87,9 @@ export class Player extends Mesh {
             else if (event.code === "KeyE") {
                 if (this.pelleteuse) {
                     this.pelleteuse.digging = false;       
+                }
+                else if (this.aimedObject) {
+                    this.pelleteuse = this.aimedObject;
                 }
             }
         });
@@ -127,6 +138,17 @@ export class Player extends Mesh {
             else {
                 this.position.addInPlace(this.forward.scale(this.zInput * 0.1));
                 this.position.addInPlace(this.right.scale(this.xInput * 0.1));
+
+                let aimRay = new Ray(this.head.absolutePosition, this.head.forward, 10);
+                let aimPickInfo = this.game.scene.pickWithRay(aimRay, (mesh) => {
+                    return mesh instanceof PelleteusePart;
+                });
+                if (aimPickInfo && aimPickInfo.pickedMesh instanceof PelleteusePart) {
+                    this.aimedObject = aimPickInfo.pickedMesh.pelleteuse;
+                }
+                else {
+                    this.aimedObject = undefined;
+                }
 
                 let ray = new Ray(this.position.add(new Vector3(0, 1.8, 0)), Vector3.Down(), 500);
                 if (!this.targetPosition) {
