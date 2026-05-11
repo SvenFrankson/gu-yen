@@ -1,11 +1,14 @@
 import { Mesh } from "@babylonjs/core/Meshes/mesh";
 import { GetGLTFMeshDataArray } from "../VertexDataUtils";
-import { MeshBuilder, PhysicsBody, PhysicsMotionType, PhysicsShapeConvexHull, Plane, Ray, Space, Vector3 } from "@babylonjs/core";
+import { Color3, MeshBuilder, PhysicsBody, PhysicsMotionType, PhysicsShapeConvexHull, Plane, Ray, Space, StandardMaterial, Vector3 } from "@babylonjs/core";
 import { Game } from "../Game";
 import { Chunck } from "../voxel-engine/Chunck";
-import { Rotate, RotateInPlace } from "babylonjs-geometry-kit";
+import { AngleFromToAround, Rotate, RotateInPlace } from "babylonjs-geometry-kit";
 import { BlockType } from "../voxel-engine/BlockType";
 import { FloatingBlocksDetector } from "../voxel-engine/FloatingBlocksDetector";
+import { MakeStandardMaterial } from "../MaterialUtils";
+import { StepAngle } from "../Number";
+import { TerrainMaterial } from "../TerrainMaterial";
 
 export class Pelleteuse extends Mesh {
     
@@ -25,26 +28,39 @@ export class Pelleteuse extends Mesh {
     public rZSpeed: number = 0;
 
     public digging: boolean = false;
+    public lastGodetDist: number = 0;
+    public replacing: boolean = false;
+    //public get replacing(): boolean {
+    //    return Vector3.Distance(this.godet.absolutePosition, this.cabine.absolutePosition) > this.lastGodetDist;
+    //}
     public diggingStart: Vector3 = Vector3.Zero();
-    public diggingNormal: Vector3 = Vector3.Zero();
+    public diggingNormal: Vector3 = Vector3.Up();
     public diggingAxis: Vector3 = Vector3.Forward();
+    public diggingRight: Vector3 = Vector3.Right();
+
+    public red: StandardMaterial;
+    public green: StandardMaterial;
 
     constructor(public game: Game) {
         super("pelleteuse", null);
 
+        this.red = MakeStandardMaterial(new Color3(1, 0.2, 0.2));
+        this.green = MakeStandardMaterial(new Color3(0.2, 1, 0.2));
+
         this.cabine = new Mesh("pelleteuse_cabine", null);
+        this.cabine.material = MakeStandardMaterial(new Color3(0.8, 0.8, 0.2));
         this.cabine.parent = this;
 
         this.head = MeshBuilder.CreateSphere("player-visual", { diameter: 0.1 }, game.scene);
         this.head.visibility = 0.5;
-        this.head.parent = this.cabine;
-        this.head.position.y = 2.5;
 
         this.bras0 = new Mesh("pelleteuse_bras0", null);
+        this.bras0.material = MakeStandardMaterial(new Color3(0.8, 0.8, 0.2));
         this.bras0.parent = this.cabine;
         this.bras0.rotation.x = - Math.PI / 3;
 
         this.bras1 = new Mesh("pelleteuse_bras1", null);
+        this.bras1.material = MakeStandardMaterial(new Color3(0.8, 0.8, 0.2));
         this.bras1.parent = this.bras0;
         this.bras1.rotation.x = Math.PI / 2;
 
@@ -96,11 +112,11 @@ export class Pelleteuse extends Mesh {
             this.bras0.position = dataArray[3].position.subtract(dataArray[2].position);
 
             dataArray[4].vertexData.applyToMesh(this.bras1);
-            this.bras1.position = dataArray[4].position.subtract(dataArray[3].position);
+            this.bras1.position.z = dataArray[4].position.subtract(dataArray[3].position).length();
             this.l0 = this.bras1.position.length();
 
             dataArray[5].vertexData.applyToMesh(this.godet);
-            this.godet.position = dataArray[5].position.subtract(dataArray[4].position);
+            this.godet.position.z = dataArray[5].position.subtract(dataArray[4].position).length();
             this.l1 = this.godet.position.length();
         }
 
@@ -108,7 +124,15 @@ export class Pelleteuse extends Mesh {
     }
 
     private _update = () => {
-        if (this.game.terrain) {     
+        if (this.game.terrain) {
+
+            this.head.position.copyFrom(this.absolutePosition);
+            this.head.position.y += 3.5 + this.cabine.position.y;
+            this.head.rotation.y = this.cabine.rotation.y + AngleFromToAround(Vector3.Forward(), Vector3.Normalize(new Vector3(this.forward.x, 0, this.forward.z)), Vector3.Up());
+
+            let material = this.game.terrain.getMaterial(0) as TerrainMaterial;
+            material.setRangePosition(this.cabine.absolutePosition);
+            material.setRangeRadius(this.l0 + this.l1);
             let targetY = this.position.y;       
             let ijk = this.game.terrain.getChunckAndIJKAtPos(this.position, 0, false);
             let chuncks: Chunck[] = []
@@ -128,10 +152,10 @@ export class Pelleteuse extends Mesh {
                     }
                 }
 
-                let p00 = Vector3.TransformCoordinates(new Vector3(-1, 0.5, -1.5), this.getWorldMatrix());
-                let p10 = Vector3.TransformCoordinates(new Vector3(1, 0.5, -1.5), this.getWorldMatrix());
-                let p01 = Vector3.TransformCoordinates(new Vector3(-1, 0.5, 1.5), this.getWorldMatrix());
-                let p11 = Vector3.TransformCoordinates(new Vector3(1, 0.5, 1.5), this.getWorldMatrix());
+                let p00 = Vector3.TransformCoordinates(new Vector3(-1.11, 0.5, -1.66), this.getWorldMatrix());
+                let p10 = Vector3.TransformCoordinates(new Vector3(1.11, 0.5, -1.66), this.getWorldMatrix());
+                let p01 = Vector3.TransformCoordinates(new Vector3(-1.11, 0.5, 1.66), this.getWorldMatrix());
+                let p11 = Vector3.TransformCoordinates(new Vector3(1.11, 0.5, 1.66), this.getWorldMatrix());
                 
                 let ray00 = new Ray(p00, this.up.scale(-1), 500);
                 let ray10 = new Ray(p10, this.up.scale(-1), 500);
@@ -204,6 +228,12 @@ export class Pelleteuse extends Mesh {
             this.rZSpeed *= 0.96;
 
             if (this.game.player.pelleteuse === this) {
+                if (this.digging && !this.replacing) {
+                    this.godet.material = this.green;
+                }
+                else {
+                    this.godet.material = this.red;
+                }
                 let ray = new Ray(this.head.absolutePosition, this.head.forward, 500);
                 let pickedPoint: Vector3 | null = null;
                 let pickedNormal: Vector3 | null = null;
@@ -213,6 +243,9 @@ export class Pelleteuse extends Mesh {
                     if (d !== null) {
                         pickedPoint = ray.origin.add(ray.direction.scale(d));
                         pickedNormal = this.diggingNormal;
+                        if (this.replacing) {
+                            pickedPoint.addInPlace(pickedNormal!.scale(2));
+                        }
                     }
                 }
                 else {
@@ -223,16 +256,23 @@ export class Pelleteuse extends Mesh {
                             pickedNormal = pickInfo.getNormal(true);
                             this.diggingStart.copyFrom(pickedPoint);
                             this.diggingNormal.copyFrom(pickedNormal!);
-                            if (this.diggingNormal.y > 0.5) {
+                            if (this.diggingNormal.y > Math.SQRT2 / 2) {
                                 this.diggingNormal.set(0, 1, 0);
+                            }
+                            else if (this.diggingNormal.y < 0.3) {
+                                this.diggingNormal.y = 0;
+                                this.diggingNormal.normalize();
                             }
                             this.diggingAxis.copyFrom(this.diggingNormal);
                             RotateInPlace(this.diggingAxis, this.cabine.right, - Math.PI / 2);
-                            pickedPoint.addInPlace(pickedNormal!.scale(0.5));
+                            this.diggingRight = Vector3.Cross(this.diggingNormal, this.diggingAxis);
+                            pickedPoint.addInPlace(pickedNormal!.scale(2));
                             break;
                         }
                     }
                 }
+
+                let f = 0.99;
                 if (pickedPoint) {
                     let d = Vector3.Distance(pickedPoint, this.bras0.absolutePosition);
                     if (d > this.l0 + this.l1) {
@@ -240,6 +280,7 @@ export class Pelleteuse extends Mesh {
                         this.targetX1 = Math.PI / 2;
                     }
                     else {
+                        f = 0.95;
                         let dZ = Vector3.Dot(pickedPoint.subtract(this.bras0.absolutePosition), this.cabine.forward);
                         let dY = Vector3.Dot(pickedPoint.subtract(this.bras0.absolutePosition), this.cabine.up);
                         let alpha0 = - Math.atan2(dY, dZ);
@@ -250,27 +291,40 @@ export class Pelleteuse extends Mesh {
                         //console.log(alpha0 / Math.PI * 180, a0 / Math.PI * 180, a1 / Math.PI * 180);
                         this.targetX0 = - (a0 - alpha0);
                         this.targetX1 = Math.PI - a1;
-                    }
 
-                    if (this.digging) {
-                        let ijk = this.game.terrain.getChunckAndIJKAtPos(pickedPoint.subtract(this.diggingNormal.scale(0.2)), 0, false);
-                        if (ijk) {
-                            let block = BlockType.None;
-                            let chunck = ijk.chunck;
-                            if (chunck.getData(ijk.ijk.i, ijk.ijk.j, ijk.ijk.k) !== BlockType.None) {
-                                let affectedChuncks = chunck.setData(block, ijk.ijk.i, ijk.ijk.j, ijk.ijk.k);
-                                //let floatingChunks = this.floatingBlocksDetector?.findFloatingBlocks(chunck.iPos * this.game.terrain!.chunckLengthIJ + ijk.ijk.i, chunck.jPos * this.game.terrain!.chunckLengthIJ + ijk.ijk.j, ijk.ijk.k);
-                                //if (floatingChunks) {
-                                //    affectedChuncks.push(...floatingChunks.array);
-                                //}
-                                affectedChuncks.forEach(c => c.redrawMesh(true));
+                        if (this.digging && !this.replacing) {
+                            let affectedChuncks: Chunck[] = [];
+                            let w = 2;
+                            for (let x = 0; x < w; x++) {
+                                for (let y = 0; y < 3; y++) {
+                                    let p = pickedPoint.add(this.diggingRight.scale((x - (w - 1) * 0.5) * 0.5)).add(this.diggingNormal.scale(- 0.2 + y * 0.5));
+                                    let ijk = this.game.terrain.getChunckAndIJKAtPos(p, 0, false);
+                                    if (ijk) {
+                                        let block = BlockType.None;
+                                        let chunck = ijk.chunck;
+                                        if (chunck.getData(ijk.ijk.i, ijk.ijk.j, ijk.ijk.k) !== BlockType.None) {
+                                            let newAffectedChuncks = chunck.setData(block, ijk.ijk.i, ijk.ijk.j, ijk.ijk.k);
+                                            //let floatingChunks = this.floatingBlocksDetector?.findFloatingBlocks(chunck.iPos * this.game.terrain!.chunckLengthIJ + ijk.ijk.i, chunck.jPos * this.game.terrain!.chunckLengthIJ + ijk.ijk.j, ijk.ijk.k);
+                                            //if (floatingChunks) {
+                                            //    newAffectedChuncks.push(...floatingChunks.array);
+                                            //}
+                                            affectedChuncks.push(...newAffectedChuncks);
+                                        }
+                                    }
+                                }
                             }
+                            affectedChuncks.forEach(c => c.redrawMesh(true));
                         }
                     }
                 }
 
-                this.bras0.rotation.x = this.bras0.rotation.x * 0.97 + this.targetX0 * 0.03;
-                this.bras1.rotation.x = this.bras1.rotation.x * 0.97 + this.targetX1 * 0.03;
+                //this.bras0.rotation.x = StepAngle(this.bras0.rotation.x, this.targetX0, this.maxrXSpeed);
+                //this.bras1.rotation.x = StepAngle(this.bras1.rotation.x, this.targetX1, this.maxrXSpeed);
+
+                this.bras0.rotation.x = this.bras0.rotation.x * f + this.targetX0 * (1 - f);
+                this.bras1.rotation.x = this.bras1.rotation.x * f + this.targetX1 * (1 - f);
+
+                this.lastGodetDist = Vector3.Distance(this.godet.absolutePosition, this.cabine.absolutePosition);
             }
         }
     }

@@ -28,6 +28,8 @@ export class TerrainMaterial extends ShaderMaterial {
                     "blockSize_m",
                     "blockHeight_m",
                     "cameraPosition",
+                    "rangeRadius_m",
+                    "rangePosition"
                 ]
             }
             );
@@ -106,5 +108,12 @@ export class TerrainMaterial extends ShaderMaterial {
     public setLevel(v: number): void {
         this._level = v;
         this.setInt("level", this._level);
+    }
+
+    public setRangeRadius(radius: number): void {
+        this.setFloat("rangeRadius_m", radius);
+    }
+    public setRangePosition(pos: Vector3): void {
+        this.setVector3("rangePosition", pos);
     }
 }

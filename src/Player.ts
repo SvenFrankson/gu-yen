@@ -53,8 +53,9 @@ export class Player extends Mesh {
                 this.rightInput = 1;
             }
             else if (event.code === "KeyE") {
-                if (this.pelleteuse) {
-                    this.pelleteuse.digging = true;       
+                if (this.pelleteuse && !this.pelleteuse.digging) {
+                    this.pelleteuse.digging = true;
+                    this.pelleteuse.replacing = false;
                 }
             }
         });
@@ -160,11 +161,19 @@ export class Player extends Mesh {
         if (this._pointerIsDown) {
             if (this.pelleteuse) {
                 if (this.pelleteuse.digging) {
+                    this.pelleteuse.cabine.rotation.y += e.movementX * 0.0005;
                     this.pelleteuse.head.rotation.x += e.movementY * 0.002;
                 }
                 else {
                     this.pelleteuse.cabine.rotation.y += e.movementX * 0.004;
                     this.pelleteuse.head.rotation.x += e.movementY * 0.004;
+                }
+
+                if (e.movementY > 0) {
+                    this.pelleteuse.replacing = false;
+                }
+                else if (e.movementY < 0) {
+                    this.pelleteuse.replacing = true;
                 }
             }
             else {

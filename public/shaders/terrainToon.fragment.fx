@@ -22,6 +22,8 @@ uniform sampler3D noiseTexture;
 uniform sampler3D lightTexture;
 uniform vec3 debugColor;
 uniform vec3 cameraPosition;
+uniform float rangeRadius_m;
+uniform vec3 rangePosition;
 
 in vec3 vPositionL;
 in vec3 vPositionW;
@@ -328,6 +330,13 @@ void main() {
       }
       else {
          lightFactor *= 0.9;
+      }
+   }
+   
+   if (rangeRadius_m > 0.) {
+      float distToRange = distance(vPositionW, rangePosition);
+      if (abs(distToRange - rangeRadius_m) < 0.05) {
+         color = vec3(1., 1., 1.);
       }
    }
 
