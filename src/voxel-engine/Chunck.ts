@@ -679,7 +679,7 @@ export class Chunck {
         }
     }
 
-    public async redrawMesh(force?: boolean): Promise<void> {
+    public async redrawMesh(force?: boolean, forcePhysic?: boolean): Promise<void> {
         if (!this.subdivided) {
             if (this.level <= this.terrain.maxDisplayedLevel) {
                 let t0: number = 0;
@@ -712,20 +712,15 @@ export class Chunck {
                         vertexData.applyToMesh(this.mesh);
                         this.mesh.position.copyFrom(this.position);
 
-                        /*
-                        if (this.physicBody) {
-                            this.physicBody.dispose();
+                        if (forcePhysic) {
+                            this.updatePhysic();
                         }
-                        this.physicBody = new PhysicsBody(this.mesh, PhysicsMotionType.STATIC, false, this.terrain.scene);
-                        this.physicBody.setMassProperties({
-                            mass: 0
-                        });
-                        this.physicBody.shape = new PhysicsShapeMesh(
-                            this.mesh,
-                            this.terrain.scene
-                        );
-                        this.physicBody.shape.material = {friction: 0.8, restitution: 0.1};
-                        */
+                        else {
+                            clearTimeout(this._updatePhysicTimeout);
+                            this._updatePhysicTimeout = setTimeout(() => {
+                                this.updatePhysic();
+                            }, 500);
+                        }
 
                         if (this.terrain.customChunckMaterialSet) {
                             this.terrain.customChunckMaterialSet(this);
@@ -749,6 +744,24 @@ export class Chunck {
                     }
                 }
             }
+        }
+    }
+
+    private _updatePhysicTimeout: number | undefined;
+    public updatePhysic(): void {
+        if (this.mesh && !this.mesh.isDisposed()) {
+            if (this.physicBody) {
+                this.physicBody.dispose();
+            }
+            this.physicBody = new PhysicsBody(this.mesh, PhysicsMotionType.STATIC, false, this.terrain.scene);
+            this.physicBody.setMassProperties({
+                mass: 0
+            });
+            this.physicBody.shape = new PhysicsShapeMesh(
+                this.mesh,
+                this.terrain.scene
+            );
+            this.physicBody.shape.material = {friction: 0.8, restitution: 0.1};
         }
     }
 

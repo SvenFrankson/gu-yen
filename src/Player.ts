@@ -68,6 +68,9 @@ export class Player extends Mesh {
                     this.position.copyFrom(this.pelleteuse.cabine.absolutePosition).addInPlace(this.pelleteuse.cabine.right.scale(-2));
                     this.pelleteuse.dropControl();
                 }
+                else {
+                    this.fly = !this.fly;
+                }
             }
         });
         
@@ -136,7 +139,12 @@ export class Player extends Mesh {
                 this.rotation.copyFrom(this.pelleteuse.rotation);
             }
             else {
-                this.position.addInPlace(this.forward.scale(this.zInput * 0.1));
+                if (this.fly) {
+                    this.position.addInPlace(this.head.forward.scale(this.zInput * 0.1));
+                }
+                else {
+                    this.position.addInPlace(this.forward.scale(this.zInput * 0.1));
+                }
                 this.position.addInPlace(this.right.scale(this.xInput * 0.1));
 
                 let aimRay = new Ray(this.head.absolutePosition, this.head.forward, 10);

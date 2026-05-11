@@ -35,12 +35,6 @@ export class MyCamera extends UniversalCamera {
 
         this.game.scene.onBeforeRenderObservable.add(this._update);
 
-        window.addEventListener("keydown", (event) => {
-            if (event.code === "Space") {
-                this.player.fly = !this.player.fly;
-            }
-        });
-
         this.game.canvas.addEventListener("pointerdown", this._pointerDown);
 
         document.getElementById("add-concrete")?.addEventListener("click", () => {
@@ -90,13 +84,15 @@ export class MyCamera extends UniversalCamera {
                         }
                         let chunck = ijk.chunck;
                         let affectedChuncks = chunck.setData(block, ijk.ijk.i, ijk.ijk.j, ijk.ijk.k);
+                        let floatingCount = 0;
                         if (this.editionMode === 2) {
                             let floatingChunks = this.floatingBlocksDetector?.findFloatingBlocks(chunck.iPos * this.game.terrain!.chunckLengthIJ + ijk.ijk.i, chunck.jPos * this.game.terrain!.chunckLengthIJ + ijk.ijk.j, ijk.ijk.k);
                             if (floatingChunks) {
+                                floatingCount = floatingChunks.array.length;
                                 affectedChuncks.push(...floatingChunks.array);
                             }
                         }
-                        affectedChuncks.forEach(c => c.redrawMesh(true));
+                        affectedChuncks.forEach(c => c.redrawMesh(true, floatingCount > 0));
                     }
                 }
             }

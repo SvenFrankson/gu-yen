@@ -71,6 +71,7 @@ export class Minimap extends HTMLElement {
                         height *= this.game.terrain.blockSizeK_m;
                         console.log("height: " + height);
                         this.game.player.position = new Vector3(x, height + 4, z);
+                        this.game.player.targetPosition = this.game.player.position.clone();
                     }
                 }
             }
