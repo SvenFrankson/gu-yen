@@ -1,24 +1,44 @@
 import { Mesh } from "@babylonjs/core/Meshes/mesh";
 import { GetGLTFMeshDataArray } from "../VertexDataUtils";
-import { PhysicsBody, PhysicsMotionType, PhysicsShapeConvexHull, Ray, Space, Vector3 } from "@babylonjs/core";
+import { MeshBuilder, PhysicsBody, PhysicsMotionType, PhysicsShapeConvexHull, Plane, Ray, Space, Vector3 } from "@babylonjs/core";
 import { Game } from "../Game";
 import { Chunck } from "../voxel-engine/Chunck";
+import { Rotate, RotateInPlace } from "babylonjs-geometry-kit";
+import { BlockType } from "../voxel-engine/BlockType";
+import { FloatingBlocksDetector } from "../voxel-engine/FloatingBlocksDetector";
 
 export class Pelleteuse extends Mesh {
     
+    public head: Mesh;
     public cabine: Mesh;
     public bras0: Mesh;
+    public l0: number = 3;
+    public targetX0: number = - Math.PI / 3;
     public bras1: Mesh;
+    public l1: number = 3;
+    public targetX1: number = Math.PI / 2;
     public godet: Mesh;
     
     public throttle: number = 0;
     public turn: number = 0;
+    public rXSpeed: number = 0;
+    public rZSpeed: number = 0;
+
+    public digging: boolean = false;
+    public diggingStart: Vector3 = Vector3.Zero();
+    public diggingNormal: Vector3 = Vector3.Zero();
+    public diggingAxis: Vector3 = Vector3.Forward();
 
     constructor(public game: Game) {
         super("pelleteuse", null);
 
         this.cabine = new Mesh("pelleteuse_cabine", null);
         this.cabine.parent = this;
+
+        this.head = MeshBuilder.CreateSphere("player-visual", { diameter: 0.1 }, game.scene);
+        this.head.visibility = 0.5;
+        this.head.parent = this.cabine;
+        this.head.position.y = 2.5;
 
         this.bras0 = new Mesh("pelleteuse_bras0", null);
         this.bras0.parent = this.cabine;
@@ -77,9 +97,11 @@ export class Pelleteuse extends Mesh {
 
             dataArray[4].vertexData.applyToMesh(this.bras1);
             this.bras1.position = dataArray[4].position.subtract(dataArray[3].position);
+            this.l0 = this.bras1.position.length();
 
             dataArray[5].vertexData.applyToMesh(this.godet);
             this.godet.position = dataArray[5].position.subtract(dataArray[4].position);
+            this.l1 = this.godet.position.length();
         }
 
         this.game.scene.onBeforeRenderObservable.add(this._update);
@@ -106,10 +128,10 @@ export class Pelleteuse extends Mesh {
                     }
                 }
 
-                let p00 = Vector3.TransformCoordinates(new Vector3(-0.5, 0.5, -1.5), this.getWorldMatrix());
-                let p10 = Vector3.TransformCoordinates(new Vector3(0.5, 0.5, -1.5), this.getWorldMatrix());
-                let p01 = Vector3.TransformCoordinates(new Vector3(-0.5, 0.5, 1.5), this.getWorldMatrix());
-                let p11 = Vector3.TransformCoordinates(new Vector3(0.5, 0.5, 1.5), this.getWorldMatrix());
+                let p00 = Vector3.TransformCoordinates(new Vector3(-1, 0.5, -1.5), this.getWorldMatrix());
+                let p10 = Vector3.TransformCoordinates(new Vector3(1, 0.5, -1.5), this.getWorldMatrix());
+                let p01 = Vector3.TransformCoordinates(new Vector3(-1, 0.5, 1.5), this.getWorldMatrix());
+                let p11 = Vector3.TransformCoordinates(new Vector3(1, 0.5, 1.5), this.getWorldMatrix());
                 
                 let ray00 = new Ray(p00, this.up.scale(-1), 500);
                 let ray10 = new Ray(p10, this.up.scale(-1), 500);
@@ -155,22 +177,103 @@ export class Pelleteuse extends Mesh {
 
                 if (intersect00 && intersect10 && intersect01 && intersect11) {
                     let avgY = (intersect00.y + intersect10.y + intersect01.y + intersect11.y) / 4;
-                    targetY = avgY + 0.5;
+                    targetY = avgY + 0.4;
                     dig00 = Vector3.Distance(intersect00, p00);
                     dig10 = Vector3.Distance(intersect10, p10);
                     dig01 = Vector3.Distance(intersect01, p01);
                     dig11 = Vector3.Distance(intersect11, p11);
 
-                    this.rotate(Vector3.Forward(), 0.01 * (dig00 - dig10), Space.LOCAL);
-                    this.rotate(Vector3.Forward(), 0.01 * (dig01 - dig11), Space.LOCAL);
-                    this.rotate(Vector3.Right(), 0.01 * (dig01 - dig00), Space.LOCAL);
-                    this.rotate(Vector3.Right(), 0.01 * (dig11 - dig10), Space.LOCAL);
+                    this.rZSpeed += 0.5 * ((dig00 - dig10) + (dig01 - dig11));
+                    this.rXSpeed += 0.5 * ((dig01 - dig00) + (dig11 - dig10));
+
+                    this.rXSpeed = Math.max(Math.min(this.rXSpeed, Math.PI), -Math.PI);
+                    this.rZSpeed = Math.max(Math.min(this.rZSpeed, Math.PI), -Math.PI);
+
+                    this._maxRXSpeed = Math.max(this._maxRXSpeed, Math.abs(this.rXSpeed));
+                    this._maxRZSpeed = Math.max(this._maxRZSpeed, Math.abs(this.rZSpeed));
                 }
             }
 
-            this.rotate(Vector3.Up(), this.turn * 0.01);
-            this.position.addInPlace(this.forward.scale(this.throttle * 0.05));
+            this.rotate(Vector3.Up(), this.turn * 0.01, Space.LOCAL);
+            this.rotate(Vector3.Right(), this.rXSpeed * 0.003, Space.LOCAL);
+            this.rotate(Vector3.Forward(), this.rZSpeed * 0.003, Space.LOCAL);
+            this.position.addInPlace(this.forward.scale(this.throttle * 0.04));
             this.position.y = this.position.y * 0.95 + targetY * 0.05;
+
+            this.rXSpeed *= 0.96;
+            this.rZSpeed *= 0.96;
+
+            if (this.game.player.pelleteuse === this) {
+                let ray = new Ray(this.head.absolutePosition, this.head.forward, 500);
+                let pickedPoint: Vector3 | null = null;
+                let pickedNormal: Vector3 | null = null;
+                if (this.digging) {
+                    let bjsPlane = Plane.FromPositionAndNormal(this.diggingStart, this.diggingNormal);
+                    let d = ray.intersectsPlane(bjsPlane);
+                    if (d !== null) {
+                        pickedPoint = ray.origin.add(ray.direction.scale(d));
+                        pickedNormal = this.diggingNormal;
+                    }
+                }
+                else {
+                    let pickInfos = ray.intersectsMeshes(this.game.player.chuncks.map(c => c.mesh!).filter(m => m));
+                    for (let pickInfo of pickInfos) {
+                        if (pickInfo && pickInfo.hit && pickInfo.pickedPoint) {
+                            pickedPoint = pickInfo.pickedPoint;
+                            pickedNormal = pickInfo.getNormal(true);
+                            this.diggingStart.copyFrom(pickedPoint);
+                            this.diggingNormal.copyFrom(pickedNormal!);
+                            if (this.diggingNormal.y > 0.5) {
+                                this.diggingNormal.set(0, 1, 0);
+                            }
+                            this.diggingAxis.copyFrom(this.diggingNormal);
+                            RotateInPlace(this.diggingAxis, this.cabine.right, - Math.PI / 2);
+                            pickedPoint.addInPlace(pickedNormal!.scale(0.5));
+                            break;
+                        }
+                    }
+                }
+                if (pickedPoint) {
+                    let d = Vector3.Distance(pickedPoint, this.bras0.absolutePosition);
+                    if (d > this.l0 + this.l1) {
+                        this.targetX0 = - Math.PI / 3;
+                        this.targetX1 = Math.PI / 2;
+                    }
+                    else {
+                        let dZ = Vector3.Dot(pickedPoint.subtract(this.bras0.absolutePosition), this.cabine.forward);
+                        let dY = Vector3.Dot(pickedPoint.subtract(this.bras0.absolutePosition), this.cabine.up);
+                        let alpha0 = - Math.atan2(dY, dZ);
+
+                        let a0 = Math.acos((this.l0 * this.l0 + d * d - this.l1 * this.l1) / (2 * this.l0 * d));
+                        let a1 = Math.acos((this.l0 * this.l0 + this.l1 * this.l1 - d * d) / (2 * this.l0 * this.l1));
+
+                        //console.log(alpha0 / Math.PI * 180, a0 / Math.PI * 180, a1 / Math.PI * 180);
+                        this.targetX0 = - (a0 - alpha0);
+                        this.targetX1 = Math.PI - a1;
+                    }
+
+                    if (this.digging) {
+                        let ijk = this.game.terrain.getChunckAndIJKAtPos(pickedPoint.subtract(this.diggingNormal.scale(0.2)), 0, false);
+                        if (ijk) {
+                            let block = BlockType.None;
+                            let chunck = ijk.chunck;
+                            if (chunck.getData(ijk.ijk.i, ijk.ijk.j, ijk.ijk.k) !== BlockType.None) {
+                                let affectedChuncks = chunck.setData(block, ijk.ijk.i, ijk.ijk.j, ijk.ijk.k);
+                                //let floatingChunks = this.floatingBlocksDetector?.findFloatingBlocks(chunck.iPos * this.game.terrain!.chunckLengthIJ + ijk.ijk.i, chunck.jPos * this.game.terrain!.chunckLengthIJ + ijk.ijk.j, ijk.ijk.k);
+                                //if (floatingChunks) {
+                                //    affectedChuncks.push(...floatingChunks.array);
+                                //}
+                                affectedChuncks.forEach(c => c.redrawMesh(true));
+                            }
+                        }
+                    }
+                }
+
+                this.bras0.rotation.x = this.bras0.rotation.x * 0.97 + this.targetX0 * 0.03;
+                this.bras1.rotation.x = this.bras1.rotation.x * 0.97 + this.targetX1 * 0.03;
+            }
         }
     }
+    private _maxRXSpeed = 0;
+    private _maxRZSpeed = 0;
 }

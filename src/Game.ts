@@ -18,6 +18,7 @@ import { generateBuildingData } from "./data/BuildingData";
 import { Chunck } from "./voxel-engine/Chunck";
 import HavokPhysics from "@babylonjs/havok";
 import { Pelleteuse } from "./vehicles/Pelleteuse";
+import { Player } from "./Player";
 
 export class Game {
 
@@ -27,6 +28,7 @@ export class Game {
     public scene: Scene;
     public camera: MyCamera;
     public terrain: Terrain | undefined;
+    public player: Player;
     public geoConverter: GeoConverter = new GeoConverter();
     public skybox: Mesh;
 
@@ -36,7 +38,8 @@ export class Game {
         this.engine = new Engine(canvas, true)
         this.scene = new Scene(this.engine);
         this.scene.clearColor.set(0, 0, 1, 1);
-        this.camera = new MyCamera(this);
+        this.player = new Player(this);
+        this.camera = new MyCamera(this.player, this);
         let light = new HemisphericLight("light", new Vector3(1, 3, -2), this.scene);
         light.direction = (new Vector3(2, 1, -1.5)).normalize();
         light.intensity = 0.7;
@@ -117,8 +120,8 @@ export class Game {
             else if (event.code === "Numpad3") {
                 let pelleteuse = new Pelleteuse(this);
                 pelleteuse.instantiate();
-                pelleteuse.position = this.camera.position.add(this.camera.getForwardRay().direction.scale(5));
-                this.camera.pelleteuse = pelleteuse;
+                pelleteuse.position = this.player.position.add(this.player.forward.scale(5));
+                this.player.pelleteuse = pelleteuse;
             }
         });
 

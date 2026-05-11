@@ -8,30 +8,24 @@ import { Chunck } from "./voxel-engine/Chunck";
 import { BlockType } from "./voxel-engine/BlockType";
 import { FloatingBlocksDetector } from "./voxel-engine/FloatingBlocksDetector";
 import { Pelleteuse } from "./vehicles/Pelleteuse";
+import { Player } from "./Player";
+import { QuaternionFromZYAxis } from "babylonjs-geometry-kit";
 
 export class MyCamera extends UniversalCamera {
 
-    public targetPosition?: Vector3;
-    public targetSpeed: number = 1;
-    public currentSpeed: number = 0;
-    public fly: boolean = false;
-    public chuncks: Chunck[] = [];
     public floatingBlocksDetector?: FloatingBlocksDetector;
 
     public editionMode: number = 0;
 
     public pointer: Mesh;
 
-    public pelleteuse: Pelleteuse | undefined;
-
-    constructor(public game: Game) {
+    constructor(public player: Player, public game: Game) {
         super("my-camera", new Vector3(0, 64, 0), game.scene);
 
         this.maxZ = 5000;
         this.minZ = 0.1
 
         this.speed = 0.2;
-        console.log(this.speed);
 
         this.pointer = MeshBuilder.CreateBox("pointer", { size: 0.5 }, game.scene);
         let cyanMaterial = MakeStandardMaterial(new Color3(0.5, 1, 1), 0, 0.3);
@@ -39,13 +33,11 @@ export class MyCamera extends UniversalCamera {
         let redMaterial = MakeStandardMaterial(new Color3(1, 0.5, 0.5), 0, 0.3);
         redMaterial.alpha = 0.5;
 
-        this.attachControl(game.engine.getRenderingCanvas(), true);
         this.game.scene.onBeforeRenderObservable.add(this._update);
 
         window.addEventListener("keydown", (event) => {
             if (event.code === "Space") {
-                this.fly = !this.fly;
-                this.speed = this.fly ? 1 : 0.2;
+                this.player.fly = !this.player.fly;
             }
         });
 
@@ -72,21 +64,12 @@ export class MyCamera extends UniversalCamera {
                 this.pointer.scaling.copyFromFloats(1.05, 1.05, 1.05);
             }
         });
-
-        let lastPosString = localStorage.getItem("last-pos");
-        if (lastPosString) {
-            let lastPos = JSON.parse(lastPosString);
-            if (lastPos.length === 6) {
-                this.position = new Vector3(lastPos[0], lastPos[1], lastPos[2]);
-                this.rotation = new Vector3(lastPos[3], lastPos[4], lastPos[5]);
-            }
-        }
     }
 
     public _pointerDown = () => {
         if (this.game.terrain && this.editionMode !== 0) {
             let ray = this._scene.createPickingRay(this._scene.pointerX, this._scene.pointerY, Matrix.Identity(), this);
-            let pickInfos = ray.intersectsMeshes(this.chuncks.map(c => c.mesh!).filter(m => m));
+            let pickInfos = ray.intersectsMeshes(this.player.chuncks.map(c => c.mesh!).filter(m => m));
             for (let pickInfo of pickInfos) {
                 if (pickInfo && pickInfo.hit && pickInfo.pickedPoint) {
                     let p = pickInfo.pickedPoint;
@@ -121,87 +104,36 @@ export class MyCamera extends UniversalCamera {
     }
 
     private _update = () => {
-        if (this.pelleteuse) {
-            this.position = Vector3.TransformCoordinates(new Vector3(0, 5, -10), this.pelleteuse.getWorldMatrix());
-            this.setTarget(this.pelleteuse.position);
-            return;
+        if (this.player.pelleteuse) {
+            this.position.copyFrom(this.player.pelleteuse.head.absolutePosition);
+            this.position.subtractInPlace(this.player.pelleteuse.head.forward.scale(7));
+            this.rotationQuaternion = QuaternionFromZYAxis(this.player.pelleteuse.head.forward, Vector3.Up());
         }
         else {
-            if (this.game.terrain) {
-                localStorage.setItem("last-pos", JSON.stringify([this.position.x, this.position.y, this.position.z, this.rotation.x, this.rotation.y, this.rotation.z]));
-
-                let ray = new Ray(this.position.add(new Vector3(0, 1.8, 0)), Vector3.Down(), 500);
-                if (!this.targetPosition) {
-                    ray.direction.x += 0.1 * Math.random() - 0.05;
-                    ray.direction.z += 0.1 * Math.random() - 0.05;
-                    ray.direction.normalize();
-                }
-                let ijk = this.game.terrain.getChunckAndIJKAtPos(this.position, 0, false);
-                if (ijk) {
-                    let chunck = ijk.chunck;
-                    this.chuncks = [chunck];
-                    if (ijk.ijk.i < this.chuncks[0].chunckLengthIJ * 0.5) {
-                        let leftChunck = this.game.terrain.getChunck(chunck.level, chunck.iPos - 1, chunck.jPos);
-                        if (leftChunck) {
-                            this.chuncks.push(leftChunck);
-                        }
-                    }
-                    else {
-                        let rightChunck = this.game.terrain.getChunck(chunck.level, chunck.iPos + 1, chunck.jPos);
-                        if (rightChunck) {
-                            this.chuncks.push(rightChunck);
-                        }
-                    }
-                    if (ijk.ijk.j < this.chuncks[0].chunckLengthIJ * 0.5) {
-                        let topChunck = this.game.terrain.getChunck(chunck.level, chunck.iPos, chunck.jPos - 1);
-                        if (topChunck) {
-                            this.chuncks.push(topChunck);
-                        }
-                    }
-                    else {
-                        let bottomChunck = this.game.terrain.getChunck(chunck.level, chunck.iPos, chunck.jPos + 1);
-                        if (bottomChunck) {
-                            this.chuncks.push(bottomChunck);
-                        }
-                    }
-                    let pickInfos = ray.intersectsMeshes(this.chuncks.map(c => c.mesh!).filter(m => m));
-                    for (let pickInfo of pickInfos) {
-                        if (pickInfo && pickInfo.hit && pickInfo.pickedPoint) {
-                            this.targetPosition = pickInfo.pickedPoint.add(new Vector3(0, 1.8, 0));
-                        }
-                    }
-                }
-            }
-
-            if (this.targetPosition && !this.fly) {
-                Vector3.LerpToRef(this.position, this.targetPosition, 0.1, this.position);
-                if (this.position.y < this.targetPosition.y - 0.5) {
-                    this.position.y = this.targetPosition.y - 0.5;
-                }
-            }
-
-            if (this.game.terrain && this.editionMode !== 0) {
-                let ray = this._scene.createPickingRay(this._scene.pointerX, this._scene.pointerY, Matrix.Identity(), this);
-                let pickInfos = ray.intersectsMeshes(this.chuncks.map(c => c.mesh!).filter(m => m));
-                for (let pickInfo of pickInfos) {
-                    if (pickInfo && pickInfo.hit && pickInfo.pickedPoint) {
-                        let p = pickInfo.pickedPoint;
-                        if (this.editionMode === 1) {
-                            p.addInPlace(pickInfo.getNormal(true)!.scale(0.2));
-                        }
-                        else if (this.editionMode === 2) {
-                            p.subtractInPlace(pickInfo.getNormal(true)!.scale(0.2));
-                        }
-                        let ijk = this.game.terrain.getChunckAndIJKAtPos(p, 0, false);
-                        if (ijk) {
-                            this.pointer.position = ijk.chunck.getPosAtIJK(ijk.ijk);
-                            this.pointer.isVisible = true;
-                            return;
-                        }
-                    }
-                }
-            }  
+            this.position.copyFrom(this.player.head.absolutePosition);
+            this.rotationQuaternion = QuaternionFromZYAxis(this.player.head.forward, this.player.head.up);
         }
+        if (this.game.terrain && this.editionMode !== 0) {
+            let ray = this._scene.createPickingRay(this._scene.pointerX, this._scene.pointerY, Matrix.Identity(), this);
+            let pickInfos = ray.intersectsMeshes(this.player.chuncks.map(c => c.mesh!).filter(m => m));
+            for (let pickInfo of pickInfos) {
+                if (pickInfo && pickInfo.hit && pickInfo.pickedPoint) {
+                    let p = pickInfo.pickedPoint;
+                    if (this.editionMode === 1) {
+                        p.addInPlace(pickInfo.getNormal(true)!.scale(0.2));
+                    }
+                    else if (this.editionMode === 2) {
+                        p.subtractInPlace(pickInfo.getNormal(true)!.scale(0.2));
+                    }
+                    let ijk = this.game.terrain.getChunckAndIJKAtPos(p, 0, false);
+                    if (ijk) {
+                        this.pointer.position = ijk.chunck.getPosAtIJK(ijk.ijk);
+                        this.pointer.isVisible = true;
+                        return;
+                    }
+                }
+            }
+        }  
         this.pointer.isVisible = false;
     }
 }
