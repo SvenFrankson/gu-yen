@@ -51,7 +51,7 @@ export class PlayerActionDefault extends PlayerAction {
             this.player.aimedIJK = undefined;
             this.player.aimedObject = undefined;
 
-            let aimRay = new Ray(this.player.head.absolutePosition, this.player.head.forward, 5);
+            let aimRay = new Ray(this.player.head.absolutePosition, this.player.head.forward, 8);
             let aimPickInfo = this.game.scene.pickWithRay(aimRay, (mesh) => {
                 return mesh instanceof PelleteusePart;
             });

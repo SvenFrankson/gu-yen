@@ -74,7 +74,7 @@ export class TerrainMaterial extends ShaderMaterial {
     }
 
     private _update = () => {
-        let camera = this.getScene().activeCamera;
+        let camera = this.getScene().activeCameras![0];
         if (camera) {
             this.setVector3("cameraPosition", camera.position);
         }

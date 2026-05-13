@@ -2,7 +2,7 @@
 import { ArcRotateCamera } from "@babylonjs/core/Cameras/arcRotateCamera";
 import { Vector3 } from "@babylonjs/core/Maths/math.vector";
 import type { Game } from "./Game";
-import { Color3, FreeCamera, Matrix, Mesh, MeshBuilder, Ray, StandardMaterial, UniversalCamera } from "@babylonjs/core";
+import { Color3, FreeCamera, Matrix, Mesh, MeshBuilder, PassPostProcess, Ray, RenderTargetTexture, StandardMaterial, UniversalCamera } from "@babylonjs/core";
 import { MakeStandardMaterial } from "./MaterialUtils";
 import { Chunck } from "./voxel-engine/Chunck";
 import { BlockType } from "./voxel-engine/BlockType";
@@ -10,18 +10,22 @@ import { FloatingBlocksDetector } from "./voxel-engine/FloatingBlocksDetector";
 import { Pelleteuse } from "./vehicles/Pelleteuse";
 import { Player } from "./player/Player";
 import { QuaternionFromZYAxis } from "babylonjs-geometry-kit";
+import { OutlinePostProcess } from "./OutlinePostProcess";
+
+export var NO_OUTLINE_LAYERMASK = 0x10000000;
 
 export class MyCamera extends UniversalCamera {
 
     public editionMode: number = 0;
+    public noOutlineCamera?: FreeCamera;
 
     public pointer: Mesh;
 
-    constructor(public player: Player, public game: Game) {
+    constructor(public player: Player, public game: Game, public useOutline: boolean = true) {
         super("my-camera", new Vector3(0, 64, 0), game.scene);
 
-        this.maxZ = 5000;
-        this.minZ = 0.1
+        this.maxZ = 2000;
+        this.minZ = 0.2;
 
         this.speed = 0.2;
 
@@ -56,6 +60,62 @@ export class MyCamera extends UniversalCamera {
                 this.pointer.scaling.copyFromFloats(1.05, 1.05, 1.05);
             }
         });
+
+        this.initOutline();
+    }
+
+    public initOutline(): void {
+        if (this.useOutline) {
+            try {
+                const rtt = new RenderTargetTexture('render target', { width: this.game.engine.getRenderWidth(), height: this.game.engine.getRenderHeight() }, this.game.scene);
+                rtt.samples = 1;
+                this.outputRenderTarget = rtt;
+        
+                this.noOutlineCamera = new FreeCamera(
+                    "no-outline-camera",
+                    Vector3.Zero(),
+                    this.game.scene
+                );
+
+                this.noOutlineCamera.minZ = 0.2;
+                this.noOutlineCamera.maxZ = 2000;
+                this.noOutlineCamera.layerMask = NO_OUTLINE_LAYERMASK;
+                this.noOutlineCamera.parent = this;
+        
+                let postProcess = OutlinePostProcess.AddOutlinePostProcess(this);
+                //let postProcess = new PassPostProcess("pass-test", 1, this);
+                postProcess.onSizeChangedObservable.add(() => {
+                    if (!postProcess.inputTexture.depthStencilTexture) {
+                        postProcess.inputTexture.createDepthStencilTexture(0, true, false, 4);
+                        postProcess.inputTexture.shareDepth(rtt.renderTarget!);
+                    }
+                });
+                
+                const pp = new PassPostProcess("pass", 1, this.noOutlineCamera);
+                pp.inputTexture = rtt.renderTarget!;
+                pp.autoClear = false;
+
+                this.game.engine.onResizeObservable.add(() => {
+                    //console.log("w " + this.game.engine.getRenderWidth());
+                    //console.log("h " + this.game.engine.getRenderHeight());
+                    //postProcess.getEffect().setFloat("width", this.game.engine.getRenderWidth());
+                    //postProcess.getEffect().setFloat("height", this.game.engine.getRenderHeight());
+                    rtt.resize({ width: this.game.engine.getRenderWidth(), height: this.game.engine.getRenderHeight() });
+                    postProcess.inputTexture.createDepthStencilTexture(0, true, false, 4);
+                    postProcess.inputTexture.shareDepth(rtt.renderTarget!);
+                    this.outputRenderTarget = rtt;
+                    pp.inputTexture = rtt.renderTarget!;
+                });
+
+                this.game.scene.activeCameras = [this, this.noOutlineCamera];
+            }
+            catch (e) {
+                console.error(e);
+            }
+        }
+        else {
+            this.layerMask |= NO_OUTLINE_LAYERMASK;
+        }
     }
 
     public _pointerDown = () => {
@@ -63,7 +123,6 @@ export class MyCamera extends UniversalCamera {
     }
 
     private _update = () => {
-        console.log("Camera position: ", this.position.clone());
         if (this.player.pelleteuse) {
             this.position.copyFrom(this.player.pelleteuse.head.absolutePosition);
             this.position.subtractInPlace(this.player.pelleteuse.head.forward.scale(7));

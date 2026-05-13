@@ -67,7 +67,7 @@ void main() {
    vec3 baryPos = vColor.rgb;
 
    float sunLightFactor = (dot(vNormalW, lightInvDirW) + 1.) * 0.5;
-   float lightFactor = sunLightFactor / 1.3;
+   float lightFactor = sunLightFactor;
 
    float period = 1.;
    float ampli = 0.1;
@@ -264,6 +264,7 @@ void main() {
       diffuseUV.y = vPositionL.y * 1.;
    }
 
+   /*
    if (colorIndex == 2) {
       color = texture(grassTexture, diffuseUV * 0.3).rgb;
    }
@@ -294,6 +295,7 @@ void main() {
    else if (colorIndex >= 18 && colorIndex <= 21) {
       color = color * texture(rockTexture, diffuseUV).rgb;
    }
+   */
    
    /*
    // show triangles
@@ -312,10 +314,10 @@ void main() {
    float gi = texture(lightTexture, uvr).r;
    gi = round(gi * 3.) / 3. * 0.6 + 0.4;
    //gi = floor(gi);
-   lightFactor = round(lightFactor * 12.) / 12.;
+   lightFactor = round(lightFactor * 1.) / 1. * 0.7 + 0.3;
    lightFactor = lightFactor * gi;
 
-   if (colorIndex >= 2 && colorIndex <= 4) {
+   if (colorIndex >= 2 && colorIndex <= 6) {
       // Case dirt and grass > no tall flat surfaces
       float dy = vPositionL.y / blockHeight_m - floor(vPositionL.y / blockHeight_m) + noise * 0.15;
       if ((dy > 0.15 && dy < 0.85)) {
@@ -325,7 +327,7 @@ void main() {
    else {
       // Case with potential tall flat surfaces
       float dy = vPositionL.y / blockHeight_m - floor(vPositionL.y / blockHeight_m);
-      if ((dy < 0.1 || dy > 0.9) && abs(vNormalW.y) > 0.6) {
+      if ((dy < 0.1 || dy > 0.9) && abs(vNormalL.y) > 0.6) {
          lightFactor *= 1.1;
       }
       else {
@@ -355,8 +357,8 @@ void main() {
    depth = max(min(depth, 1.), 0.);
    depth = depth * depth;
    color *= debugColor * lightFactor;
-   color *= (1. - depth);
-   color += vec3(141. / 255., 107. / 255., 56. / 255.) * depth;
+   //color *= (1. - depth);
+   //color += vec3(141. / 255., 107. / 255., 56. / 255.) * depth;
    //color += vec3(60. / 255., 60. / 255., 60. / 255.) * depth;
    outColor = vec4(color, 1);
 }

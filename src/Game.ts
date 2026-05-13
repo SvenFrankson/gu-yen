@@ -37,7 +37,7 @@ export class Game {
     constructor(public canvas: HTMLCanvasElement) {
         Game.Instance = this;
 
-        this.engine = new Engine(canvas, true)
+        this.engine = new Engine(canvas, true, undefined, false)
         this.scene = new Scene(this.engine);
         this.scene.clearColor.set(0, 0, 1, 1);
         this.player = new Player(this);

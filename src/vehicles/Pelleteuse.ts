@@ -351,8 +351,8 @@ export class Pelleteuse extends Mesh implements IPelleteuse {
                             this.targetX2 = Math.PI / 4;
                             let affectedChuncks: Chunck[] = [];
                             let w = 4;
-                            for (let x = 0; x < w; x++) {
-                                for (let y = 0; y < 3; y++) {
+                            for (let y = 2; y >= 0; y--) {
+                                for (let x = 0; x < w; x++) {
                                     let p = pickedPoint.add(this.diggingRight.scale((x - (w - 1) * 0.5) * 0.5)).add(this.diggingNormal.scale(- 0.2 + y * 0.5));
                                     let ijk = this.game.terrain.getChunckAndIJKAtPos(p, 0, false);
                                     if (ijk) {
@@ -360,9 +360,9 @@ export class Pelleteuse extends Mesh implements IPelleteuse {
                                         let chunck = ijk.chunck;
                                         if (chunck.getData(ijk.ijk.i, ijk.ijk.j, ijk.ijk.k) !== BlockType.None) {
                                             if (y === 2) {
-                                                this.digging = false;
+                                                this.replacing = true;
                                                 x = w;
-                                                y = 3;
+                                                y = -1;
                                             }
                                             else {
                                                 let newAffectedChuncks = chunck.setData(block, ijk.ijk.i, ijk.ijk.j, ijk.ijk.k);

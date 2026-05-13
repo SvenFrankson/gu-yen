@@ -295,7 +295,8 @@ export class FloatingBlocksDetector {
             let testMesh = new Mesh("floatingBlockTestMesh" + n, this.terrain.scene);
             testMesh.material = this.terrain.getMaterial(0);
             vertexData.applyToMesh(testMesh);
-
+            
+            /*
             let cross = MeshBuilder.CreateLineSystem(
                 "cross",
                 {
@@ -308,6 +309,7 @@ export class FloatingBlocksDetector {
                 this.terrain.scene
             );
             cross.parent = testMesh;
+            */
 
             console.log(vertexData);
 

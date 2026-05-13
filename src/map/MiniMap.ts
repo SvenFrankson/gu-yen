@@ -27,6 +27,9 @@ export class Minimap extends HTMLElement {
         this.style.top = "10px";
         this.style.width = this.size.toFixed(0) + "px";
         this.style.height = this.size.toFixed(0) + "px";
+        this.style.border = "2px solid lime";
+        this.style.borderRadius = "10px";
+        this.style.overflow = "hidden";
         
         this.background = document.createElement("img");
         this.background.src = "heightMap_-20_150.png";

@@ -293,9 +293,10 @@ export class ChunckMeshBuilder {
 
                                         let pIndex = positions.length / 3;
                                         if (xIndex >= xMin && zIndex >= zMin && xIndex < xMax && zIndex < zMax) {
+                                            let dataAtVertex = chunck.getRawData(i + cx + m, j + cz + m, k + cy);
+
                                             positions.push(x, y, z);
                                             colors.push(vIndex === 0 ? 1 : 0, vIndex === 1 ? 1 : 0, vIndex === 2 ? 1 : 0, 1);
-                                            let dataAtVertex = chunck.getRawData(i + cx + m, j + cz + m, k + cy);
                                             colorsMap.push(dataAtVertex);
                                             
                                             let n = this._GetNormal(xIndex, yIndex, zIndex);
@@ -466,7 +467,6 @@ export class ChunckMeshBuilder {
                                         let cx = fastColorIndexes[triIndex][vIndex].x;
                                         let cy = fastColorIndexes[triIndex][vIndex].y;
                                         let cz = fastColorIndexes[triIndex][vIndex].z;
-
 
                                         x = x * 0.5 + i - i0;
                                         y = y * 0.5 + k - k0;
