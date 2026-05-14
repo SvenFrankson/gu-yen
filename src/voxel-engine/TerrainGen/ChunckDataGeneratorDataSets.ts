@@ -4,9 +4,10 @@ import { BlockType } from "../BlockType";
 import { BicubicInterpolate, IsVeryFinite } from "../../Number";
 import { VoxelDrawing } from "./RawProp/VoxelDrawing";
 import { getTreeVoxelDrawingDataByHeight, getTreeVoxelDrawingDataByIndex } from "./RawProp/Tree";
-import { DistancePointSegment as DistancePointSegmentVec2 } from "../../Math2D";
+import { DistancePointSegment as DistancePointSegmentVec2, RasterizeTriangle } from "../../Math2D";
 import { Vector2 } from "@babylonjs/core/Maths/math.vector";
 import { Terrain } from "../Terrain";
+import { NextFrame } from "../../Tools";
 
 export interface ITreeData {
     lat: number;
@@ -25,10 +26,13 @@ export interface IRoadData {
 }
 
 export interface IBuildingData {
+    ijGlobalCenter: number[];
     ijGlobals: number[];
     type: string;
     c?: number;
     h?: number;
+    floors: number;
+    h0?: number;
 }
 
 export interface IDataTile<T> {
@@ -285,22 +289,27 @@ export class ChunckDataGeneratorDataSets extends ChunckDataGenerator {
                     }
                 }
             }
+
+            await NextFrame();
             
             let buildingTileI = Math.floor(chunck.iPos / this.terrain.chunckCountIJ * this.buildingTiles.size);
             let buildingTileJ = Math.floor(chunck.jPos / this.terrain.chunckCountIJ * this.buildingTiles.size); 
             let buildingTiles = this.buildingTiles.tiles.filter(tile => Math.abs(tile.i - buildingTileI) <= 1 && Math.abs(tile.j - buildingTileJ) <= 1);
 
-            let buildingMap: number[][] = [];
+            let buildingMap: number[][][] = [];
             for (let i: number = -m; i < chunck.chunckLengthIJ + m; i++) {
                 buildingMap[i + m] = [];
                 for (let j: number = -m; j < chunck.chunckLengthIJ + m; j++) {
-                    buildingMap[i + m][j + m] = 0;
+                    buildingMap[i + m][j + m] = [0, 0, 0, 0]; //h0, h, type (0 wall, 1 door, 2 window)
                 }
             }
 
             if (buildingTiles.length > 0) {
                 for (let buildingTile of buildingTiles) {
                     for (let buildingData of buildingTile.dataArray) {
+                        let h0 = this.evaluateHeight(heightMap, buildingData.ijGlobalCenter[0], buildingData.ijGlobalCenter[1]);
+                        let h = (buildingData.h !== undefined ? buildingData.h! : 6);
+
                         for (let n = 0; n < buildingData.ijGlobals.length - 2; n += 2) {
                             let i0 = buildingData.ijGlobals[n] - chunck.iPos * chunck.chunckLengthIJ;
                             let j0 = buildingData.ijGlobals[n + 1] - chunck.jPos * chunck.chunckLengthIJ;
@@ -309,19 +318,39 @@ export class ChunckDataGeneratorDataSets extends ChunckDataGenerator {
 
                             let l = Math.max(Math.abs(i1 - i0), Math.abs(j1 - j0));
                             for (let i = 0; i <= l; i++) {
-                                let x = Math.floor(i0 + (i1 - i0) * i / l);
+                                let x = Math.round(i0 + (i1 - i0) * i / l);
                                 if (x >= -m && x < chunck.chunckLengthIJ + m) {
-                                    let y = Math.floor(j0 + (j1 - j0) * i / l);
+                                    let y = Math.round(j0 + (j1 - j0) * i / l);
                                     if (y >= -m && y < chunck.chunckLengthIJ + m) {
-                                        roadMap[x + m][y + m] = 3 + (buildingData.c !== undefined ? buildingData.c! : 0);
-                                        buildingMap[x + m][y + m] = (buildingData.h !== undefined ? buildingData.h! : 4);
+                                        if (h >= buildingMap[x + m][y + m][1]) {
+                                            roadMap[x + m][y + m] = 3 + (buildingData.c !== undefined ? buildingData.c! : 0);
+                                            let type = 0;
+                                            if (i % 5 >= 2 && i % 5 <= 3) {
+                                                type = 2;
+                                            }
+                                            buildingMap[x + m][y + m][0] = h0;
+                                            buildingMap[x + m][y + m][1] = h;
+                                            buildingMap[x + m][y + m][2] = type;
+                                        }
                                     }
                                 }
                             }
+
+                            RasterizeTriangle(
+                                i0, j0,
+                                i1, j1,
+                                buildingData.ijGlobalCenter[0] - chunck.iPos * chunck.chunckLengthIJ, buildingData.ijGlobalCenter[1] - chunck.jPos * chunck.chunckLengthIJ,
+                                (i, j) => {
+                                    buildingMap[i + m][j + m][3] = Math.max(h + h0, buildingMap[i + m][j + m][3]);
+                                },
+                                -m, chunck.chunckLengthIJ + m - 1, -m, chunck.chunckLengthIJ + m - 1
+                            );
                         }
                     }
                 }
             }
+            
+            await NextFrame();
 
             for (let i: number = -m; i < chunck.chunckLengthIJ + m; i++) {
                 for (let j: number = -m; j < chunck.chunckLengthIJ + m; j++) {
@@ -361,6 +390,8 @@ export class ChunckDataGeneratorDataSets extends ChunckDataGenerator {
                     let maxAsphalt = 0;
                     maxRock = h;
                     let maxConcrete = 0;
+                    let buildingWallType = 0;
+                    let buildingH0 = 0;
                     if (isRoad === 0) {
                         maxRock = h + Math.min(noiseValue * 8, 0);
                         maxDirt = h + noiseValue * 8;
@@ -370,8 +401,15 @@ export class ChunckDataGeneratorDataSets extends ChunckDataGenerator {
                         maxAsphalt = h - 1;
                     }
                     else if (isRoad >= 3) {
-                        maxConcrete = h + noiseValue * 10 + buildingMap[i + m][j + m];
+                        buildingH0 = buildingMap[i + m][j + m][0];
+                        maxConcrete = buildingH0 + buildingMap[i + m][j + m][1];
+                        buildingWallType = buildingMap[i + m][j + m][2];
                     }
+
+                    if (buildingMap[i + m][j + m][3] > 0) {
+                        chunck.setRawData(BlockType.Laterite, i + m, j + m, Math.floor(buildingMap[i + m][j + m][3] + 1));
+                    }
+
                     for (let k: number = 0; k <= chunck.chunckLengthK; k++) {
                         let kGlobal = k * chunck.levelFactor;
                         if (kGlobal <= maxRock) {
@@ -390,12 +428,28 @@ export class ChunckDataGeneratorDataSets extends ChunckDataGenerator {
                         }
                         else if (kGlobal <= maxConcrete) {
                             let blockType = BlockType.WhiteConcrete + isRoad - 3;
-                            chunck.setRawData(blockType, i + m, j + m, k);
+                            if (buildingWallType === 0) {
+                                chunck.setRawData(blockType, i + m, j + m, k);
+                            }
+                            else if (buildingWallType === 1) {
+                                let dH = Math.floor(kGlobal - buildingH0) % 6;
+                                if (dH > 6) {
+                                    chunck.setRawData(blockType, i + m, j + m, k);
+                                }
+                            }
+                            else if (buildingWallType === 2) {
+                                let dH = Math.floor(kGlobal - buildingH0) % 6;
+                                if (dH < 2 || dH >= 5) {
+                                    chunck.setRawData(blockType, i + m, j + m, k);
+                                }
+                            }
                         }
                     }
                 }
             }
 
+            await NextFrame();
+            
             let treeTileI = Math.floor(chunck.iPos / this.terrain.chunckCountIJ * this.treeTiles.size);
             let treeTileJ = Math.floor(chunck.jPos / this.terrain.chunckCountIJ * this.treeTiles.size);
             for (let i = treeTileI - 1; i <= treeTileI + 1; i++) {

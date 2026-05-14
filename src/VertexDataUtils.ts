@@ -1,4 +1,4 @@
-import { StandardMaterial } from "@babylonjs/core";
+import { PBRMaterial, StandardMaterial } from "@babylonjs/core";
 import { ImportMeshAsync } from "@babylonjs/core/Loading/sceneLoader";
 import { Color3 } from "@babylonjs/core/Maths/math.color";
 import { Quaternion, Vector3 } from "@babylonjs/core/Maths/math.vector";
@@ -40,21 +40,45 @@ export async function GetGLTFMeshDataArray(path: string, scene: Scene): Promise<
     let dataArray: IMeshData[] = [];
     data.meshes.forEach(mesh => {
         if (mesh instanceof Mesh) {
-        let vData = VertexData.ExtractFromMesh(mesh);
-        ColorizeVertexDataInPlace(vData, new Color3(1, 1, 1));
-        MirrorZVertexDataInPlace(vData);
-        TriFlipVertexDataInPlace(vData);
+            let vData = VertexData.ExtractFromMesh(mesh);
+            if (mesh.material instanceof PBRMaterial) {
+                ColorizeVertexDataInPlace(vData, mesh.material.albedoColor);
+            }
+            else {
+                ColorizeVertexDataInPlace(vData, new Color3(1, 1, 1));
+            }
+            MirrorZVertexDataInPlace(vData);
+            TriFlipVertexDataInPlace(vData);
 
-        dataArray.push({
-            name: mesh.name,
-            vertexData: vData,
-            position: mesh.position.multiplyByFloats(1, 1, -1),
-            rotation: mesh.rotation.clone(),
-            scaling: mesh.scaling.clone()
-        });
-    }
+            dataArray.push({
+                name: mesh.name,
+                vertexData: vData,
+                position: mesh.position.multiplyByFloats(1, 1, -1),
+                rotation: mesh.rotation.clone(),
+                scaling: mesh.scaling.clone()
+            });
+        }
         mesh.dispose(true);
     });
+
+    for (let i = 0; i < dataArray.length; i++) {
+        let data = dataArray[i];
+        if (data.name.indexOf("_primitive") > 0) {
+            let baseName = data.name.split("_primitive")[0];
+            let parts = dataArray.filter(d => d.name.startsWith(baseName));
+            if (parts.length > 1) {
+                let mergedData = MergeVertexDatas(...parts.map(p => p.vertexData));
+                dataArray[i] = {
+                    name: baseName,
+                    vertexData: mergedData,
+                    position: data.position,
+                    rotation: data.rotation,
+                    scaling: data.scaling
+                };
+                dataArray = dataArray.filter(d => !d.name.startsWith(baseName + "_primitive"));
+            }
+        }
+    }
 
     return dataArray;
 }

@@ -71,3 +71,21 @@ export function CapsuleRectCheck(segA: Vector2, segB: Vector2, radius: number,  
     }
     return true;
 }
+
+export function RasterizeTriangle(i0: number, j0: number, i1: number, j1: number, i2: number, j2: number, rasterizeFunc: (i: number, j: number) => void, iMin: number, iMax: number, jMin: number, jMax: number): void {
+    let minI = Math.max(Math.floor(Math.min(i0, i1, i2)), iMin);
+    let maxI = Math.min(Math.ceil(Math.max(i0, i1, i2)), iMax);
+    let minJ = Math.max(Math.floor(Math.min(j0, j1, j2)), jMin);
+    let maxJ = Math.min(Math.ceil(Math.max(j0, j1, j2)), jMax);
+    
+    for (let i = minI; i <= maxI; i++) {
+        for (let j = minJ; j <= maxJ; j++) {
+            let w0 = (i1 - i0) * (j - j0) - (i - i0) * (j1 - j0);
+            let w1 = (i2 - i1) * (j - j1) - (i - i1) * (j2 - j1);
+            let w2 = (i0 - i2) * (j - j2) - (i - i2) * (j0 - j2);
+            if ((w0 >= 0 && w1 >= 0 && w2 >= 0) || (w0 <= 0 && w1 <= 0 && w2 <= 0)) {
+                rasterizeFunc(i, j);
+            }
+        }
+    }
+}

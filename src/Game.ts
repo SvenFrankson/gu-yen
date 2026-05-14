@@ -117,7 +117,7 @@ export class Game {
                 //generateRoadData(this);
             }
             else if (event.code === "Numpad2") {
-                //generateBuildingData(this);
+                generateBuildingData(this);
             }
             else if (event.code === "Numpad3") {
                 console.log("Player position: ", this.player.absolutePosition.clone());
@@ -172,7 +172,7 @@ export class Game {
             });
 
             this.terrain.initialize();
-            this.terrain.chunckManager.setDistance(100);
+            this.terrain.chunckManager.setDistance(50);
             this.terrain.sunDir.copyFrom(light.direction);
 
             let noiseTexture = new CubicNoiseTexture(this.scene);

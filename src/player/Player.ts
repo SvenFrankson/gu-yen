@@ -110,6 +110,19 @@ export class Player extends Mesh {
         this.game.canvas.addEventListener("pointerdown", this._pointerDown);
         this.game.canvas.addEventListener("pointerup", this._pointerUp);
         this.game.canvas.addEventListener("pointermove", this._pointerMove);
+
+        let updatePointerLockState = () => {
+            if (document.pointerLockElement === this.game.canvas) {
+                this.isPointerLocked = true;
+            }
+            else {
+                this.isPointerLocked = false;
+            }
+        };
+        document.addEventListener("pointerlockchange", () => {
+            updatePointerLockState();
+            requestAnimationFrame(updatePointerLockState);
+        });
         
         let lastPosString = localStorage.getItem("last-pos");
         if (lastPosString) {
@@ -218,27 +231,29 @@ export class Player extends Mesh {
     }
 
     private _pointerMove = (e: PointerEvent) => {
+        let movementX = Math.max(-10, Math.min(10, e.movementX));
+        let movementY = Math.max(-10, Math.min(10, e.movementY));
         if (this.isPointerLocked || this._pointerIsDown) {
             if (this.pelleteuse) {
                 if (this.pelleteuse.digging) {
-                    this.pelleteuse.cabine.rotation.y += e.movementX * 0.0005;
-                    this.pelleteuse.head.rotation.x += e.movementY * 0.002;
+                    this.pelleteuse.cabine.rotation.y += movementX * 0.0005;
+                    this.pelleteuse.head.rotation.x += movementY * 0.002;
                 }
                 else {
-                    this.pelleteuse.cabine.rotation.y += e.movementX * 0.004;
-                    this.pelleteuse.head.rotation.x += e.movementY * 0.004;
+                    this.pelleteuse.cabine.rotation.y += movementX * 0.004;
+                    this.pelleteuse.head.rotation.x += movementY * 0.004;
                 }
 
-                if (e.movementY > 0) {
+                if (movementY > 0) {
                     this.pelleteuse.replacing = false;
                 }
-                else if (e.movementY < 0) {
+                else if (movementY < 0) {
                     this.pelleteuse.replacing = true;
                 }
             }
             else {
-                this.rotation.y += e.movementX * 0.004;
-                this.head.rotation.x += e.movementY * 0.004;
+                this.rotation.y += movementX * 0.004;
+                this.head.rotation.x += movementY * 0.004;
             }
         }
         if (this.action) {

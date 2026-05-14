@@ -10,6 +10,7 @@ import { MakeStandardMaterial } from "../MaterialUtils";
 import { IsVeryFinite, StepAngle } from "../Number";
 import { TerrainMaterial } from "../TerrainMaterial";
 import { Player } from "../player/Player";
+import { ToonMaterial } from "../ToonMaterial";
 
 export interface IPelleteuse {
     pelleteuse: Pelleteuse;
@@ -80,14 +81,15 @@ export class Pelleteuse extends Mesh implements IPelleteuse {
     constructor(position: Vector3, public game: Game) {
         super("pelleteuse", null);
         this.position.copyFrom(position);
+        
+        let toonMaterial = new ToonMaterial("test", game.scene);
+        this.material = toonMaterial;
 
         this.red = MakeStandardMaterial(new Color3(1, 0.2, 0.2));
         this.green = MakeStandardMaterial(new Color3(0.2, 1, 0.2));
 
-        this.material = MakeStandardMaterial(new Color3(0.1, 0.1, 0.1));
-
         this.cabine = new PelleteusePart("pelleteuse_cabine", this);
-        this.cabine.material = MakeStandardMaterial(new Color3(1, 0.8, 0.1));
+        this.cabine.material = this.material;
         this.cabine.parent = this;
 
         this.head = MeshBuilder.CreateSphere("player-visual", { diameter: 0.1 }, game.scene);
@@ -97,17 +99,17 @@ export class Pelleteuse extends Mesh implements IPelleteuse {
         this.head.visibility = 0.5;
 
         this.bras0 = new PelleteusePart("pelleteuse_bras0", this);
-        this.bras0.material = MakeStandardMaterial(new Color3(1, 0.8, 0.1));
+        this.bras0.material = this.material;
         this.bras0.parent = this.cabine;
         this.bras0.rotation.x = - Math.PI / 3;
 
         this.bras1 = new PelleteusePart("pelleteuse_bras1", this);
-        this.bras1.material = MakeStandardMaterial(new Color3(1, 0.8, 0.1));
+        this.bras1.material = this.material;
         this.bras1.parent = this.bras0;
         this.bras1.rotation.x = Math.PI / 2;
 
         this.godet = new PelleteusePart("pelleteuse_godet", this);
-        this.godet.material = MakeStandardMaterial(new Color3(0.1, 0.1, 0.1));
+        this.godet.material = this.material;
         this.godet.parent = this.bras1;
 
         this.pointer = MeshBuilder.CreateBox("pointer", { size: 0.5 }, game.scene);

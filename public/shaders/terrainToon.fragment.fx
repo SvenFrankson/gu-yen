@@ -22,8 +22,12 @@ uniform sampler3D noiseTexture;
 uniform sampler3D lightTexture;
 uniform vec3 debugColor;
 uniform vec3 cameraPosition;
+
 uniform float rangeRadius_m;
 uniform vec3 rangePosition;
+
+uniform float gridRangeRadius_m;
+uniform vec3 gridRangePosition;
 
 in vec3 vPositionL;
 in vec3 vPositionW;
@@ -314,7 +318,7 @@ void main() {
    float gi = texture(lightTexture, uvr).r;
    gi = round(gi * 3.) / 3. * 0.6 + 0.4;
    //gi = floor(gi);
-   lightFactor = round(lightFactor * 1.) / 1. * 0.7 + 0.3;
+   lightFactor = round(lightFactor * 2.) / 2. * 0.7 + 0.3;
    lightFactor = lightFactor * gi;
 
    if (colorIndex >= 2 && colorIndex <= 6) {
@@ -339,6 +343,19 @@ void main() {
       float distToRange = distance(vPositionW, rangePosition);
       if (abs(distToRange - rangeRadius_m) < 0.05) {
          color = vec3(1., 1., 1.);
+      }
+   }
+   
+   if (gridRangeRadius_m > 0.) {
+      vec3 dist = vPositionW - gridRangePosition;
+      if (abs(dist.x) < gridRangeRadius_m && abs(dist.y) < gridRangeRadius_m && abs(dist.z) < gridRangeRadius_m) {
+         if (abs(dist.x) > gridRangeRadius_m - 0.01 || abs(dist.y) > gridRangeRadius_m - 0.01 || abs(dist.z) > gridRangeRadius_m - 0.01) {
+            color = vec3(1., 1., 1.);
+            lightFactor = 1.;
+         }
+         else {
+            color *= 0.9;
+         }
       }
    }
 

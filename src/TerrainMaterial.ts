@@ -29,7 +29,9 @@ export class TerrainMaterial extends ShaderMaterial {
                     "blockHeight_m",
                     "cameraPosition",
                     "rangeRadius_m",
-                    "rangePosition"
+                    "rangePosition",
+                    "gridRangeRadius_m",
+                    "gridRangePosition"
                 ]
             }
             );
@@ -110,10 +112,45 @@ export class TerrainMaterial extends ShaderMaterial {
         this.setInt("level", this._level);
     }
 
+    private _rangeRadius: number = 0;
+    public get rangeRadius(): number {
+        return this._rangeRadius;
+    }
     public setRangeRadius(radius: number): void {
+        this._rangeRadius = radius;
         this.setFloat("rangeRadius_m", radius);
     }
-    public setRangePosition(pos: Vector3): void {
-        this.setVector3("rangePosition", pos);
+    
+    private _rangePosition: Vector3 = Vector3.Zero();
+    public get rangePosition(): Vector3 {
+        return this._rangePosition;
+    }
+    public setRangePosition(c: Vector3) {
+        this._rangePosition = c;
+        this.updateRangePosition();
+    }
+    public updateRangePosition(): void {
+        this.setVector3("rangePosition", this._rangePosition);
+    }
+
+    private _gridRangeRadius: number = 0;
+    public get gridRangeRadius(): number {
+        return this._gridRangeRadius;
+    }
+    public setGridRangeRadius(radius: number): void {
+        this._gridRangeRadius = radius;
+        this.setFloat("gridRangeRadius_m", radius);
+    }
+    
+    private _gridRangePosition: Vector3 = Vector3.Zero();
+    public get gridRangePosition(): Vector3 {
+        return this._gridRangePosition;
+    }
+    public setGridRangePosition(c: Vector3) {
+        this._gridRangePosition = c;
+        this.updateGridRangePosition();
+    }
+    public updateGridRangePosition(): void {
+        this.setVector3("gridRangePosition", this._gridRangePosition);
     }
 }

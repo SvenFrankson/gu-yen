@@ -9,6 +9,7 @@ export class Minimap extends HTMLElement {
     public background?: HTMLImageElement;
     public treesLayer?: HTMLImageElement;
     public currentPositionMarker?: HTMLDivElement;
+    public coordinates?: HTMLDivElement;
 
     public game?: Game;
 
@@ -59,6 +60,16 @@ export class Minimap extends HTMLElement {
         this.currentPositionMarker.style.zIndex = "100";
         this.appendChild(this.currentPositionMarker);
 
+        this.coordinates = document.createElement("div");
+        this.coordinates.style.position = "absolute";
+        this.coordinates.style.right = "10px";
+        this.coordinates.style.bottom = "0px";
+        this.coordinates.style.zIndex = "200";
+        this.coordinates.style.color = "lime";
+        this.coordinates.style.fontFamily = "monospace";
+        this.coordinates.innerHTML = "coordinates";
+        this.appendChild(this.coordinates);
+
         this.onclick = async (e) => {
             if (this.game && this.game.camera && this.game.terrain) {
                 let rect = this.getBoundingClientRect();
@@ -89,6 +100,9 @@ export class Minimap extends HTMLElement {
                 let z = position.z / this.game.terrain.halfTerrainSizeIJ_m * this.size * 0.5 + this.size * 0.5;
                 this.currentPositionMarker.style.left = (x - 2) + "px";
                 this.currentPositionMarker.style.bottom = (z - 2) + "px";
+
+                let latlong = this.game.geoConverter.vector3ToLatLong(position);
+                this.coordinates!.innerHTML = "N" + latlong.lat.toFixed(5) + " W" + Math.abs(latlong.long).toFixed(5) + ", " + position.y.toFixed(1) + "m";
             }
         }
     }

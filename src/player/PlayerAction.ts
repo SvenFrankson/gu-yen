@@ -4,6 +4,7 @@ import { PelleteusePart } from "../vehicles/Pelleteuse";
 import { Player } from "./Player";
 import { MakeStandardMaterial } from "../MaterialUtils";
 import { BlockType } from "../voxel-engine/BlockType";
+import { TerrainMaterial } from "../TerrainMaterial";
 
 export abstract class PlayerAction {
 
@@ -48,6 +49,10 @@ export class PlayerActionDefault extends PlayerAction {
     public update(): void {
         if (this.game.terrain) {
             this.blockPointer.isVisible = false;
+            if (this.game.terrain) {
+                let material = this.game.terrain.getMaterial(0) as TerrainMaterial;
+                material.setGridRangeRadius(0);
+            }
             this.player.aimedIJK = undefined;
             this.player.aimedObject = undefined;
 
@@ -63,12 +68,17 @@ export class PlayerActionDefault extends PlayerAction {
             let pickInfos = aimRay.intersectsMeshes(this.player.chuncks.map(c => c.mesh!).filter(m => m));
             for (let pickInfo of pickInfos) {
                 if (pickInfo && pickInfo.hit && pickInfo.pickedPoint) {
-                    let p = pickInfo.pickedPoint.subtractInPlace(pickInfo.getNormal(true)!.scale(0.25));
+                    let p = pickInfo.pickedPoint.subtractInPlace(pickInfo.getNormal(true)!.scale(0.1));
                     let ijk = this.game.terrain.getChunckAndIJKAtPos(p, 0, false);
                     if (ijk) {
                         this.player.aimedIJK = ijk;
                         this.blockPointer.position = ijk.chunck.getPosAtIJK(ijk.ijk);
-                        this.blockPointer.isVisible = true;
+                        this.blockPointer.isVisible = false;
+                        if (this.game.terrain) {
+                            let material = this.game.terrain.getMaterial(0) as TerrainMaterial;
+                            material.setGridRangeRadius(this.game.terrain.blockSizeIJ_m * 0.5 + 0.02);
+                            material.setGridRangePosition(this.blockPointer.position);
+                        }
                         return;
                     }
                 }

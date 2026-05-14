@@ -9,6 +9,7 @@ export async function generateBuildingData(game: Game) {
     let NBuildingTiles = 1024;
     let BuildingTileLengthIJ = game.terrain ? game.terrain.terrainLengthIJ / NBuildingTiles : 32;
     let NBuildingFetchTiles = 16;
+    NBuildingFetchTiles = 128;
     
     let dLat = Math.atan2(16384, game.geoConverter.radius) / Math.PI * 180;
     let dLong = Math.atan2(16384, game.geoConverter.radius * Math.cos(game.geoConverter.latZero * Math.PI / 180)) / Math.PI * 180;
@@ -44,7 +45,7 @@ export async function generateBuildingData(game: Game) {
         for (let j = min; j < max; j++) {
     //for (let i = 0; i < count; i++) {
     //    for (let j = 0; j < count; j++) {
-            console.log("fetching roads for tile " + i + ", " + j);
+            console.log("fetching buildings for tile " + i + ", " + j);
             let latMin = lat1 - (i + 1) * latStep;
             let latMax = lat1 - i * latStep;
             let longMin = long0 + j * longStep;
@@ -71,20 +72,32 @@ export async function generateBuildingData(game: Game) {
 
             for (let e of data.elements) {
                 let building: IBuildingData = {
+                    ijGlobalCenter: [0, 0],
                     ijGlobals: [],
                     type: "",
+                    floors: 1,
+                    c: Math.floor(Math.random() * 4)
                 }
 
                 if (e.tags && e.tags["building"]) {
                     tags.push(e.tags["building"]);
                     building.type = e.tags["building"];
+                    if (building.type === "yes") {
+                        building.floors = 1 + Math.floor(Math.random() * 3);
+                    }
+                    else if (building.type === "apartments") {
+                        building.floors = 3 + Math.floor(Math.random() * 6);
+                    }
+                    else if (building.type === "house") {
+                        building.floors = 1 + Math.floor(Math.random() * 2);
+                    }
                 }
                 
                 let line: Vector3[] = [];
-                let roadGlobalIMin = Number.POSITIVE_INFINITY;
-                let roadGlobalIMax = Number.NEGATIVE_INFINITY;
-                let roadGlobalJMin = Number.POSITIVE_INFINITY;
-                let roadGlobalJMax = Number.NEGATIVE_INFINITY;
+                let shapeGlobalIMin = Number.POSITIVE_INFINITY;
+                let shapeGlobalIMax = Number.NEGATIVE_INFINITY;
+                let shapeGlobalJMin = Number.POSITIVE_INFINITY;
+                let shapeGlobalJMax = Number.NEGATIVE_INFINITY;
                 for (let p of e.geometry) {
                     let lat = p.lat;
                     let long = p.lon;
@@ -96,23 +109,26 @@ export async function generateBuildingData(game: Game) {
                         let height = await game.terrain.chunckDataGenerator.asyncEvaluateHeight(globalIJK.i, globalIJK.j);
                         position.y = height + 3;
                         building.ijGlobals.push(globalIJK.i, globalIJK.j);
-                        roadGlobalIMin = Math.min(roadGlobalIMin, globalIJK.i);
-                        roadGlobalIMax = Math.max(roadGlobalIMax, globalIJK.i);
-                        roadGlobalJMin = Math.min(roadGlobalJMin, globalIJK.j);
-                        roadGlobalJMax = Math.max(roadGlobalJMax, globalIJK.j);
+                        shapeGlobalIMin = Math.min(shapeGlobalIMin, globalIJK.i);
+                        shapeGlobalIMax = Math.max(shapeGlobalIMax, globalIJK.i);
+                        shapeGlobalJMin = Math.min(shapeGlobalJMin, globalIJK.j);
+                        shapeGlobalJMax = Math.max(shapeGlobalJMax, globalIJK.j);
                     }
                     line.push(position);
                 }
 
-                roadGlobalIMin -= 4;
-                roadGlobalIMax += 4;
-                roadGlobalJMin -= 4;
-                roadGlobalJMax += 4;
+                shapeGlobalIMin -= 4;
+                shapeGlobalIMax += 4;
+                shapeGlobalJMin -= 4;
+                shapeGlobalJMax += 4;
 
-                let i0 = Math.floor(roadGlobalIMin / BuildingTileLengthIJ);
-                let i1 = Math.floor(roadGlobalIMax / BuildingTileLengthIJ);
-                let j0 = Math.floor(roadGlobalJMin / BuildingTileLengthIJ);
-                let j1 = Math.floor(roadGlobalJMax / BuildingTileLengthIJ);
+                building.ijGlobalCenter[0] = (shapeGlobalIMin + shapeGlobalIMax) / 2;
+                building.ijGlobalCenter[1] = (shapeGlobalJMin + shapeGlobalJMax) / 2;
+
+                let i0 = Math.floor(shapeGlobalIMin / BuildingTileLengthIJ);
+                let i1 = Math.floor(shapeGlobalIMax / BuildingTileLengthIJ);
+                let j0 = Math.floor(shapeGlobalJMin / BuildingTileLengthIJ);
+                let j1 = Math.floor(shapeGlobalJMax / BuildingTileLengthIJ);
 
                 let tileMin = Vector2.Zero();
                 let tileMax = Vector2.Zero();

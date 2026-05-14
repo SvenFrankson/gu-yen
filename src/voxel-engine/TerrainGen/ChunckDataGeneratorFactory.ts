@@ -110,12 +110,17 @@ export class ChunckDataGeneratorFactory {
                 chunckDataGenerator.buildingTiles = props.buildingTiles as IDataTilesCollection<IDataTile<IBuildingData>>;
                 for (let buildingTile of chunckDataGenerator.buildingTiles.tiles) {
                     for (let buildingData of buildingTile.dataArray) {
-                        buildingData.c = Math.floor(4 * Math.random());
-                        buildingData.h = Math.floor(10 * Math.random());
-                        if (buildingData.ijGlobals.length > 20) {
-                            buildingData.ijGlobals = buildingData.ijGlobals.slice(0, 20);
+                        if (!IsVeryFinite(buildingData.floors)) {
+                            buildingData.floors = 1;
                         }
+                        buildingData.h = buildingData.floors * 6;
+                        //if (buildingData.ijGlobals.length > 40) {
+                        //    buildingData.ijGlobals = buildingData.ijGlobals.slice(0, 40);
+                        //}
                     }
+                    buildingTile.dataArray.sort((a, b) => {
+                        return a.h! - b.h!;
+                    });
                 }
             }
 
