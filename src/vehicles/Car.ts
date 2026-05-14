@@ -21,8 +21,10 @@ export class Car extends Vehicle implements IVehicle {
     constructor(position: Vector3, game: Game) {
         super(position, game);
 
-        this.throttlePower *= 8;
-        this.turnPower *= 3;
+        this.throttlePower = 1;
+        this.throttleSmoothNSec = 4;
+        this.turnPower = 4;
+        this.height = 0.2;
 
         this.position.copyFrom(position);
         

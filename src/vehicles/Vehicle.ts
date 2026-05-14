@@ -11,6 +11,7 @@ import { IsVeryFinite, StepAngle } from "../Number";
 import { TerrainMaterial } from "../TerrainMaterial";
 import { Player } from "../player/Player";
 import { ToonMaterial } from "../ToonMaterial";
+import { smoothNSec } from "../Tools";
 
 export interface IVehicle {
     vehicle: Vehicle;
@@ -30,8 +31,10 @@ export class Vehicle extends Mesh implements IVehicle {
         return this;
     }
     
-    public throttlePower: number = 0.005;
-    public turnPower: number = 0.02;
+    public height: number = 0.5;
+    public throttlePower: number = 0.1;
+    public throttleSmoothNSec: number = 5;
+    public turnPower: number = 0.1;
 
     public get throttle(): number {
         if (this.controler) {
@@ -86,6 +89,8 @@ export class Vehicle extends Mesh implements IVehicle {
 
     private _update = () => {
         if (this.game.terrain && this.controler) {
+            let dt = this.game.engine.getDeltaTime() / 1000;
+
             let targetY = this.position.y;       
             let ijk = this.game.terrain.getChunckAndIJKAtPos(this.position, 0, false);
             let chuncks: Chunck[] = []
@@ -110,10 +115,10 @@ export class Vehicle extends Mesh implements IVehicle {
                 let p01 = Vector3.TransformCoordinates(new Vector3(-1.11, 2, 1.66), this.getWorldMatrix());
                 let p11 = Vector3.TransformCoordinates(new Vector3(1.11, 2, 1.66), this.getWorldMatrix());
                 
-                let ray00 = new Ray(p00, this.up.scale(-1), 500);
-                let ray10 = new Ray(p10, this.up.scale(-1), 500);
-                let ray01 = new Ray(p01, this.up.scale(-1), 500);
-                let ray11 = new Ray(p11, this.up.scale(-1), 500);
+                let ray00 = new Ray(p00, this.up.scale(-1), 20);
+                let ray10 = new Ray(p10, this.up.scale(-1), 20);
+                let ray01 = new Ray(p01, this.up.scale(-1), 20);
+                let ray11 = new Ray(p11, this.up.scale(-1), 20);
                 
                 let intersect00: Vector3 | null = null;
                 let intersect10: Vector3 | null = null;
@@ -127,25 +132,25 @@ export class Vehicle extends Mesh implements IVehicle {
 
                 for (let chunck of chuncks) {
                     if (!intersect00) {
-                        let hit00 = ray00.intersectsMesh(chunck.mesh!, true);
+                        let hit00 = ray00.intersectsMesh(chunck.mesh!, false);
                         if (hit00) {
                             intersect00 = hit00.pickedPoint;
                         }
                     }
                     if (!intersect10) {
-                        let hit10 = ray10.intersectsMesh(chunck.mesh!, true);
+                        let hit10 = ray10.intersectsMesh(chunck.mesh!, false);
                         if (hit10) {
                             intersect10 = hit10.pickedPoint;
                         }
                     }
                     if (!intersect01) {
-                        let hit01 = ray01.intersectsMesh(chunck.mesh!, true);
+                        let hit01 = ray01.intersectsMesh(chunck.mesh!, false);
                         if (hit01) {
                             intersect01 = hit01.pickedPoint;
                         }
                     }
                     if (!intersect11) {
-                        let hit11 = ray11.intersectsMesh(chunck.mesh!, true);
+                        let hit11 = ray11.intersectsMesh(chunck.mesh!, false);
                         if (hit11) {
                             intersect11 = hit11.pickedPoint;
                         }
@@ -154,7 +159,7 @@ export class Vehicle extends Mesh implements IVehicle {
 
                 if (intersect00 && intersect10 && intersect01 && intersect11) {
                     let avgY = (intersect00.y + intersect10.y + intersect01.y + intersect11.y) / 4;
-                    targetY = avgY + 0.4;
+                    targetY = avgY + this.height;
                     dig00 = Vector3.Distance(intersect00, p00);
                     dig10 = Vector3.Distance(intersect10, p10);
                     dig01 = Vector3.Distance(intersect01, p01);
@@ -168,26 +173,28 @@ export class Vehicle extends Mesh implements IVehicle {
                 }
             }
 
-            this.rYSpeed += this.turn * this.turnPower;
-            this.rYSpeed *= 0.98;
+            this.rYSpeed += this.turn * this.turnPower * dt;
+            this.rYSpeed *= smoothNSec(1 / dt, 1);
 
             this.rotate(Vector3.Up(), this.rYSpeed * 0.01, Space.LOCAL);
             this.rotate(Vector3.Right(), this.rXSpeed * 0.003, Space.LOCAL);
             this.rotate(Vector3.Forward(), this.rZSpeed * 0.003, Space.LOCAL);
 
-            this.velocity.addInPlace(this.forward.scale(this.throttle * this.throttlePower));
+            this.velocity.addInPlace(this.forward.scale(this.throttle * this.throttlePower * dt));
             let forwardVelocity = Vector3.Dot(this.velocity, this.forward);
             let rightVelocity = Vector3.Dot(this.velocity, this.right);
-            forwardVelocity *= 0.98;
-            rightVelocity *= 0.95;
+            forwardVelocity *= smoothNSec(1 / dt, this.throttleSmoothNSec);
+            rightVelocity *= smoothNSec(1 / dt, 0.5);
             this.velocity = this.forward.scale(forwardVelocity).add(this.right.scale(rightVelocity));
 
             this.position.addInPlace(this.velocity.scale(0.1));
             if (this.position.y < targetY) {
-                this.position.y = this.position.y * 0.95 + targetY * 0.05;
+                let f = smoothNSec(1 / dt, 0.01);
+                this.position.y = this.position.y * f + targetY * (1 - f);
             }
             else {
-                this.position.y = this.position.y * 0.99 + targetY * 0.01;
+                let f = smoothNSec(1 / dt, 3);
+                this.position.y = this.position.y * f + targetY * (1 - f);
             }
 
             this.rXSpeed *= 0.96;

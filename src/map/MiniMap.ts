@@ -79,7 +79,6 @@ export class Minimap extends HTMLElement {
                 let z = zNorm * this.game.terrain.terrainSizeIJ_m - this.game.terrain.halfTerrainSizeIJ_m;
                 let ijk = this.game.terrain.worldPosToGlobalIJK(new Vector3(x, 0, z));
                 if (ijk) {
-                    console.log(ijk);
                     if (this.game.terrain.chunckDataGenerator instanceof ChunckDataGeneratorDataSets) {
                         let height = await this.game.terrain.chunckDataGenerator.asyncEvaluateHeight(ijk.i, ijk.j);
                         height *= this.game.terrain.blockSizeK_m;
