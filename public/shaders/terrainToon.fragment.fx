@@ -354,7 +354,9 @@ void main() {
             lightFactor = 1.;
          }
          else {
-            color *= 0.9;
+            color.r *= 1.5;
+            color.g *= 0.75;
+            color.b *= 0.75;
          }
       }
    }

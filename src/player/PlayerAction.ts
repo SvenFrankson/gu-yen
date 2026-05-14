@@ -5,50 +5,72 @@ import { Player } from "./Player";
 import { MakeStandardMaterial } from "../MaterialUtils";
 import { BlockType } from "../voxel-engine/BlockType";
 import { TerrainMaterial } from "../TerrainMaterial";
+import { PlayerActionManager } from "./PlayerActionManager";
 
 export abstract class PlayerAction {
+
+    public svgIcon: string = "";
 
     public get game(): Game {
         return this.player.game;
     }
 
+    public get playerActionManager(): PlayerActionManager {
+        return this.player.playerActionManager;
+    }
+
+    public get equiped(): boolean {
+        return this.player.action === this;
+    }
+
     public constructor(public player: Player) {
-        
+        this.svgIcon = `<path fill-rule="evenodd" d="M4.475 5.458c-.284 0-.514-.237-.47-.517C4.28 3.24 5.576 2 7.825 2c2.25 0 3.767 1.36 3.767 3.215 0 1.344-.665 2.288-1.79 2.973-1.1.659-1.414 1.118-1.414 2.01v.03a.5.5 0 0 1-.5.5h-.77a.5.5 0 0 1-.5-.495l-.003-.2c-.043-1.221.477-2.001 1.645-2.712 1.03-.632 1.397-1.135 1.397-2.028 0-.979-.758-1.698-1.926-1.698-1.009 0-1.71.529-1.938 1.402-.066.254-.278.461-.54.461h-.777ZM7.496 14c.622 0 1.095-.474 1.095-1.09 0-.618-.473-1.092-1.095-1.092-.606 0-1.087.474-1.087 1.091S6.89 14 7.496 14"/>`;
+    }
+
+    public equip(): void {
+        if (this.player.action) {
+            this.player.action.unEquip();
+        }
+        this.player.action = this;
+        this.playerActionManager.highlightPlayerAction(this);
+    }
+
+    public unEquip(): void {
+        if (this.player.action === this) {
+            this.player.action = undefined;
+            this.playerActionManager.unlightPlayerAction(this);
+        }
     }
 
     public update(): void {
 
     }
 
-    public pointerMove(event: PointerEvent): void {
-
+    public pointerMove(event: PointerEvent): boolean {
+        return false;
     }
 
-    public pointerDown(event: PointerEvent): void {
-
+    public pointerDown(event: PointerEvent): boolean {
+        return false;
     }
 
-    public pointerUp(event: PointerEvent): void {
-
+    public pointerUp(event: PointerEvent): boolean {
+        return false;
     }
 }
 
 export class PlayerActionDefault extends PlayerAction {
 
-    public blockPointer: Mesh;
-
      constructor(player: Player) {
         super(player);
-        this.blockPointer = MeshBuilder.CreateBox("block-pointer", { size: 0.5 }, player.game.scene);
-        this.blockPointer.scaling.copyFromFloats(1.05, 1.05, 1.05);
-        let redMaterial = MakeStandardMaterial(new Color3(1, 0.5, 0.5), 0, 0.3);
-        redMaterial.alpha = 0.5;
-        this.blockPointer.material = redMaterial;
+    }
+
+    public equip(): void {
+
     }
     
     public update(): void {
         if (this.game.terrain) {
-            this.blockPointer.isVisible = false;
             if (this.game.terrain) {
                 let material = this.game.terrain.getMaterial(0) as TerrainMaterial;
                 material.setGridRangeRadius(0);
@@ -62,48 +84,16 @@ export class PlayerActionDefault extends PlayerAction {
             });
             if (aimPickInfo && aimPickInfo.pickedMesh instanceof PelleteusePart) {
                 this.player.aimedObject = aimPickInfo.pickedMesh.pelleteuse;
-                return;
-            }
-
-            let pickInfos = aimRay.intersectsMeshes(this.player.chuncks.map(c => c.mesh!).filter(m => m));
-            for (let pickInfo of pickInfos) {
-                if (pickInfo && pickInfo.hit && pickInfo.pickedPoint) {
-                    let p = pickInfo.pickedPoint.subtractInPlace(pickInfo.getNormal(true)!.scale(0.1));
-                    let ijk = this.game.terrain.getChunckAndIJKAtPos(p, 0, false);
-                    if (ijk) {
-                        this.player.aimedIJK = ijk;
-                        this.blockPointer.position = ijk.chunck.getPosAtIJK(ijk.ijk);
-                        this.blockPointer.isVisible = false;
-                        if (this.game.terrain) {
-                            let material = this.game.terrain.getMaterial(0) as TerrainMaterial;
-                            material.setGridRangeRadius(this.game.terrain.blockSizeIJ_m * 0.5 + 0.02);
-                            material.setGridRangePosition(this.blockPointer.position);
-                        }
-                        return;
-                    }
-                }
             }
         }
     }
 
-    public pointerDown(event: PointerEvent): void {
+    public pointerDown(event: PointerEvent): boolean {
         if (this.game.terrain) {
             if (this.player.aimedObject) {
-                
-            }
-            else if (this.player.aimedIJK) {
-                let ijk = this.player.aimedIJK;
-                let chunck = ijk.chunck;
-                let affectedChuncks = chunck.setData(BlockType.None, ijk.ijk.i, ijk.ijk.j, ijk.ijk.k);
-                let floatingCount = 0;
-                let floatingChunks = this.game.floatingBlocksDetector?.findFloatingBlocks(chunck.iPos * this.game.terrain!.chunckLengthIJ + ijk.ijk.i, chunck.jPos * this.game.terrain!.chunckLengthIJ + ijk.ijk.j, ijk.ijk.k);
-                if (floatingChunks) {
-                    floatingCount = floatingChunks.array.length;
-                    affectedChuncks.push(...floatingChunks.array);
-                }
-                affectedChuncks.forEach(c => c.redrawMesh(true, floatingCount > 0));
+                return true;
             }
         }
+        return false;
     }
-
 }

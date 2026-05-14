@@ -161,7 +161,7 @@ export class Pelleteuse extends Mesh implements IPelleteuse {
     }
 
     private _update = () => {
-        if (this.game.terrain) {
+        if (this.game.terrain && this.controler) {
             this.head.position.copyFrom(this.absolutePosition);
             this.head.position.y += 3.5 + this.cabine.position.y;
             this.head.rotation.y = this.cabine.rotation.y + AngleFromToAround(Vector3.Forward(), Vector3.Normalize(new Vector3(this.forward.x, 0, this.forward.z)), Vector3.Up());

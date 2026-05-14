@@ -6,12 +6,16 @@ import { Chunck } from "../voxel-engine/Chunck";
 import { Ray } from "@babylonjs/core/Culling/ray.core";
 import { Vector3, Matrix, TransformNode } from "@babylonjs/core";
 import { PlayerAction, PlayerActionDefault } from "./PlayerAction";
+import { PlayerActionManager } from "./PlayerActionManager";
+import { PlayerActionDelete } from "./PlayerActionDelete";
+import { PlayerActionBlock } from "./PlayerActionBlock";
 
 export class Player extends Mesh {
 
     public canUsePointerLock: boolean = true;
     public isPointerLocked: boolean = false;
 
+    public playerActionManager: PlayerActionManager;
     public action?: PlayerAction;
     public defaultAction: PlayerActionDefault;
 
@@ -42,8 +46,11 @@ export class Player extends Mesh {
     constructor(public game: Game) {
         super("player", null);
 
+        this.playerActionManager = new PlayerActionManager(this);
         this.defaultAction = new PlayerActionDefault(this);
-        this.action = this.defaultAction;
+
+        this.playerActionManager.linkAction(1, new PlayerActionBlock(this));
+        this.playerActionManager.linkAction(2, new PlayerActionDelete(this));
 
         MeshBuilder.CreateSphere("player-visual", { diameter: 0.5 }, game.scene).parent = this;
         this.head = new TransformNode("player-head", game.scene);
@@ -75,10 +82,23 @@ export class Player extends Mesh {
                 if (this.pelleteuse) {
                     this.position.copyFrom(this.pelleteuse.cabine.absolutePosition).addInPlace(this.pelleteuse.cabine.right.scale(-2));
                     this.pelleteuse.dropControl();
-                    this.action = this.defaultAction;
+                    this.action = undefined;
                 }
                 else {
                     this.fly = !this.fly;
+                }
+            }
+            for (let i = 0; i < 10; i++) {
+                if (event.code === "Digit" + i) {
+                    let action = this.playerActionManager.actions[i];
+                    if (action) {
+                        if (!action.equiped) {
+                            action.equip();
+                        }
+                        else if (action.equiped) {
+                            action.unEquip();
+                        }
+                    }
                 }
             }
         });
@@ -191,6 +211,7 @@ export class Player extends Mesh {
                 }
             }
 
+            this.defaultAction.update();
             if (this.action) {
                 this.action.update();
             }
@@ -211,7 +232,9 @@ export class Player extends Mesh {
             }
         }
         this._pointerIsDown = true;
-        if (this.action) {
+        
+        let defaultActionValue = this.defaultAction.pointerDown(e);
+        if (!defaultActionValue && this.action) {
             this.action.pointerDown(e);
         }
     }
@@ -225,7 +248,8 @@ export class Player extends Mesh {
             }
         }
         this._pointerIsDown = false;
-        if (this.action) {
+        let defaultActionValue = this.defaultAction.pointerUp(e);
+        if (!defaultActionValue && this.action) {
             this.action.pointerUp(e);
         }
     }
@@ -256,7 +280,8 @@ export class Player extends Mesh {
                 this.head.rotation.x += movementY * 0.004;
             }
         }
-        if (this.action) {
+        let defaultActionValue = this.defaultAction.pointerMove(e);
+        if (!defaultActionValue && this.action) {
             this.action.pointerMove(e);
         }
     }
