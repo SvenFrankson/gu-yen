@@ -77,9 +77,6 @@ body {
 	font-weight: bold;
 	font-family: monospace;
 	color: lime;
-}
-
-    font-family: sans-serif;
     cursor: pointer;
     transition:
         background-color 0.2s,

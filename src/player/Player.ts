@@ -9,6 +9,7 @@ import { PlayerAction, PlayerActionDefault } from "./PlayerAction";
 import { PlayerActionManager } from "./PlayerActionManager";
 import { PlayerActionDelete } from "./PlayerActionDelete";
 import { PlayerActionBlock } from "./PlayerActionBlock";
+import { PlayerActionTreeGenerator } from "./PlayerActionTreeGenerator";
 
 export class Player extends Mesh {
 
@@ -51,6 +52,7 @@ export class Player extends Mesh {
 
         this.playerActionManager.linkAction(1, new PlayerActionBlock(this));
         this.playerActionManager.linkAction(2, new PlayerActionDelete(this));
+        this.playerActionManager.linkAction(3, new PlayerActionTreeGenerator(this));
 
         MeshBuilder.CreateSphere("player-visual", { diameter: 0.5 }, game.scene).parent = this;
         this.head = new TransformNode("player-head", game.scene);

@@ -111,7 +111,6 @@ export class Game {
             this.skybox.position.z = this.camera.position.z;
         });
 
-        let treeGenerator = new TreeGenerator();
         this.canvas.addEventListener("keydown", (event) => {
             if (event.code === "Numpad1") {
                 //generateRoadData(this);

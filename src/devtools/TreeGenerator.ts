@@ -58,7 +58,7 @@ class TreeNode {
     public voxelDraw(terrain: Terrain, drawnBlocks?: IDrawnBlocks[]): void {
         if (this.parent) {
             if (this.radius > 0.5) {
-                let fatLine = new FatLine(terrain, this.position, this.parent.position, Math.max(this.radius * 2, 2));
+                let fatLine = new FatLine(terrain, this.position, this.parent.position, this.radius * 2);
                 fatLine.draw(BlockType.Wood, undefined, undefined, drawnBlocks);
             }
             else {
@@ -97,33 +97,25 @@ class Tree {
 
 export class TreeGenerator {
 
-    public async runTest(game: Game): Promise<void> {
-        let rootPos = Vector3.Zero();
-        let dir = game.camera.getDirection(Axis.Z);
-        dir.y = 0;
-        dir.normalize();
-        rootPos = game.camera.position.add(dir.scale(30));
+    constructor(public game: Game) {
 
-        if (game.terrain) {
-            let ijkGlobal = game.terrain.worldPosToGlobalIJK(rootPos);
-            if (ijkGlobal) {
-                if (game.terrain.chunckDataGenerator instanceof ChunckDataGeneratorDataSets) {
-                    let height = await game.terrain.chunckDataGenerator.asyncEvaluateHeight(ijkGlobal.i, ijkGlobal.j);
-                    rootPos.y = height;
-                }
-            }
+    }
+
+    public async makeTree(rootPos: Vector3): Promise<void> {
+        if (this.game.terrain) {
+            let ijkGlobal = this.game.terrain.worldPosToGlobalIJK(rootPos);
 
             let tree = new Tree();
-            tree.minLength = 1 + Math.floor(Math.random() * 6);
-            tree.maxLength = tree.minLength + Math.floor(Math.random() * 6);
-            tree.rootRadius = 0.1 + Math.random() * 2.5;
-            tree.endRadius = 0.1 + Math.random() * 0.4;
-            tree.maxDepth = 3 + Math.floor(Math.random() * 5);
+            tree.minLength = 1.5 + Math.random();
+            tree.maxLength = tree.minLength + Math.random() * 4;
+            tree.rootRadius = 0.1 + Math.random() * 1.5;
+            tree.endRadius = 0.1 + Math.random() * 0.3;
+            tree.maxDepth = 3 + Math.floor(Math.random() * 4);
             tree.root.position = rootPos;
             tree.root.generateChildren();
 
             let drawnBlocks: IDrawnBlocks[] = [];
-            tree.root.voxelDraw(game.terrain!, drawnBlocks);
+            tree.root.voxelDraw(this.game.terrain!, drawnBlocks);
             let minI = Math.min(...drawnBlocks.map(b => b.i));
             let maxI = Math.max(...drawnBlocks.map(b => b.i));
             let minJ = Math.min(...drawnBlocks.map(b => b.j));
@@ -161,7 +153,7 @@ export class TreeGenerator {
 
             console.log("Tree height = " + h.toFixed(0));
             console.log(voxelDrawingData);
-            //tree.root.draw(new Mesh("tree", game.scene));
+            //tree.root.draw(new Mesh("tree", this.game.scene));
         }
     }
 }
