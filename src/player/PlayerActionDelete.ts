@@ -1,6 +1,5 @@
 import { Color3, Mesh, MeshBuilder, Ray } from "@babylonjs/core";
 import { Game } from "../Game";
-import { PelleteusePart } from "../vehicles/Pelleteuse";
 import { Player } from "./Player";
 import { MakeStandardMaterial } from "../MaterialUtils";
 import { BlockType } from "../voxel-engine/BlockType";

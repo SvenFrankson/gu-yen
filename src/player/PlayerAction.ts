@@ -1,11 +1,11 @@
 import { Color3, Mesh, MeshBuilder, Ray } from "@babylonjs/core";
 import { Game } from "../Game";
-import { PelleteusePart } from "../vehicles/Pelleteuse";
 import { Player } from "./Player";
 import { MakeStandardMaterial } from "../MaterialUtils";
 import { BlockType } from "../voxel-engine/BlockType";
 import { TerrainMaterial } from "../TerrainMaterial";
 import { PlayerActionManager } from "./PlayerActionManager";
+import { VehiclePart } from "../vehicles/Vehicle";
 
 export abstract class PlayerAction {
 
@@ -80,10 +80,10 @@ export class PlayerActionDefault extends PlayerAction {
 
             let aimRay = new Ray(this.player.head.absolutePosition, this.player.head.forward, 8);
             let aimPickInfo = this.game.scene.pickWithRay(aimRay, (mesh) => {
-                return mesh instanceof PelleteusePart;
+                return mesh instanceof VehiclePart;
             });
-            if (aimPickInfo && aimPickInfo.pickedMesh instanceof PelleteusePart) {
-                this.player.aimedObject = aimPickInfo.pickedMesh.pelleteuse;
+            if (aimPickInfo && aimPickInfo.pickedMesh instanceof VehiclePart) {
+                this.player.aimedObject = aimPickInfo.pickedMesh.vehicle;
             }
         }
     }

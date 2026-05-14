@@ -11,6 +11,7 @@ import { Pelleteuse } from "./vehicles/Pelleteuse";
 import { Player } from "./player/Player";
 import { QuaternionFromZYAxis } from "babylonjs-geometry-kit";
 import { OutlinePostProcess } from "./OutlinePostProcess";
+import { Vehicle } from "./vehicles/Vehicle";
 
 export var NO_OUTLINE_LAYERMASK = 0x10000000;
 
@@ -123,10 +124,10 @@ export class MyCamera extends UniversalCamera {
     }
 
     private _update = () => {
-        if (this.player.pelleteuse) {
-            this.position.copyFrom(this.player.pelleteuse.head.absolutePosition);
-            this.position.subtractInPlace(this.player.pelleteuse.head.forward.scale(7));
-            this.rotationQuaternion = QuaternionFromZYAxis(this.player.pelleteuse.head.forward, Vector3.Up());
+        if (this.player.vehicle instanceof Vehicle) {
+            this.position.copyFrom(this.player.vehicle.head.absolutePosition);
+            this.position.subtractInPlace(this.player.vehicle.head.forward.scale(7));
+            this.rotationQuaternion = QuaternionFromZYAxis(this.player.vehicle.head.forward, Vector3.Up());
         }
         else {
             this.position.copyFrom(this.player.head.absolutePosition);

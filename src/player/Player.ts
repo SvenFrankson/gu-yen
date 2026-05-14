@@ -1,7 +1,7 @@
 import { Mesh } from "@babylonjs/core/Meshes/mesh";
 import { Game } from "../Game";
 import { MeshBuilder } from "@babylonjs/core/Meshes/meshBuilder";
-import { IPelleteuse, Pelleteuse, PelleteusePart } from "../vehicles/Pelleteuse";
+import { Pelleteuse } from "../vehicles/Pelleteuse";
 import { Chunck } from "../voxel-engine/Chunck";
 import { Ray } from "@babylonjs/core/Culling/ray.core";
 import { Vector3, Matrix, TransformNode } from "@babylonjs/core";
@@ -10,6 +10,8 @@ import { PlayerActionManager } from "./PlayerActionManager";
 import { PlayerActionDelete } from "./PlayerActionDelete";
 import { PlayerActionBlock } from "./PlayerActionBlock";
 import { PlayerActionTreeGenerator } from "./PlayerActionTreeGenerator";
+import { Vehicle } from "../vehicles/Vehicle";
+import { Car } from "../vehicles/Car";
 
 export class Player extends Mesh {
 
@@ -21,7 +23,7 @@ export class Player extends Mesh {
     public defaultAction: PlayerActionDefault;
 
     public head: TransformNode;
-    public pelleteuse: Pelleteuse | undefined;
+    public vehicle: Vehicle | undefined;
     public chuncks: Chunck[] = [];
     public targetPosition?: Vector3;
     public targetSpeed: number = 1;
@@ -33,7 +35,7 @@ export class Player extends Mesh {
     public leftInput: number = 0;
     public rightInput: number = 0;
 
-    public aimedObject: Pelleteuse | undefined;
+    public aimedObject: Vehicle | undefined;
     public aimedIJK: { chunck: Chunck, ijk: { i: number, j: number, k: number } } | undefined;
 
     public get zInput(): number {
@@ -75,15 +77,15 @@ export class Player extends Mesh {
                 this.rightInput = 1;
             }
             else if (event.code === "KeyE") {
-                if (this.pelleteuse && !this.pelleteuse.digging) {
-                    this.pelleteuse.digging = true;
-                    this.pelleteuse.replacing = false;
+                if (this.vehicle instanceof Pelleteuse && !this.vehicle.digging) {
+                    this.vehicle.digging = true;
+                    this.vehicle.replacing = false;
                 }
             }
             else if (event.code === "Space") {
-                if (this.pelleteuse) {
-                    this.position.copyFrom(this.pelleteuse.cabine.absolutePosition).addInPlace(this.pelleteuse.cabine.right.scale(-2));
-                    this.pelleteuse.dropControl();
+                if (this.vehicle) {
+                    this.position.copyFrom(this.vehicle.absolutePosition).addInPlace(this.vehicle.right.scale(-2));
+                    this.vehicle.dropControl();
                     this.action = undefined;
                 }
                 else {
@@ -119,8 +121,8 @@ export class Player extends Mesh {
                 this.rightInput = 0;
             }
             else if (event.code === "KeyE") {
-                if (this.pelleteuse) {
-                    this.pelleteuse.digging = false;       
+                if (this.vehicle instanceof Pelleteuse) {
+                    this.vehicle.digging = false;       
                 }
                 else if (this.aimedObject) {
                     this.aimedObject.takeControl(this);
@@ -179,9 +181,9 @@ export class Player extends Mesh {
                 }
             }
 
-            if (this.pelleteuse) {
-                this.position.copyFrom(this.pelleteuse.position);
-                this.rotation.copyFrom(this.pelleteuse.rotation);
+            if (this.vehicle) {
+                this.position.copyFrom(this.vehicle.position);
+                this.rotation.copyFrom(this.vehicle.rotation);
             }
             else {
                 if (this.fly) {
@@ -227,9 +229,9 @@ export class Player extends Mesh {
                 this.isPointerLocked = true;
             });
             if (this.isPointerLocked) {
-                if (this.pelleteuse && !this.pelleteuse.digging) {
-                    this.pelleteuse.digging = true;
-                    this.pelleteuse.replacing = false;
+                if (this.vehicle instanceof Pelleteuse && !this.vehicle.digging) {
+                    this.vehicle.digging = true;
+                    this.vehicle.replacing = false;
                 }
             }
         }
@@ -244,8 +246,8 @@ export class Player extends Mesh {
     private _pointerUp = (e: PointerEvent) => {
         if (this.canUsePointerLock) {
             if (this.isPointerLocked) {
-                if (this.pelleteuse) {
-                    this.pelleteuse.digging = false;
+                if (this.vehicle instanceof Pelleteuse) {
+                    this.vehicle.digging = false;
                 }
             }
         }
@@ -260,22 +262,26 @@ export class Player extends Mesh {
         let movementX = Math.max(-10, Math.min(10, e.movementX));
         let movementY = Math.max(-10, Math.min(10, e.movementY));
         if (this.isPointerLocked || this._pointerIsDown) {
-            if (this.pelleteuse) {
-                if (this.pelleteuse.digging) {
-                    this.pelleteuse.cabine.rotation.y += movementX * 0.0005;
-                    this.pelleteuse.head.rotation.x += movementY * 0.002;
+            if (this.vehicle instanceof Pelleteuse) {
+                if (this.vehicle.digging) {
+                    this.vehicle.cabine.rotation.y += movementX * 0.0005;
+                    this.vehicle.head.rotation.x += movementY * 0.002;
                 }
                 else {
-                    this.pelleteuse.cabine.rotation.y += movementX * 0.004;
-                    this.pelleteuse.head.rotation.x += movementY * 0.004;
+                    this.vehicle.cabine.rotation.y += movementX * 0.004;
+                    this.vehicle.head.rotation.x += movementY * 0.004;
                 }
 
                 if (movementY > 0) {
-                    this.pelleteuse.replacing = false;
+                    this.vehicle.replacing = false;
                 }
                 else if (movementY < 0) {
-                    this.pelleteuse.replacing = true;
+                    this.vehicle.replacing = true;
                 }
+            }
+            else if (this.vehicle instanceof Car) {
+                this.vehicle.head.rotation.y += movementX * 0.0005;
+                this.vehicle.head.rotation.x += movementY * 0.002;
             }
             else {
                 this.rotation.y += movementX * 0.004;

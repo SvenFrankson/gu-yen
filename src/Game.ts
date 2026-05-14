@@ -20,6 +20,8 @@ import HavokPhysics from "@babylonjs/havok";
 import { Pelleteuse } from "./vehicles/Pelleteuse";
 import { Player } from "./player/Player";
 import { FloatingBlocksDetector } from "./voxel-engine/FloatingBlocksDetector";
+import { Car } from "./vehicles/Car";
+import { ChunckDataGeneratorDataSets } from "./voxel-engine/TerrainGen/ChunckDataGeneratorDataSets";
 
 export class Game {
 
@@ -111,7 +113,20 @@ export class Game {
             this.skybox.position.z = this.camera.position.z;
         });
 
-        this.canvas.addEventListener("keydown", (event) => {
+        this.canvas.addEventListener("keydown", async (event) => {
+            if (event.code === "Numpad0") {
+                if (this.terrain) {
+                    let ijk = this.terrain.worldPosToGlobalIJK(new Vector3(0, 0, 0));
+                    if (ijk) {
+                        if (this.terrain.chunckDataGenerator instanceof ChunckDataGeneratorDataSets) {
+                            let height = await this.terrain.chunckDataGenerator.asyncEvaluateHeight(ijk.i, ijk.j);
+                            height *= this.terrain.blockSizeK_m;
+                            this.player.position = new Vector3(0, height + 4, 0);
+                            this.player.targetPosition = this.player.position.clone();
+                        }
+                    }
+                }
+            }
             if (event.code === "Numpad1") {
                 //generateRoadData(this);
             }
@@ -122,6 +137,11 @@ export class Game {
                 console.log("Player position: ", this.player.absolutePosition.clone());
                 let pelleteuse = new Pelleteuse(this.player.absolutePosition.add(this.player.forward.scale(5)), this);
                 pelleteuse.instantiate();
+            }
+            else if (event.code === "Numpad4") {
+                console.log("Player position: ", this.player.absolutePosition.clone());
+                let car = new Car(this.player.absolutePosition.add(this.player.forward.scale(5)), this);
+                car.instantiate();
             }
         });
 
@@ -171,7 +191,7 @@ export class Game {
             });
 
             this.terrain.initialize();
-            this.terrain.chunckManager.setDistance(50);
+            this.terrain.chunckManager.setDistance(100);
             this.terrain.sunDir.copyFrom(light.direction);
 
             let noiseTexture = new CubicNoiseTexture(this.scene);
