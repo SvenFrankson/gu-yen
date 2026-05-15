@@ -9,7 +9,7 @@ export class ChunckDataGeneratorFromSave extends ChunckDataGenerator {
         if (terrainSave) {
             let chunckSave = terrainSave.chuncks.find(c => { return c.name === chunck.name; });
             if (chunckSave) {
-                chunck.deserializeData2(chunckSave.data);
+                chunck.deserializeData(chunckSave.data);
             
                 for (let k = 0; k < chunck.dataSizeK; k++) {
                     chunck.updateIsEmptyIsFull(k);

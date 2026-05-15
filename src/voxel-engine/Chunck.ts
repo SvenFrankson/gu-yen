@@ -14,6 +14,7 @@ import { Texture } from "@babylonjs/core/Materials/Textures/texture";
 import { Constants } from "@babylonjs/core/Engines/constants";
 import { PhysicsBody } from "@babylonjs/core/Physics/v2/physicsBody";
 import { PhysicsMotionType, PhysicsShapeMesh } from "@babylonjs/core";
+import { crunchDataString, uncrunchDataString } from "./TerrainGen/RawProp/VoxelDrawing";
 
 export var DRAW_CHUNCK_MARGIN: number = 2;
 
@@ -301,9 +302,15 @@ export class Chunck {
             }
 
             let fromSave = false;
-            fromSave = await this.terrain.chunckDataGeneratorSave.initializeData(this);
+            
+            let dataString = localStorage.getItem(this.name);
+            if (dataString) {
+                this.deserializeData(dataString);
+                fromSave = true;
+            }
             if (!fromSave) {
                 await this.terrain.chunckDataGenerator.initializeData(this);
+                this.saveToLocalStorage();
                 //await this.terrain.chunckDataGeneratorFlat.initializeData(this);
             }
 
@@ -1034,42 +1041,29 @@ export class Chunck {
     }
 
     public saveToLocalStorage(): void {
-        let dataString = this.serializeData2();
+        let dataString = this.serializeData();
         localStorage.setItem(this.name, dataString);
     }
 
     public serializeData(): string {
-        let compressedDataArray: number[][] = [];
-        for (let k = 0; k < this._dataSizeK; k++) {
-            let compressedData = [...this._data[k]];
-            compressedDataArray[k] = compressedData;
-        }
-        return JSON.stringify(compressedDataArray);
-    }
-
-    public serializeData2(): string {
         let dataString: string = "";
 
         for (let k = 0; k < this._dataSizeK; k++) {
             let l = this._data[k].length;
             if (l === 1) {
-                dataString += "O" + this._data[k][0].toString(16).padStart(2, "0");
+                dataString += this._data[k][0].toString(16).padStart(2, "0") + "\n";
             }
             else {
-                let layerDataString = "";
-                let compressedData = Compress(this._data[k]);
-                for (let i = 0; i < compressedData.length; i++) {
-                    layerDataString += compressedData[i].toString(16).padStart(2, "0");
-                }
-                dataString += "M" + layerDataString;
+                dataString += crunchDataString(btoa(String.fromCharCode(...this._data[k]))) + "\n";
             }
         }
+        console.log(dataString.length);
 
         return dataString;
     }
 
-    public deserializeData2(dataString: string): void {
-        let splitDataString = dataString.split(/[XOM]+/).filter((s) => { return s.length > 0; });
+    public deserializeData(dataString: string): void {
+        let splitDataString = dataString.split(/[\n]+/).filter((s) => { return s.length > 0; });
         let kMax = Math.min(splitDataString.length, this.dataSizeK);
         for (let k = 0; k < kMax; k++) {
             let layerDataString = splitDataString[k];
@@ -1077,11 +1071,7 @@ export class Chunck {
                 this._data[k] = new Uint8Array([parseInt(layerDataString, 16)]);
             }
             else {
-                let compressedLayerData: Uint8Array = new Uint8Array(layerDataString.length / 2);
-                for (let n = 0; n < layerDataString.length / 2; n++) {
-                    compressedLayerData[n] = parseInt(layerDataString.substring(2 * n, 2 * n + 2), 16);
-                }
-                this._data[k] = Decompress(compressedLayerData);
+                this._data[k] = Uint8Array.from(atob(uncrunchDataString(layerDataString)), c => c.charCodeAt(0))
             }
             this.updateIsEmptyIsFull(k);
         }
