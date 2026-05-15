@@ -3,6 +3,7 @@ import { Chunck, DRAW_CHUNCK_MARGIN } from "../../Chunck";
 import { ChunckDataGeneratorDataSets, IBuildingData } from "../ChunckDataGeneratorDataSets";
 import { RasterizeTriangle } from "../../../Math2D";
 import { BlockType } from "../../BlockType";
+import { IsVeryFinite } from "../../../Number";
 
 export function drawBuilding(buildingData: IBuildingData, chunck: Chunck, chunckGenerator: ChunckDataGeneratorDataSets): void {
     let m = DRAW_CHUNCK_MARGIN;
@@ -12,8 +13,12 @@ export function drawBuilding(buildingData: IBuildingData, chunck: Chunck, chunck
         return;
     }
 
+    let floorHeight = 7;
     let h0 = Math.floor(chunckGenerator.evaluateHeight(heightMap, buildingData.ijGlobalCenter[0], buildingData.ijGlobalCenter[1]));
-    let h = (buildingData.h !== undefined ? buildingData.h! : 6);
+    if (!IsVeryFinite(buildingData.floors)) {
+        buildingData.floors = 1;
+    }
+    let h = buildingData.floors * floorHeight;
 
     let localIJs = buildingData.ijGlobals.map((ijGlobal, index) => {
         if (index % 2 === 0) {
@@ -35,9 +40,44 @@ export function drawBuilding(buildingData: IBuildingData, chunck: Chunck, chunck
             if (i >= -m && i < chunck.chunckLengthIJ + m) {
                 let j = Math.round(j0 + (j1 - j0) * nn / l);
                 if (j >= -m && j < chunck.chunckLengthIJ + m) {
+                    let wallType = 0;
+                    if (nn % 6 >= 2 && nn % 6 <= 3) {
+                        wallType = 2;
+                    }
+                    else if (nn % 6 >= 1 && nn % 6 <= 4) {
+                        wallType = 3;
+                    }
                     for (let k = 0; k <= h; k++) {
+                        let kGlobal = h0 + k;
                         let blockType = BlockType.WhiteConcrete + buildingData.c;
-                        chunck.setRawData(blockType, i + m, j + m, h0 +k);
+                        if (wallType === 0) {
+                            chunck.setRawData(blockType, i + m, j + m, kGlobal);
+                        }
+                        else if (wallType === 2) {
+                            if (k < floorHeight) {
+                                let dH = k % floorHeight;
+                                if (dH >= 6) {
+                                    chunck.setRawData(blockType, i + m, j + m, kGlobal);
+                                }
+                            }
+                            else {
+                                let dH = k % floorHeight;
+                                if (dH <= 2 || dH >= 6) {
+                                    chunck.setRawData(blockType, i + m, j + m, kGlobal);
+                                }
+                            }
+                        }
+                        else if (wallType === 3) {
+                            if (k < floorHeight) {
+                                let dH = k % floorHeight;
+                                if (dH >= 6) {
+                                    chunck.setRawData(blockType, i + m, j + m, kGlobal);
+                                }
+                            }
+                            else {
+                                chunck.setRawData(blockType, i + m, j + m, kGlobal);
+                            }
+                        }
                     }
                 }
             }
@@ -60,6 +100,12 @@ export function drawBuilding(buildingData: IBuildingData, chunck: Chunck, chunck
             i1, j1,
             i2, j2,
             (i, j) => {
+                for (let f = 0; f < buildingData.floors; f++) {
+                    let k = h0 + f * floorHeight;
+                    if (chunck.getRawData(i + m, j + m, k) === BlockType.None) {
+                        chunck.setRawData(BlockType.Regolith, i + m, j + m, k);
+                    }
+                }
                 chunck.setRawData(BlockType.Laterite, i + m, j + m, Math.floor(h + h0 + 1));
             },
             -m, chunck.chunckLengthIJ + m - 1, -m, chunck.chunckLengthIJ + m - 1
