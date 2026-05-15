@@ -9,6 +9,7 @@ import { Vector2 } from "@babylonjs/core/Maths/math.vector";
 import { Terrain } from "../Terrain";
 import { NextFrame } from "../../Tools";
 import * as earcut from "earcut"
+import { drawBuilding } from "./building/BuildingMaker";
 
 export interface ITreeData {
     lat: number;
@@ -294,86 +295,6 @@ export class ChunckDataGeneratorDataSets extends ChunckDataGenerator {
                     }
                 }
             }
-
-            await NextFrame();
-            
-            let buildingTileI = Math.floor(chunck.iPos / this.terrain.chunckCountIJ * this.buildingTiles.size);
-            let buildingTileJ = Math.floor(chunck.jPos / this.terrain.chunckCountIJ * this.buildingTiles.size); 
-            let buildingTiles = this.buildingTiles.tiles.filter(tile => Math.abs(tile.i - buildingTileI) <= 1 && Math.abs(tile.j - buildingTileJ) <= 1);
-
-            let buildingMap: number[][][] = [];
-            for (let i: number = -m; i < chunck.chunckLengthIJ + m; i++) {
-                buildingMap[i + m] = [];
-                for (let j: number = -m; j < chunck.chunckLengthIJ + m; j++) {
-                    buildingMap[i + m][j + m] = [0, 0, 0, 0]; //h0, h, type (0 wall, 1 door, 2 window)
-                }
-            }
-
-            if (buildingTiles.length > 0) {
-                for (let buildingTile of buildingTiles) {
-                    for (let buildingData of buildingTile.dataArray) {
-                        let h0 = this.evaluateHeight(heightMap, buildingData.ijGlobalCenter[0], buildingData.ijGlobalCenter[1]);
-                        let h = (buildingData.h !== undefined ? buildingData.h! : 6);
-
-                        let localIJs = buildingData.ijGlobals.map((ijGlobal, index) => {
-                            if (index % 2 === 0) {
-                                return ijGlobal - chunck.iPos * chunck.chunckLengthIJ;
-                            } else {
-                                return ijGlobal - chunck.jPos * chunck.chunckLengthIJ;
-                            }
-                        });
-
-                        for (let n = 0; n < localIJs.length - 2; n += 2) {
-                            let i0 = localIJs[n];
-                            let j0 = localIJs[n + 1];
-                            let i1 = localIJs[n + 2];
-                            let j1 = localIJs[n + 3];
-
-                            let l = Math.max(Math.abs(i1 - i0), Math.abs(j1 - j0));
-                            for (let i = 0; i <= l; i++) {
-                                let x = Math.round(i0 + (i1 - i0) * i / l);
-                                if (x >= -m && x < chunck.chunckLengthIJ + m) {
-                                    let y = Math.round(j0 + (j1 - j0) * i / l);
-                                    if (y >= -m && y < chunck.chunckLengthIJ + m) {
-                                        if (h >= buildingMap[x + m][y + m][1]) {
-                                            roadMap[x + m][y + m] = 3 + (buildingData.c !== undefined ? buildingData.c! : 0);
-                                            let type = 0;
-                                            if (i % 5 >= 2 && i % 5 <= 3) {
-                                                type = 2;
-                                            }
-                                            buildingMap[x + m][y + m][0] = h0;
-                                            buildingMap[x + m][y + m][1] = h;
-                                            buildingMap[x + m][y + m][2] = type;
-                                        }
-                                    }
-                                }
-                            }
-                        }
-
-                        let triangles = earcut.default(localIJs, undefined, 2);
-                        for (let t = 0; t < triangles.length; t += 3) {
-                            let i0 = localIJs[2 * triangles[t]];
-                            let j0 = localIJs[2 * triangles[t] + 1];
-
-                            let i1 = localIJs[2 * triangles[t + 1]];
-                            let j1 = localIJs[2 * triangles[t + 1] + 1];
-
-                            let i2 = localIJs[2 * triangles[t + 2]];
-                            let j2 = localIJs[2 * triangles[t + 2] + 1];
-
-                            RasterizeTriangle(
-                                i0, j0,
-                                i1, j1,
-                                i2, j2,
-                                (i, j) => {
-                                    buildingMap[i + m][j + m][3] = Math.max(h + h0, buildingMap[i + m][j + m][3]);
-                                },
-                                -m, chunck.chunckLengthIJ + m - 1, -m, chunck.chunckLengthIJ + m - 1
-                            );
-                        }                        
-                    }
-                }
-            }
             
             await NextFrame();
 
@@ -425,15 +346,6 @@ export class ChunckDataGeneratorDataSets extends ChunckDataGenerator {
                         maxRock -= 2;
                         maxAsphalt = h - 1;
                     }
-                    else if (isRoad >= 3) {
-                        buildingH0 = buildingMap[i + m][j + m][0];
-                        maxConcrete = buildingH0 + buildingMap[i + m][j + m][1];
-                        buildingWallType = buildingMap[i + m][j + m][2];
-                    }
-
-                    if (buildingMap[i + m][j + m][3] > 0) {
-                        chunck.setRawData(BlockType.Laterite, i + m, j + m, Math.floor(buildingMap[i + m][j + m][3] + 1));
-                    }
 
                     for (let k: number = 0; k <= chunck.chunckLengthK; k++) {
                         let kGlobal = k * chunck.levelFactor;
@@ -469,6 +381,20 @@ export class ChunckDataGeneratorDataSets extends ChunckDataGenerator {
                                 }
                             }
                         }
+                    }
+                }
+            }
+
+            await NextFrame();
+            
+            let buildingTileI = Math.floor(chunck.iPos / this.terrain.chunckCountIJ * this.buildingTiles.size);
+            let buildingTileJ = Math.floor(chunck.jPos / this.terrain.chunckCountIJ * this.buildingTiles.size); 
+            let buildingTiles = this.buildingTiles.tiles.filter(tile => Math.abs(tile.i - buildingTileI) <= 1 && Math.abs(tile.j - buildingTileJ) <= 1);
+
+            if (buildingTiles.length > 0) {
+                for (let buildingTile of buildingTiles) {
+                    for (let buildingData of buildingTile.dataArray) {
+                        drawBuilding(buildingData, chunck, this);
                     }
                 }
             }

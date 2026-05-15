@@ -12,7 +12,7 @@ export function drawBuilding(buildingData: IBuildingData, chunck: Chunck, chunck
         return;
     }
 
-    let h0 = chunckGenerator.evaluateHeight(heightMap, buildingData.ijGlobalCenter[0], buildingData.ijGlobalCenter[1]);
+    let h0 = Math.floor(chunckGenerator.evaluateHeight(heightMap, buildingData.ijGlobalCenter[0], buildingData.ijGlobalCenter[1]));
     let h = (buildingData.h !== undefined ? buildingData.h! : 6);
 
     let localIJs = buildingData.ijGlobals.map((ijGlobal, index) => {
@@ -35,9 +35,9 @@ export function drawBuilding(buildingData: IBuildingData, chunck: Chunck, chunck
             if (i >= -m && i < chunck.chunckLengthIJ + m) {
                 let j = Math.round(j0 + (j1 - j0) * nn / l);
                 if (j >= -m && j < chunck.chunckLengthIJ + m) {
-                    for (let k = 0; k < h; k++) {
+                    for (let k = 0; k <= h; k++) {
                         let blockType = BlockType.WhiteConcrete + buildingData.c;
-                        chunck.setRawData(blockType, i + m, j + m, k);
+                        chunck.setRawData(blockType, i + m, j + m, h0 +k);
                     }
                 }
             }
