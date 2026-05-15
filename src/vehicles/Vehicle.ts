@@ -129,53 +129,71 @@ export class Vehicle extends Mesh implements IVehicle {
                 let intersect01: Vector3 | null = null;
                 let intersect11: Vector3 | null = null;
 
-                let dig00 = 0;
-                let dig10 = 0;
-                let dig01 = 0;
-                let dig11 = 0;
+                let dig00: number = 2 + this.height;
+                let dig10: number = 2 + this.height;
+                let dig01: number = 2 + this.height;
+                let dig11: number = 2 + this.height;
 
                 for (let chunck of chuncks) {
                     if (!intersect00) {
                         let hit00 = ray00.intersectsMesh(chunck.mesh!, false);
-                        if (hit00) {
+                        if (hit00 && hit00.pickedPoint) {
                             intersect00 = hit00.pickedPoint;
+                            dig00 = Vector3.Distance(hit00.pickedPoint, p00);
                         }
                     }
                     if (!intersect10) {
                         let hit10 = ray10.intersectsMesh(chunck.mesh!, false);
-                        if (hit10) {
+                        if (hit10 && hit10.pickedPoint) {
                             intersect10 = hit10.pickedPoint;
+                            dig10 = Vector3.Distance(hit10.pickedPoint, p10);
                         }
                     }
                     if (!intersect01) {
                         let hit01 = ray01.intersectsMesh(chunck.mesh!, false);
-                        if (hit01) {
+                        if (hit01 && hit01.pickedPoint) {
                             intersect01 = hit01.pickedPoint;
+                            dig01 = Vector3.Distance(hit01.pickedPoint, p01);
                         }
                     }
                     if (!intersect11) {
                         let hit11 = ray11.intersectsMesh(chunck.mesh!, false);
-                        if (hit11) {
+                        if (hit11 && hit11.pickedPoint) {
                             intersect11 = hit11.pickedPoint;
+                            dig11 = Vector3.Distance(hit11.pickedPoint, p11);
                         }
                     }
                 }
 
-                if (intersect00 && intersect10 && intersect01 && intersect11) {
-                    grounded = true;
-                    let avgY = (intersect00.y + intersect10.y + intersect01.y + intersect11.y) / 4;
-                    targetY = avgY + this.height;
-                    dig00 = Vector3.Distance(intersect00, p00);
-                    dig10 = Vector3.Distance(intersect10, p10);
-                    dig01 = Vector3.Distance(intersect01, p01);
-                    dig11 = Vector3.Distance(intersect11, p11);
-
-                    this.rZSpeed += 80 * dt * ((dig00 - dig10) + (dig01 - dig11));
-                    this.rXSpeed += 80 * dt * ((dig01 - dig00) + (dig11 - dig10));
-
-                    this.rXSpeed = Math.max(Math.min(this.rXSpeed, Math.PI), -Math.PI);
-                    this.rZSpeed = Math.max(Math.min(this.rZSpeed, Math.PI), -Math.PI);
+                let avgY = 0;
+                let count = 0;
+                if (intersect00) {
+                    avgY += intersect00.y;
+                    count++;
                 }
+                if (intersect10) {
+                    avgY += intersect10.y;
+                    count++;
+                }
+                if (intersect01) {
+                    avgY += intersect01.y;
+                    count++;
+                }
+                if (intersect11) {
+                    avgY += intersect11.y;
+                    count++;
+                }
+
+                if (count > 0) {
+                grounded = true;
+                    avgY /= count;
+                    targetY = avgY + this.height;
+                }
+
+                this.rZSpeed += 20 * dt * (dig00 - dig10);
+                this.rZSpeed += 20 * dt * (dig01 - dig11);
+                this.rXSpeed += 20 * dt * (dig01 - dig00);
+                this.rXSpeed += 20 * dt * (dig11 - dig10);
             }
 
             this.rYSpeed += this.turn * this.turnPower * dt;
@@ -192,22 +210,16 @@ export class Vehicle extends Mesh implements IVehicle {
             this.velocity = this.forward.scale(forwardVelocity).add(this.right.scale(rightVelocity)).add(this.up.scale(upVelocity));
             this.velocity.y -= 9.81 * dt;
             if (this.position.y < targetY) {
+                this.velocity.y += 100 * (targetY - this.position.y) * dt;
                 if (this.velocity.y < 0) {
-                    this.velocity.y = - this.velocity.y * 0.5;
+                    this.velocity.y = - this.velocity.y * 0.1;
                 }
-                this.velocity.y += 200 * (targetY - this.position.y) * dt;
                 //this.position.y = targetY;
             }
 
             grounded = grounded && this.position.y <= targetY + 0.1;
-            if (grounded) {
-                this.rXSpeed *= smoothNSec(1 / dt, 1);
-                this.rZSpeed *= smoothNSec(1 / dt, 1);
-            }
-            else {
-                this.rXSpeed *= smoothNSec(1 / dt, 1);
-                this.rZSpeed *= smoothNSec(1 / dt, 1);
-            }
+            this.rXSpeed *= smoothNSec(1 / dt, 0.2);
+            this.rZSpeed *= smoothNSec(1 / dt, 0.2);
 
             this.position.addInPlace(this.velocity.scale(dt));
             this.rotate(Vector3.Up(), this.rYSpeed * dt, Space.LOCAL);

@@ -4,12 +4,13 @@ import { IsVeryFinite } from "../Number";
 import { ChunckDataGeneratorDataSets, IBuildingData, IDataTile, IDataTilesCollection, IRoadData } from "../voxel-engine/TerrainGen/ChunckDataGeneratorDataSets";
 import { UniqueList } from "../UniqueList";
 import { CapsuleRectCheck } from "../Math2D";
+import { download, WaitNSeconds } from "../Tools";
 
 export async function generateBuildingData(game: Game) {
     let NBuildingTiles = 1024;
     let BuildingTileLengthIJ = game.terrain ? game.terrain.terrainLengthIJ / NBuildingTiles : 32;
-    let NBuildingFetchTiles = 16;
-    NBuildingFetchTiles = 128;
+    let NBuildingFetchTiles = 32;
+    //NBuildingFetchTiles = 128;
     
     let dLat = Math.atan2(16384, game.geoConverter.radius) / Math.PI * 180;
     let dLong = Math.atan2(16384, game.geoConverter.radius * Math.cos(game.geoConverter.latZero * Math.PI / 180)) / Math.PI * 180;
@@ -34,7 +35,7 @@ export async function generateBuildingData(game: Game) {
 
     let tags: UniqueList<string> = new UniqueList<string>();
 
-    let s = 0;
+    let s = 1;
     let min = NBuildingFetchTiles / 2 - s;
     let max = NBuildingFetchTiles / 2 + s;
     if (s === 0) {
@@ -54,7 +55,7 @@ export async function generateBuildingData(game: Game) {
             var query = `
                 [bbox:${latMin.toFixed(7)},${longMin.toFixed(7)},${latMax.toFixed(7)},${longMax.toFixed(7)}]
                 [out:json]
-                [timeout:90]
+                [timeout:120]
                 ;
                 way(${latMin.toFixed(7)}, ${longMin.toFixed(7)}, ${latMax.toFixed(7)}, ${longMax.toFixed(7)})[building];
                 out geom;
@@ -68,7 +69,6 @@ export async function generateBuildingData(game: Game) {
                 }
             );
             let data = await res.json();
-            console.log(data);
 
             for (let e of data.elements) {
                 let building: IBuildingData = {
@@ -93,7 +93,7 @@ export async function generateBuildingData(game: Game) {
                     }
                 }
                 
-                let line: Vector3[] = [];
+                //let line: Vector3[] = [];
                 let shapeGlobalIMin = Number.POSITIVE_INFINITY;
                 let shapeGlobalIMax = Number.NEGATIVE_INFINITY;
                 let shapeGlobalJMin = Number.POSITIVE_INFINITY;
@@ -114,7 +114,7 @@ export async function generateBuildingData(game: Game) {
                         shapeGlobalJMin = Math.min(shapeGlobalJMin, globalIJK.j);
                         shapeGlobalJMax = Math.max(shapeGlobalJMax, globalIJK.j);
                     }
-                    line.push(position);
+                    //line.push(position);
                 }
 
                 shapeGlobalIMin -= 4;
@@ -150,10 +150,13 @@ export async function generateBuildingData(game: Game) {
                             }
                         }
                     }
-                }
-                
-                MeshBuilder.CreateLines("line", { points: line, colors: line.map(() => new Color4(0, 1, 0, 1)) }, game.scene);
+                }            
+                //MeshBuilder.CreateLines("line", { points: line, colors: line.map(() => new Color4(0, 1, 0, 1)) }, game.scene);
             }
+
+            console.log("waiting a bit to avoid overloading the server...");
+            await WaitNSeconds(3);
+            console.log("continuing");    
         }
     }
 
@@ -174,6 +177,5 @@ export async function generateBuildingData(game: Game) {
         }
     }
 
-    console.log(sparseBuildingTiles);
-    console.log("maxBuildingsPerTile: " + maxBuildingsPerTile);
+    download("buildings.json", JSON.stringify(sparseBuildingTiles));
 }

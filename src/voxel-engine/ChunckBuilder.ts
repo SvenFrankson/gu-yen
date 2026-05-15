@@ -8,6 +8,7 @@ import { ExtendedVertexData } from "./ExtendedVertexData";
 import { BlockType } from "./BlockType";
 import { IChunckAnalyticBuildOccurence } from "./ChunckAnalytic";
 import { IJK, IsVeryFinite, MinMax } from "../Number";
+import { NextFrame } from "../Tools";
 
 export class ChunckMeshBuilder {
 
@@ -98,7 +99,7 @@ export class ChunckMeshBuilder {
         return this._Normals[y][x][z];
     }
     
-    public BuildMesh(chunck: Chunck, sides: number, analyticOccurence?: IChunckAnalyticBuildOccurence): VertexData {
+    public async BuildMesh(chunck: Chunck, sides: number, analyticOccurence?: IChunckAnalyticBuildOccurence): Promise<VertexData> {
         this._Vertices = [];
         this._Normals = [];
 
@@ -230,6 +231,8 @@ export class ChunckMeshBuilder {
             profile_buildReferencesArray();
         }
 
+        //await NextFrame();
+
         if (analyticOccurence) {
             analyticOccurence.firstNonEmptyReferenceK = firstNonEmptyReferenceK;
             analyticOccurence.lastNonEmptyReferenceK = lastNonEmptyReferenceK;
@@ -334,6 +337,8 @@ export class ChunckMeshBuilder {
             profile_fillVertexDataArrays();
         }
 
+        //await NextFrame();
+        
         let profile_postProcessVertexDataArrays = () => {
             if (positions.length === 0 || indices.length === 0) {
                 return;

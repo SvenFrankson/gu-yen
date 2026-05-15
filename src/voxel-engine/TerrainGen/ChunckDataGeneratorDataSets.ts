@@ -8,6 +8,7 @@ import { DistancePointSegment as DistancePointSegmentVec2, RasterizeTriangle } f
 import { Vector2 } from "@babylonjs/core/Maths/math.vector";
 import { Terrain } from "../Terrain";
 import { NextFrame } from "../../Tools";
+import * as earcut from "earcut"
 
 export interface ITreeData {
     lat: number;
@@ -29,7 +30,7 @@ export interface IBuildingData {
     ijGlobalCenter: number[];
     ijGlobals: number[];
     type: string;
-    c?: number;
+    c: number;
     h?: number;
     floors: number;
     h0?: number;
@@ -98,6 +99,10 @@ export class ChunckDataGeneratorDataSets extends ChunckDataGenerator {
             this.trees[n] = tree;
         }
         return tree;
+    }
+
+    public getDataIfReady(): number[] | undefined {
+        return this._data;
     }
 
     private async _getData(): Promise<number[] | undefined> {
@@ -310,11 +315,19 @@ export class ChunckDataGeneratorDataSets extends ChunckDataGenerator {
                         let h0 = this.evaluateHeight(heightMap, buildingData.ijGlobalCenter[0], buildingData.ijGlobalCenter[1]);
                         let h = (buildingData.h !== undefined ? buildingData.h! : 6);
 
-                        for (let n = 0; n < buildingData.ijGlobals.length - 2; n += 2) {
-                            let i0 = buildingData.ijGlobals[n] - chunck.iPos * chunck.chunckLengthIJ;
-                            let j0 = buildingData.ijGlobals[n + 1] - chunck.jPos * chunck.chunckLengthIJ;
-                            let i1 = buildingData.ijGlobals[n + 2] - chunck.iPos * chunck.chunckLengthIJ;
-                            let j1 = buildingData.ijGlobals[n + 3] - chunck.jPos * chunck.chunckLengthIJ;
+                        let localIJs = buildingData.ijGlobals.map((ijGlobal, index) => {
+                            if (index % 2 === 0) {
+                                return ijGlobal - chunck.iPos * chunck.chunckLengthIJ;
+                            } else {
+                                return ijGlobal - chunck.jPos * chunck.chunckLengthIJ;
+                            }
+                        });
+
+                        for (let n = 0; n < localIJs.length - 2; n += 2) {
+                            let i0 = localIJs[n];
+                            let j0 = localIJs[n + 1];
+                            let i1 = localIJs[n + 2];
+                            let j1 = localIJs[n + 3];
 
                             let l = Math.max(Math.abs(i1 - i0), Math.abs(j1 - j0));
                             for (let i = 0; i <= l; i++) {
@@ -335,17 +348,29 @@ export class ChunckDataGeneratorDataSets extends ChunckDataGenerator {
                                     }
                                 }
                             }
+                        }
+
+                        let triangles = earcut.default(localIJs, undefined, 2);
+                        for (let t = 0; t < triangles.length; t += 3) {
+                            let i0 = localIJs[2 * triangles[t]];
+                            let j0 = localIJs[2 * triangles[t] + 1];
+
+                            let i1 = localIJs[2 * triangles[t + 1]];
+                            let j1 = localIJs[2 * triangles[t + 1] + 1];
+
+                            let i2 = localIJs[2 * triangles[t + 2]];
+                            let j2 = localIJs[2 * triangles[t + 2] + 1];
 
                             RasterizeTriangle(
                                 i0, j0,
                                 i1, j1,
-                                buildingData.ijGlobalCenter[0] - chunck.iPos * chunck.chunckLengthIJ, buildingData.ijGlobalCenter[1] - chunck.jPos * chunck.chunckLengthIJ,
+                                i2, j2,
                                 (i, j) => {
                                     buildingMap[i + m][j + m][3] = Math.max(h + h0, buildingMap[i + m][j + m][3]);
                                 },
                                 -m, chunck.chunckLengthIJ + m - 1, -m, chunck.chunckLengthIJ + m - 1
                             );
-                        }
+                        }                        
                     }
                 }
             }

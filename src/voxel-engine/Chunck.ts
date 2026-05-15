@@ -301,17 +301,21 @@ export class Chunck {
                 this._data[k][0] = BlockType.None;
             }
 
-            let fromSave = false;
             
-            let dataString = localStorage.getItem(this.name);
-            if (dataString) {
-                this.deserializeData(dataString);
-                fromSave = true;
+            if (this.terrain.useLocalStorage) {
+                let fromSave = false;
+                let dataString = localStorage.getItem(this.name);
+                if (dataString) {
+                    this.deserializeData(dataString);
+                    fromSave = true;
+                }
+                if (!fromSave) {
+                    await this.terrain.chunckDataGenerator.initializeData(this);
+                    this.saveToLocalStorage();
+                }
             }
-            if (!fromSave) {
+            else {
                 await this.terrain.chunckDataGenerator.initializeData(this);
-                this.saveToLocalStorage();
-                //await this.terrain.chunckDataGeneratorFlat.initializeData(this);
             }
 
             this._dataInitialized = true;
@@ -710,7 +714,7 @@ export class Chunck {
                 }
 
                 if (force || !this.mesh || sides != this._lastDrawnSides) {
-                    let vertexData = this.terrain.chunckBuilder.BuildMesh(this, sides, analyticOccurence);
+                    let vertexData = await this.terrain.chunckBuilder.BuildMesh(this, sides, analyticOccurence);
                     if (vertexData) {
                         if (!this.mesh) {
                             this.mesh = new Mesh(this.name + "-mesh");
@@ -719,6 +723,7 @@ export class Chunck {
                         vertexData.applyToMesh(this.mesh);
                         this.mesh.position.copyFrom(this.position);
 
+                        /*
                         if (forcePhysic) {
                             this.updatePhysic();
                         }
@@ -728,6 +733,7 @@ export class Chunck {
                                 this.updatePhysic();
                             }, 500);
                         }
+                        */
 
                         if (this.terrain.customChunckMaterialSet) {
                             this.terrain.customChunckMaterialSet(this);

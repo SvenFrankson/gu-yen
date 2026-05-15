@@ -13,12 +13,14 @@
     "@babylonjs/havok": "^1.3.11",
     "@babylonjs/inspector": "^9.2.0",
     "@babylonjs/loaders": "^9.2.1",
+    "@types/earcut": "^3.0.0",
     "babylonjs-extra-meshes-kit": "^0.0.1",
     "babylonjs-geometry-kit": "^0.0.4",
     "typescript": "~6.0.2",
     "vite": "^8.0.4"
   },
   "dependencies": {
-    "bootstrap-icons": "^1.13.1"
+    "bootstrap-icons": "^1.13.1",
+    "earcut": "^3.0.2"
   }
 }

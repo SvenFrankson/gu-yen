@@ -51,6 +51,6 @@ export class GameSave {
             };
             this.data.terrain.chuncks.push(existingChunck);
         }
-        existingChunck.data = chunck.serializeData2();
+        existingChunck.data = chunck.serializeData();
     }
 }

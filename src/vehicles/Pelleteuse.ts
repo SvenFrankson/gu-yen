@@ -50,6 +50,13 @@ export class Pelleteuse extends Vehicle implements IVehicle {
         super(position, game);
 
         this.position.copyFrom(position);
+
+        this.throttlePower = 10;
+        this.throttleSmoothNSec = 1;
+        this.turnPower = 2;
+        this.length = 2.4;
+        this.width = 1.2;
+        this.height = 0.5;
         
         let toonMaterial = new ToonMaterial("test", game.scene);
         this.material = toonMaterial;

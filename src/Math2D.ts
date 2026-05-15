@@ -77,7 +77,7 @@ export function RasterizeTriangle(i0: number, j0: number, i1: number, j1: number
     let maxI = Math.min(Math.ceil(Math.max(i0, i1, i2)), iMax);
     let minJ = Math.max(Math.floor(Math.min(j0, j1, j2)), jMin);
     let maxJ = Math.min(Math.ceil(Math.max(j0, j1, j2)), jMax);
-    
+
     for (let i = minI; i <= maxI; i++) {
         for (let j = minJ; j <= maxJ; j++) {
             let w0 = (i1 - i0) * (j - j0) - (i - i0) * (j1 - j0);
