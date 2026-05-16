@@ -1,3 +1,4 @@
+import { Vector2 } from "@babylonjs/core/Maths/math.vector";
 import { IsVeryFinite } from "../../Number";
 import { UniqueList } from "../../UniqueList";
 import { BlockType } from "../BlockType";
@@ -8,6 +9,7 @@ import { ChunckDataGeneratorEmpty } from "./ChunckDataGeneratorEmpty";
 import { ChunckDataGeneratorFlat } from "./ChunckDataGeneratorFlat";
 import { ChunckDataGeneratorPNG } from "./ChunckDataGeneratorPNG";
 import { treesVoxelDrawingDatas } from "./RawProp/Tree";
+import { AngleFromTo } from "../../Math2D";
 
 export class ChunckDataGeneratorFactory {
     
@@ -110,6 +112,35 @@ export class ChunckDataGeneratorFactory {
                 chunckDataGenerator.buildingTiles = props.buildingTiles as IDataTilesCollection<IDataTile<IBuildingData>>;
                 for (let buildingTile of chunckDataGenerator.buildingTiles.tiles) {
                     for (let buildingData of buildingTile.dataArray) {
+
+                        let angleSum = 0;
+                        let rays: Vector2[] = [];
+                        for (let n = 0; n < buildingData.ijGlobals.length; n += 2) {
+                            let x = buildingData.ijGlobals[n] - buildingData.ijGlobalCenter[0];
+                            let y = buildingData.ijGlobals[n + 1] - buildingData.ijGlobalCenter[1];
+                            rays.push(new Vector2(x, y));
+                        }
+                        for (let i = 0; i < rays.length; i++) {
+                            let ray = rays[i];
+                            let nextRay = rays[(i + 1) % rays.length];
+                            let angle = AngleFromTo(ray, nextRay);
+                            angleSum += angle;
+                        }
+                        if (angleSum < 0) {
+                            //console.log("reversing building vertices");
+                            buildingData.ijGlobals.reverse();
+                            for (let n = 0; n < buildingData.ijGlobals.length; n += 2) {
+                                let j = buildingData.ijGlobals[n];
+                                let i = buildingData.ijGlobals[n + 1];
+                                buildingData.ijGlobals[n] = i;
+                                buildingData.ijGlobals[n + 1] = j;
+                            }
+                        }
+                        else {
+                            //console.log("building vertices order is correct");
+                        }
+
+                        
                         if (!IsVeryFinite(buildingData.floors)) {
                             buildingData.floors = 1;
                         }

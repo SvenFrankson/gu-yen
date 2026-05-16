@@ -8,12 +8,18 @@ export interface Intersection2DResult {
     penetration: number;
 }
 
-var TmpVec3 = [Vector2.Zero(), Vector2.Zero(), Vector2.Zero(), Vector2.Zero(), Vector2.Zero()];
+var TmpVec2 = [Vector2.Zero(), Vector2.Zero(), Vector2.Zero(), Vector2.Zero(), Vector2.Zero()];
+
+export function AngleFromTo(v1: Vector2, v2: Vector2): number {
+    let angle1 = Math.atan2(v1.y, v1.x);
+    let angle2 = Math.atan2(v2.y, v2.x);
+    return angle2 - angle1;
+}
 
 export function DistancePointSegment(point: Vector2, segA: Vector2, segB: Vector2): number {
-    let AP = TmpVec3[0];
-    let dir = TmpVec3[1];
-    let projP = TmpVec3[2];
+    let AP = TmpVec2[0];
+    let dir = TmpVec2[1];
+    let projP = TmpVec2[2];
     AP.copyFrom(point).subtractInPlace(segA);
     dir.copyFrom(segB).subtractInPlace(segA);
     let l = dir.length();
@@ -87,5 +93,16 @@ export function RasterizeTriangle(i0: number, j0: number, i1: number, j1: number
                 rasterizeFunc(i, j);
             }
         }
+    }
+}
+
+export function RasterizeTriangles(v2s: Vector2[], rasterizeFunc: (i: number, j: number) => void, iMin: number, iMax: number, jMin: number, jMax: number): void {
+    for (let t = 0; t < v2s.length; t += 3) {
+        RasterizeTriangle(
+            v2s[t].x, v2s[t].y,
+            v2s[t + 1].x, v2s[t + 1].y,
+            v2s[t + 2].x, v2s[t + 2].y,
+            rasterizeFunc, iMin, iMax, jMin, jMax
+        );
     }
 }

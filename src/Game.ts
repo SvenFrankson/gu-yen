@@ -5,7 +5,7 @@ import "@babylonjs/core/Culling/ray";
 import { ChunckVertexData } from "./voxel-engine/ChunckVertexData";
 import { Terrain } from "./voxel-engine/Terrain";
 import { GeneratorType } from "./voxel-engine/TerrainGen/ChunckDataGenerator";
-import { Color3, CubeTexture, HavokPlugin, HemisphericLight, Mesh, MeshBuilder, StandardMaterial, Texture, Vector3 } from "@babylonjs/core";
+import { Color3, CubeTexture, HavokPlugin, HemisphericLight, Mesh, MeshBuilder, StandardMaterial, Texture, Vector2, Vector3 } from "@babylonjs/core";
 import { GeoConverter } from "./map/Geo";
 import { TessademAPIKey } from "./APIKey";
 import { Minimap } from "./map/MiniMap";
@@ -22,6 +22,7 @@ import { Player } from "./player/Player";
 import { FloatingBlocksDetector } from "./voxel-engine/FloatingBlocksDetector";
 import { Car } from "./vehicles/Car";
 import { ChunckDataGeneratorDataSets } from "./voxel-engine/TerrainGen/ChunckDataGeneratorDataSets";
+import { AngleFromTo } from "./Math2D";
 
 export class Game {
 
@@ -148,7 +149,6 @@ export class Game {
         let miniMap: Minimap = document.createElement("mini-map") as Minimap;
         document.body.appendChild(miniMap);
         miniMap.setGame(this);
-
 
         ChunckVertexData.InitializeData("meshes/chunck-parts.gltf", this.scene).then(async () => {
             // initialize plugin
