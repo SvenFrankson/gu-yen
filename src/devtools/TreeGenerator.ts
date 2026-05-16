@@ -1,6 +1,6 @@
 import { Axis, Mesh, MeshBuilder } from "@babylonjs/core";
 import { Quaternion, Vector3 } from "@babylonjs/core/Maths/math.vector";
-import { QuaternionFromYZAxis } from "babylonjs-geometry-kit"
+import { QuaternionFromYZAxis } from "babylonjs-tiaratumgames-tools"
 import { Game } from "../Game";
 import { ChunckDataGeneratorDataSets } from "../voxel-engine/TerrainGen/ChunckDataGeneratorDataSets";
 import { Terrain } from "../voxel-engine/Terrain";

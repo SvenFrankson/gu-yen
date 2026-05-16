@@ -335,9 +335,6 @@ export class ChunckDataGeneratorDataSets extends ChunckDataGenerator {
                     maxDirt = 0;
                     let maxAsphalt = 0;
                     maxRock = h;
-                    let maxConcrete = 0;
-                    let buildingWallType = 0;
-                    let buildingH0 = 0;
                     if (isRoad === 0) {
                         maxRock = h + Math.min(noiseValue * 8, 0);
                         maxDirt = h + noiseValue * 8;
@@ -361,24 +358,6 @@ export class ChunckDataGeneratorDataSets extends ChunckDataGenerator {
                             }
                             else if (isRoad === 2) {
                                 chunck.setRawData(BlockType.WhiteAsphalt, i + m, j + m, k);
-                            }
-                        }
-                        else if (kGlobal <= maxConcrete) {
-                            let blockType = BlockType.WhiteConcrete + isRoad - 3;
-                            if (buildingWallType === 0) {
-                                chunck.setRawData(blockType, i + m, j + m, k);
-                            }
-                            else if (buildingWallType === 1) {
-                                let dH = Math.floor(kGlobal - buildingH0) % 6;
-                                if (dH > 6) {
-                                    chunck.setRawData(blockType, i + m, j + m, k);
-                                }
-                            }
-                            else if (buildingWallType === 2) {
-                                let dH = Math.floor(kGlobal - buildingH0) % 6;
-                                if (dH < 2 || dH >= 5) {
-                                    chunck.setRawData(blockType, i + m, j + m, k);
-                                }
                             }
                         }
                     }

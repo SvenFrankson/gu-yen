@@ -9,7 +9,7 @@ import { BlockType } from "./voxel-engine/BlockType";
 import { FloatingBlocksDetector } from "./voxel-engine/FloatingBlocksDetector";
 import { Pelleteuse } from "./vehicles/Pelleteuse";
 import { Player } from "./player/Player";
-import { QuaternionFromZYAxis } from "babylonjs-geometry-kit";
+import { QuaternionFromZYAxis } from "babylonjs-tiaratumgames-tools";
 import { OutlinePostProcess } from "./OutlinePostProcess";
 import { Vehicle } from "./vehicles/Vehicle";
 

@@ -5,7 +5,7 @@ import { BlockType } from "../../BlockType";
 import { TerrainEditionMode } from "../../TerrainEditor/TerrainEditor";
 import { IsVeryFinite } from "../../../Number";
 import { UniqueList } from "../../../UniqueList";
-import { DistancePointSegment } from "babylonjs-geometry-kit";
+import { DistancePointSegment } from "babylonjs-tiaratumgames-tools";
 import { IDrawnBlocks } from "../Shape";
 
 export class FatLine {

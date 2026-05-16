@@ -23,6 +23,9 @@ import { FloatingBlocksDetector } from "./voxel-engine/FloatingBlocksDetector";
 import { Car } from "./vehicles/Car";
 import { ChunckDataGeneratorDataSets } from "./voxel-engine/TerrainGen/ChunckDataGeneratorDataSets";
 import { AngleFromTo } from "./Math2D";
+import { registerBuiltInLoaders } from "@babylonjs/loaders/dynamic";
+import { Phasm } from "./sumuqan/Phasm";
+registerBuiltInLoaders();
 
 export class Game {
 
@@ -143,6 +146,13 @@ export class Game {
                 console.log("Player position: ", this.player.absolutePosition.clone());
                 let car = new Car(this.player.absolutePosition.add(this.player.forward.scale(5)), this);
                 car.instantiate();
+            }
+            else if (event.code === "Numpad5") {
+                console.log("Player position: ", this.player.absolutePosition.clone());
+                let phasm = new Phasm(this);
+                phasm.setPosition(this.player.absolutePosition.add(this.player.forward.scale(5)));
+                phasm.instantiate();
+                phasm.initialize();
             }
         });
 

@@ -62,7 +62,7 @@ export function drawBuilding(buildingData: IBuildingData, chunck: Chunck, chunck
     }
 
     let stairW = 5;
-    let stairL = floorHeight * 2;
+    let stairL = floorHeight * 1.5;
     let stairP: Vector2 | undefined = undefined;
     let stairDir: Vector2 | undefined = undefined;
     let stairRightDir: Vector2 | undefined = undefined;

@@ -5,7 +5,7 @@ import { BlockType } from "./BlockType";
 import { MeshBuilder } from "@babylonjs/core/Meshes/meshBuilder";
 import { Vector3 } from "@babylonjs/core/Maths/math.vector";
 import { UniqueList } from "../UniqueList";
-import { GetBBoxFromVertexData, TranslateVertexDataInPlace } from "../VertexDataUtils";
+import { GetBBoxFromVertexData, TranslateVertexDataInPlace } from "babylonjs-tiaratumgames-tools";
 import { PhysicsBody } from "@babylonjs/core/Physics/v2/physicsBody";
 import { PhysicsMotionType, PhysicsShapeConvexHull, PhysicsShapeCylinder, PhysicsShapeMesh } from "@babylonjs/core";
 

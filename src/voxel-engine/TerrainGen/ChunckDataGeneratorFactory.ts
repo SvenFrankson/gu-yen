@@ -113,20 +113,16 @@ export class ChunckDataGeneratorFactory {
                 for (let buildingTile of chunckDataGenerator.buildingTiles.tiles) {
                     for (let buildingData of buildingTile.dataArray) {
 
-                        let angleSum = 0;
-                        let rays: Vector2[] = [];
+                        let edgeSum = 0;
                         for (let n = 0; n < buildingData.ijGlobals.length; n += 2) {
-                            let x = buildingData.ijGlobals[n] - buildingData.ijGlobalCenter[0];
-                            let y = buildingData.ijGlobals[n + 1] - buildingData.ijGlobalCenter[1];
-                            rays.push(new Vector2(x, y));
+                            let x0 = buildingData.ijGlobals[n];
+                            let y0 = buildingData.ijGlobals[n + 1];
+                            let x1 = buildingData.ijGlobals[(n + 2) % buildingData.ijGlobals.length];
+                            let y1 = buildingData.ijGlobals[(n + 3) % buildingData.ijGlobals.length];
+                            edgeSum += (x1 - x0) * (y1 + y0);
                         }
-                        for (let i = 0; i < rays.length; i++) {
-                            let ray = rays[i];
-                            let nextRay = rays[(i + 1) % rays.length];
-                            let angle = AngleFromTo(ray, nextRay);
-                            angleSum += angle;
-                        }
-                        if (angleSum < 0) {
+                        
+                        if (edgeSum > 0) {
                             //console.log("reversing building vertices");
                             buildingData.ijGlobals.reverse();
                             for (let n = 0; n < buildingData.ijGlobals.length; n += 2) {
