@@ -1,4 +1,4 @@
-import { Vector3, Mesh, Color3, CreateBoxVertexData, Quaternion } from "@babylonjs/core";
+import { Vector3, Mesh, Color3, CreateBoxVertexData, Quaternion, StandardMaterial } from "@babylonjs/core";
 import { Game } from "../Game";
 import { ToonMaterial } from "../ToonMaterial";
 import { Polypode } from "./Polypode";
@@ -66,7 +66,7 @@ class PhasmController {
         }
         
         this.phasm.speed = distDestination * 0.5;
-        this.phasm.speed = Math.max(Math.min(this.phasm.speed, 0.5), 0);
+        this.phasm.speed = Math.max(Math.min(this.phasm.speed, 1 * this.phasm.size), 0);
         let alphaDestination = AngleFromToAround(dirDestination, this.phasm.forward, this.phasm.up);
         this.phasm.rotationSpeed = 0;
         if (alphaDestination > Math.PI / 64) {
@@ -85,6 +85,7 @@ export class Phasm extends Polypode {
 
     constructor(public game: Game) {
         super("phasm", {
+            size: 4,
             legPairsCount: 3,
             headAnchor: (new Vector3(0, 0.04, 0.25)),
             hipAnchors: [
@@ -101,8 +102,8 @@ export class Phasm extends Polypode {
             upperLegLength: 0.27,
             lowerLegLength: 0.31,
             legScales: [1.1, 0.9, 1],
-            stepHeight: 0.15,
-            stepDuration: 0.3,
+            stepHeight: 0.2,
+            stepDuration: 0.2,
             bodyWorldOffset: new Vector3(0, - 0.05, 0),
             antennaAnchor: new Vector3(0.045, 0.041, 0.065),
             antennaLength: 0.5,
@@ -118,20 +119,20 @@ export class Phasm extends Polypode {
         this.rightLegs[2].kneeMode = KneeMode.Outward;
         this.leftLegs[2].kneeMode = KneeMode.Outward;
 
-        let povMaterial = new ToonMaterial("debug-pov-material", this.game.scene);
-        //povMaterial.setDiffuse(new Color3(0.5, 0.5, 1));
-        //povMaterial.setAlpha(0.4);
-        //povMaterial.setSpecularIntensity(0.5);
+        let povMaterial = new StandardMaterial("debug-pov-material", this.game.scene);
+        povMaterial.diffuseColor = new Color3(0.5, 0.5, 1);
+        povMaterial.alpha = 0.4;
+        povMaterial.specularColor = new Color3(0.5, 0.5, 0.5);
         
-        let colliderMaterial = new ToonMaterial("body", this.game.scene);
-        //colliderMaterial.setDiffuse(new Color3(0.5, 1, 0.5));
-        //colliderMaterial.setAlpha(0.4);
-        //colliderMaterial.setSpecularIntensity(0.5);
+        let colliderMaterial = new StandardMaterial("body", this.game.scene);
+        colliderMaterial.diffuseColor = new Color3(0.5, 1, 0.5);
+        colliderMaterial.alpha = 0.4;
+        colliderMaterial.specularColor = new Color3(0.5, 0.5, 0.5);
 
-        let colliderHitMaterial = new ToonMaterial("body", this.game.scene);
-        //colliderHitMaterial.setDiffuse(new Color3(1, 0.5, 0.5));
-        //colliderHitMaterial.setAlpha(0.4);
-        //colliderHitMaterial.setSpecularIntensity(0.5);
+        let colliderHitMaterial = new StandardMaterial("body", this.game.scene);
+        colliderHitMaterial.diffuseColor = new Color3(1, 0.5, 0.5);
+        colliderHitMaterial.alpha = 0.4;
+        colliderHitMaterial.specularColor = new Color3(0.5, 0.5, 0.5);
 
         this.terrain = [];
         if (this.game.player) {
@@ -145,18 +146,27 @@ export class Phasm extends Polypode {
         }
 
         setInterval(() => {
-            this.terrain = [];
-            if (this.game.player) {
-                if (this.game.player.chuncks) {
-                    this.game.player.chuncks.forEach(chunck => {
-                        if (chunck && chunck.mesh) {
-                            this.terrain.push(chunck.mesh);
+            if (this.game.terrain) {
+                let ijk = this.game.terrain.getChunckAndIJKAtPos(this.position, 0, false);
+                if (ijk) {
+                    let chunck = ijk.chunck;
+                    this.terrain = [chunck.mesh!];
+                    let i0 = ijk.ijk.i < this.game.terrain.chunckLengthIJ * 0.5 ? -1 : 0;
+                    let j0 = ijk.ijk.j < this.game.terrain.chunckLengthIJ * 0.5 ? -1 : 0;
+                    for (let i = i0; i <= i0 + 1; i++) {
+                        for (let j = j0; j <= j0 + 1; j++) {
+                            if (i != 0 || j != 0) {
+                                let c = this.game.terrain.getChunck(chunck.level, chunck.iPos + i, chunck.jPos + j);
+                                if (c) {
+                                    this.terrain.push(c.mesh!);
+                                }
+                            }
                         }
-                    })
+                    }
                 }
             }
             console.log(this.terrain.length);
-        }, 1000);
+        }, 500);
 
         this.controller = new PhasmController(this);
 
@@ -173,7 +183,8 @@ export class Phasm extends Polypode {
         this.updateBodyCollidersMeshes();
 
         this.debugPovMaterial = povMaterial;
-        this.showCollisionDebug = false;
+        this.showCollisionDebug = true;
+        this.showPOVDebug = true;
 
         if (this.showCollisionDebug) {
             CreateBoxVertexData({ width: 0.1, height: 0.8, depth: 0.1 }).applyToMesh(this);

@@ -1,11 +1,12 @@
-import { Vector3, Mesh, Material, MeshBuilder, Quaternion, Space, Ray } from "@babylonjs/core";
+import { Vector3, Mesh, Material, MeshBuilder, Quaternion, Space, Ray, Color3 } from "@babylonjs/core";
 import { Antenna } from "./Antenna";
 import { KneeMode, Leg } from "./Leg";
-import { Collider, IsFinite, QuaternionFromYZAxis, QuaternionFromYZAxisToRef, QuaternionFromZYAxisToRef, RandomInSphereCut, RayCollidersIntersection, SphereCollider, SphereCollidersIntersection } from "babylonjs-tiaratumgames-tools";
+import { Collider, DrawDebugHit, IsFinite, QuaternionFromYZAxis, QuaternionFromYZAxisToRef, QuaternionFromZYAxisToRef, RandomInSphereCut, RayCollidersIntersection, SphereCollider, SphereCollidersIntersection } from "babylonjs-tiaratumgames-tools";
 import { IScorpionTailProps, ScorpionTail } from "./ScorpionTail";
-import { MinMax } from "../Number";
+import { IsVeryFinite, MinMax } from "../Number";
 
 export interface IPolypodeProps {
+    size?: number;
     legPairsCount: number;
     hipAnchors?: Vector3[];
     rightHipAnchors?: Vector3[];
@@ -39,6 +40,7 @@ export interface IPolypodeProps {
 
 export class Polypode extends Mesh {
 
+    public size: number = 1;
     public speed: number = 0;
     private _fSpeed: number = 0; // normalized speed between a min and a max (now 0 and 0.5)
     public rotationSpeed: number = 0;
@@ -171,10 +173,14 @@ export class Polypode extends Mesh {
     constructor(name: string, prop: IPolypodeProps) {
         super(name);
 
+        if (prop && IsVeryFinite(prop.size)) {
+            this.size = prop.size!;
+        }
         this.legPairCount = prop.legPairsCount;
 
         // Create all required meshes
         this.body = MeshBuilder.CreateSphere("body", { diameterX: 1, diameterY: 1, diameterZ: 1.5 });
+        this.body.scaling.copyFromFloats(this.size, this.size, this.size);
         this.body.rotationQuaternion = Quaternion.Identity();
 
         for (let i = 0; i < this.legPairCount; i++) {
@@ -186,6 +192,7 @@ export class Polypode extends Mesh {
         this.legs = [...this.rightLegs, ...this.leftLegs];
         
         this.head = MeshBuilder.CreateSphere("head", { diameterX: 0.5, diameterY: 0.5, diameterZ: 0.75 });
+        this.head.scaling.copyFromFloats(this.size, this.size, this.size);
         this.head.rotationQuaternion = Quaternion.Identity();
 
         if (IsFinite(prop.antennaAnchor!)) {
@@ -243,14 +250,14 @@ export class Polypode extends Mesh {
         
         if (prop.footTargets) {
             // FootTargets provided
-            this.rightFootTargets = [...prop.footTargets].map(v => { return v.clone(); });
-            this.leftFootTargets = [...prop.footTargets].map(v => { return v.multiplyByFloats(- 1, 1, 1); });
+            this.rightFootTargets = [...prop.footTargets].map(v => { return v.clone().scaleInPlace(this.size); });
+            this.leftFootTargets = [...prop.footTargets].map(v => { return v.multiplyByFloats(- 1, 1, 1).scaleInPlace(this.size); });
         }
         else {
             if (prop.rightFootTargets && prop.leftFootTargets) {
                 // Right and Left FootTargets provided
-                this.rightFootTargets = [...prop.rightFootTargets].map(v => { return v.clone(); });
-                this.leftFootTargets = [...prop.leftFootTargets].map(v => { return v.clone(); });
+                this.rightFootTargets = [...prop.rightFootTargets].map(v => { return v.clone().scaleInPlace(this.size); });
+                this.leftFootTargets = [...prop.leftFootTargets].map(v => { return v.clone().scaleInPlace(this.size); });
             }
             else {
                 // Generate default FootTargets
@@ -260,8 +267,8 @@ export class Polypode extends Mesh {
                     let a = (i + 1) / (this.legPairCount + 1) * Math.PI;
                     let cosa = Math.cos(a);
                     let sina = Math.sin(a);
-                    this.rightFootTargets[i] = (new Vector3(sina, - 0.5, cosa)).normalize().scaleInPlace(2);
-                    this.leftFootTargets[i] = (new Vector3(- sina, - 0.5, cosa)).normalize().scaleInPlace(2);
+                    this.rightFootTargets[i] = (new Vector3(sina, - 0.5, cosa)).normalize().scaleInPlace(2).scaleInPlace(this.size);
+                    this.leftFootTargets[i] = (new Vector3(- sina, - 0.5, cosa)).normalize().scaleInPlace(2).scaleInPlace(this.size);
                 }
             }
         }
@@ -297,8 +304,8 @@ export class Polypode extends Mesh {
         if (prop.legScales) {
             for (let i = 0; i < this.legPairCount; i++) {
                 if (isFinite(prop.legScales[i])) {
-                    this.rightLegs[i].scale = prop.legScales[i];
-                    this.leftLegs[i].scale = prop.legScales[i];
+                    this.rightLegs[i].scale = prop.legScales[i] * this.size;
+                    this.leftLegs[i].scale = prop.legScales[i] * this.size;
                 }
             }
         }
@@ -403,7 +410,7 @@ export class Polypode extends Mesh {
             let destinationForward = targetForward.clone();
             let dist = 1.5 * Vector3.Distance(origin, destination);
             let hMax = Math.min(Math.max(this.stepHeightMin, dist), this.stepHeightMax);
-            let duration = Math.min(Math.max(this.stepDurationMin, dist), this.stepDurationMax);
+            let duration = Math.min(Math.max(this.stepDurationMin, dist), this.stepDurationMax) * Math.sqrt(this.size);
             duration *= 3 * (1 - this._fSpeed) + 1 * this._fSpeed;
             let t = 0;
             let animationCB = () => {
@@ -448,7 +455,7 @@ export class Polypode extends Mesh {
         let fFindUp = 0.999 * (1 - this._fSpeed) + 0.98 * this._fSpeed;
         let origin = Vector3.TransformCoordinates(this.povOffset, this.getWorldMatrix());
         for (let i = 0; i < this.mentalCheckPerFrame; i++) {
-            let distCheck = this.povRadiusMax;
+            let distCheck = this.povRadiusMax * this.size;
             let dir = RandomInSphereCut(this.forward, - this.povAlpha * 0.5, this.povAlpha * 0.5, this.povBetaMin, this.povBetaMax, this.up);
             let ray = new Ray(origin, dir, distCheck);
             let intersection = RayCollidersIntersection(ray, this.terrain);
@@ -460,7 +467,7 @@ export class Polypode extends Mesh {
                     this.mentalMapNormal[this.mentalMapIndex] = n;
                     this.localNormal.scaleInPlace(fFindUp).addInPlace(this.mentalMapNormal[this.mentalMapIndex].scale(1 - fFindUp));
                     if (this._showPOVDebug) {
-                        //DrawDebugHit(intersection.point, this.mentalMapNormal[this.mentalMapIndex], this.mentalMapMaxSize / this.mentalCheckPerFrame, Color3.Green());
+                        DrawDebugHit(intersection.point!, this.mentalMapNormal[this.mentalMapIndex], this.mentalMapMaxSize / this.mentalCheckPerFrame, Color3.Green());
                     }
                     this.mentalMapIndex = (this.mentalMapIndex + 1) % this.mentalMapMaxSize;
                 }
@@ -601,7 +608,7 @@ export class Polypode extends Mesh {
         
         QuaternionFromZYAxisToRef(this.forward, this.up, this.head.rotationQuaternion!);
 
-        Vector3.LerpToRef(this.body.position, bodyPos, 0.1, this.body.position);
+        Vector3.LerpToRef(this.body.position, bodyPos, 0.05, this.body.position);
 
         // Terrain collision [v]
         let collideWithTerrain = false;
@@ -636,7 +643,7 @@ export class Polypode extends Mesh {
         // Prevent overstrech [v]
         let dir = this.position.subtract(this.body.absolutePosition);
         let l = dir.length();
-        let maxL = 1;
+        let maxL = 1 * Math.sqrt(this.size);
         if (l > maxL) {
             dir.scaleInPlace(1 / l);
             this.position.copyFrom(dir).scaleInPlace(maxL).addInPlace(this.body.absolutePosition);

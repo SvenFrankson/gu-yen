@@ -12,7 +12,7 @@ export enum KneeMode {
 export class Leg {
 
     public kneeMode: KneeMode = KneeMode.Vertical;
-    public initialKneePos: Vector3 = Vector3.Zero();
+    public initialKneePos?: Vector3;
 
     public footLength: number = 0.5;
     public lowerLegLength: number = 1;

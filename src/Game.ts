@@ -201,7 +201,7 @@ export class Game {
             });
 
             this.terrain.initialize();
-            this.terrain.chunckManager.setDistance(100);
+            this.terrain.chunckManager.setDistance(50);
             this.terrain.sunDir.copyFrom(light.direction);
 
             let noiseTexture = new CubicNoiseTexture(this.scene);
