@@ -29,7 +29,8 @@ export enum BlockType {
     WhiteConcrete,
     YellowConcrete,
     GrayConcrete,
-    BlackConcrete
+    BlackConcrete,
+    MetalPole
 }
 
 export var BlockTypeColors: Color3[] = [];

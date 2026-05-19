@@ -12,6 +12,8 @@ import { PlayerActionBlock } from "./PlayerActionBlock";
 import { PlayerActionTreeGenerator } from "./PlayerActionTreeGenerator";
 import { Vehicle } from "../vehicles/Vehicle";
 import { Car } from "../vehicles/Car";
+import { PlayerActionBall } from "./PlayerActionBall";
+import { BlockType } from "../voxel-engine/BlockType";
 
 export class Player extends Mesh {
 
@@ -49,17 +51,18 @@ export class Player extends Mesh {
     constructor(public game: Game) {
         super("player", null);
 
-        this.playerActionManager = new PlayerActionManager(this);
-        this.defaultAction = new PlayerActionDefault(this);
-
-        this.playerActionManager.linkAction(1, new PlayerActionBlock(this));
-        this.playerActionManager.linkAction(2, new PlayerActionDelete(this));
-        this.playerActionManager.linkAction(3, new PlayerActionTreeGenerator(this));
-
-        MeshBuilder.CreateSphere("player-visual", { diameter: 0.5 }, game.scene).parent = this;
         this.head = new TransformNode("player-head", game.scene);
         this.head.parent = this;
         this.head.position.y = 1.8;
+
+        this.playerActionManager = new PlayerActionManager(this);
+        this.defaultAction = new PlayerActionDefault(this);
+
+        this.playerActionManager.linkAction(1, new PlayerActionBlock(this, BlockType.Grass));
+        this.playerActionManager.linkAction(2, new PlayerActionDelete(this));
+        this.playerActionManager.linkAction(3, new PlayerActionTreeGenerator(this));
+        this.playerActionManager.linkAction(4, new PlayerActionBall(this));
+        this.playerActionManager.linkAction(5, new PlayerActionBlock(this, BlockType.MetalPole));
 
         this.game.scene.onBeforeRenderObservable.add(this._update);
 

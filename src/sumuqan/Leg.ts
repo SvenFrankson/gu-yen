@@ -21,6 +21,9 @@ export class Leg {
     public get totalLength(): number {
         return (this.upperLegLength + this.lowerLegLength) * this.scale;
     }
+    public get totalLengthSquared(): number {
+        return this.totalLength * this.totalLength;
+    }
 
     public foot: Mesh;
     public lowerLeg: Mesh;

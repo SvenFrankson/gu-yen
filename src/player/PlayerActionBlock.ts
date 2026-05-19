@@ -10,7 +10,7 @@ export class PlayerActionBlock extends PlayerAction {
 
     public blockPointer: Mesh;
 
-     constructor(player: Player) {
+     constructor(player: Player, public blockType: BlockType) {
         super(player);
 
         this.svgIcon = `
@@ -66,7 +66,7 @@ export class PlayerActionBlock extends PlayerAction {
             if (this.player.aimedIJK) {
                 let ijk = this.player.aimedIJK;
                 let chunck = ijk.chunck;
-                let affectedChuncks = chunck.setData(BlockType.Grass, ijk.ijk.i, ijk.ijk.j, ijk.ijk.k);
+                let affectedChuncks = chunck.setData(this.blockType, ijk.ijk.i, ijk.ijk.j, ijk.ijk.k);
                 affectedChuncks.forEach(c => c.redrawMesh(true));
                 return true;
             }

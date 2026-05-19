@@ -9,6 +9,8 @@ import { BlockType } from "./BlockType";
 import { IChunckAnalyticBuildOccurence } from "./ChunckAnalytic";
 import { IJK, IsVeryFinite, MinMax } from "../Number";
 import { NextFrame } from "../Tools";
+import { CreateBoxVertexData } from "@babylonjs/core";
+import { MergeVertexDatas, TranslateVertexDataInPlace } from "babylonjs-tiaratumgames-tools";
 
 export class ChunckMeshBuilder {
 
@@ -23,6 +25,7 @@ export class ChunckMeshBuilder {
     private readonly _DataLengthK: number;
     private readonly FlatMesh: boolean;
     private readonly _References: Uint8Array;
+    private readonly _PoleReferences: Uint8Array;
     private readonly _Colors: Uint8Array;
     
     private _Vertices: number[][][];
@@ -39,6 +42,7 @@ export class ChunckMeshBuilder {
         this._Vertices = [];
         this._Normals = [];
         this._References = new Uint8Array(this._ReferencesLengthIJ * this._ReferencesLengthIJ * this._ReferencesLengthK);
+        this._PoleReferences = new Uint8Array(this._ReferencesLengthIJ * this._ReferencesLengthIJ * this._ReferencesLengthK);
         this._Colors = new Uint8Array(this._DataLengthIJ * this._DataLengthIJ * this._DataLengthK);
     }
 
@@ -165,9 +169,13 @@ export class ChunckMeshBuilder {
 
         let firstNonEmptyReferenceK: number = chunck.chunckLengthK;
         let lastNonEmptyReferenceK: number = - m;
+        let firstPoleK: number = chunck.chunckLengthK;
+        let lastPoleK: number = - m;
         let l = this._ReferencesLengthIJ;
         let references = this._References;
         references.fill(0);
+        let poleReferences = this._PoleReferences;
+        poleReferences.fill(0);
         let clonedData = this._Colors;
         clonedData.fill(0);
         let profile_buildReferencesArray = () => {
@@ -190,7 +198,7 @@ export class ChunckMeshBuilder {
                 for (let j = - m; j < chunck.chunckLengthIJ + m; j++) {
                     for (let i = - m; i < chunck.chunckLengthIJ + m; i++) {
                         let data = getData(i, j, k);
-                        if (data > BlockType.Water) {
+                        if (data > BlockType.Water && data < BlockType.MetalPole) {
                             let ii = i + m;
                             let jj = j + m;
                             let kk = k;
@@ -217,6 +225,14 @@ export class ChunckMeshBuilder {
                             if (kk > 0) {
                                 references[ii + jj * l + (kk - 1) * l * l] |= 0b1 << 4;
                             }
+                        }
+                        if (data === BlockType.MetalPole) {
+                            let ii = i + m;
+                            let jj = j + m;
+                            let kk = k;
+                            poleReferences[ii + jj * l + kk * l * l] |= 0b1 << 0;
+                            firstPoleK = Math.min(firstPoleK, k);
+                            lastPoleK = Math.max(lastPoleK, k);
                         }
                     }
                 }
@@ -361,12 +377,34 @@ export class ChunckMeshBuilder {
                 positions[3 * i + 2] = (positions[3 * i + 2] * chunck.levelFactor + 0.5) * chunck.blockSizeIJ_m;
             }
 
+            let poleVertexDatas: VertexData[] = [];
+            for (let k = firstPoleK; k <= lastPoleK; k++) {
+                for (let j = - m; j < chunck.chunckLengthIJ + m; j++) {
+                    for (let i = - m; i < chunck.chunckLengthIJ + m; i++) {
+                        let ii = i + m;
+                        let jj = j + m;
+                        let kk = k;
+                        let poleReference = poleReferences[ii + jj * l + kk * l * l];
+                        if (poleReference & 0b1) {
+                            let cubeVertexData = CreateBoxVertexData({ size: 0.1 });
+                            TranslateVertexDataInPlace(cubeVertexData, new Vector3((i + 0.5) * chunck.blockSizeIJ_m, (k + 0.5) * chunck.blockSizeK_m, (j + 0.5) * chunck.blockSizeIJ_m));
+                            poleVertexDatas.push(cubeVertexData);
+                        }
+                    }
+                }
+            }
+
             vertexData.positions = positions;
             vertexData.colors = colors;
             vertexData.normals = normals;
             vertexData.indices = indices;
             vertexData.uvs = uv1s;
             vertexData.uvs2 = uv2s;
+
+            if (poleVertexDatas.length > 0) {
+                let mergedPoleVertexData = MergeVertexDatas(...poleVertexDatas);
+                vertexData = MergeVertexDatas(vertexData, mergedPoleVertexData);
+            }
         }
         if (analyticOccurence) {
             let t0 = performance.now();

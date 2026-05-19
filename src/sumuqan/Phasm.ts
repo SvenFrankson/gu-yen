@@ -1,9 +1,9 @@
-import { Vector3, Mesh, Color3, CreateBoxVertexData, Quaternion, StandardMaterial } from "@babylonjs/core";
+import { Vector3, Mesh, Color3, CreateBoxVertexData, Quaternion, StandardMaterial, MeshBuilder } from "@babylonjs/core";
 import { Game } from "../Game";
 import { ToonMaterial } from "../ToonMaterial";
 import { Polypode } from "./Polypode";
 import { KneeMode } from "./Leg";
-import { AngleFromToAround, IsFinite, SphereCollider } from "babylonjs-tiaratumgames-tools";
+import { AngleFromToAround, IsFinite, Rotate, SphereCollider } from "babylonjs-tiaratumgames-tools";
 import { GetGLTFMeshDataArray } from "../VertexDataUtils";
 
 class PhasmController {
@@ -21,6 +21,7 @@ class PhasmController {
 
     public updateExplorerDestination(): boolean {
         this.destination = this.phasm.game.player.absolutePosition;
+        this.destination.y += 1;
         this.debug.position.copyFrom(this.destination);
         
         return true;
@@ -51,6 +52,8 @@ class PhasmController {
         }
 
         let dirDestination = this.destination.subtract(this.phasm.position);
+        let rightDestination = Vector3.Cross(this.phasm.localNormal, dirDestination);
+        this.phasm.targetUp = Vector3.Cross(dirDestination, rightDestination).normalize();
         let distDestination = dirDestination.length();
         if (distDestination < 0.4) {
             if (this.updateExplorerDestination()) {
@@ -66,14 +69,14 @@ class PhasmController {
         }
         
         this.phasm.speed = distDestination * 0.5;
-        this.phasm.speed = Math.max(Math.min(this.phasm.speed, 1 * this.phasm.size), 0);
+        this.phasm.speed = Math.max(Math.min(this.phasm.speed, 2 * this.phasm.size), 0);
         let alphaDestination = AngleFromToAround(dirDestination, this.phasm.forward, this.phasm.up);
         this.phasm.rotationSpeed = 0;
         if (alphaDestination > Math.PI / 64) {
-            this.phasm.rotationSpeed = - 0.25;
+            this.phasm.rotationSpeed = - 0.5;
         }
         else if (alphaDestination < - Math.PI / 64) {
-            this.phasm.rotationSpeed = 0.25;
+            this.phasm.rotationSpeed = 0.5;
         }
     }
 }
@@ -85,7 +88,7 @@ export class Phasm extends Polypode {
 
     constructor(public game: Game) {
         super("phasm", {
-            size: 4,
+            size: 1 + 20 * Math.random(),
             legPairsCount: 3,
             headAnchor: (new Vector3(0, 0.04, 0.25)),
             hipAnchors: [
@@ -95,16 +98,18 @@ export class Phasm extends Polypode {
             ],
             footTargets: [
                 new Vector3(0.25, -.2, -0.5),
-                new Vector3(0.32, -.2, 0),
-                new Vector3(0.15, -.2, 0.5)
+                new Vector3(0.35, -.2, 0),
+                new Vector3(0.2, -.2, 0.5)
             ],
             footThickness: 0,
             upperLegLength: 0.27,
             lowerLegLength: 0.31,
             legScales: [1.1, 0.9, 1],
-            stepHeight: 0.2,
-            stepDuration: 0.2,
-            bodyWorldOffset: new Vector3(0, - 0.05, 0),
+            stepHeight: 0.1,
+            stepDuration: 0.15,
+            stepSimultaneousMaxCount: 3,
+            bodyLocalOffset: new Vector3(0, 0.2, 0),
+            bodyWorldOffset: new Vector3(0, - 0.1, 0),
             antennaAnchor: new Vector3(0.045, 0.041, 0.065),
             antennaLength: 0.5,
             scorpionTailProps: {
@@ -116,6 +121,8 @@ export class Phasm extends Polypode {
         });
         this.rightLegs[0].kneeMode = KneeMode.Backward;
         this.leftLegs[0].kneeMode = KneeMode.Backward;
+        this.rightLegs[1].kneeMode = KneeMode.Backward;
+        this.leftLegs[1].kneeMode = KneeMode.Backward;
         this.rightLegs[2].kneeMode = KneeMode.Outward;
         this.leftLegs[2].kneeMode = KneeMode.Outward;
 
@@ -151,6 +158,7 @@ export class Phasm extends Polypode {
                 if (ijk) {
                     let chunck = ijk.chunck;
                     this.terrain = [chunck.mesh!];
+                    this.chuncks = [chunck];
                     let i0 = ijk.ijk.i < this.game.terrain.chunckLengthIJ * 0.5 ? -1 : 0;
                     let j0 = ijk.ijk.j < this.game.terrain.chunckLengthIJ * 0.5 ? -1 : 0;
                     for (let i = i0; i <= i0 + 1; i++) {
@@ -159,13 +167,13 @@ export class Phasm extends Polypode {
                                 let c = this.game.terrain.getChunck(chunck.level, chunck.iPos + i, chunck.jPos + j);
                                 if (c) {
                                     this.terrain.push(c.mesh!);
+                                    this.chuncks.push(c);
                                 }
                             }
                         }
                     }
                 }
             }
-            console.log(this.terrain.length);
         }, 500);
 
         this.controller = new PhasmController(this);
@@ -173,9 +181,10 @@ export class Phasm extends Polypode {
         this.debugColliderMaterial = colliderMaterial;
         this.debugColliderHitMaterial = colliderHitMaterial;
 
-        let headCollider = new SphereCollider(new Vector3(0, 0, 0.1), 0.15, this.head);
-        let assCollider = new SphereCollider(new Vector3(0, 0, - 0.2), 0.2, this.body);
-        this.bodyColliders.push(headCollider, assCollider);
+        let headCollider = new SphereCollider(new Vector3(0, 0, 0.05), 0.12, this.head);
+        let bodyCollider = new SphereCollider(Vector3.Zero(), 0.13, this.body);
+        let assCollider = new SphereCollider(new Vector3(0, 0, - 0.2), 0.14, this.body);
+        this.bodyColliders.push(headCollider, bodyCollider, assCollider);
 
         let tailEndCollider = new SphereCollider(Vector3.Zero(), 0.15, this.tail!.tailSegments[6]);
         this.tail!.tailCollider = tailEndCollider;
@@ -187,7 +196,18 @@ export class Phasm extends Polypode {
         this.showPOVDebug = true;
 
         if (this.showCollisionDebug) {
-            CreateBoxVertexData({ width: 0.1, height: 0.8, depth: 0.1 }).applyToMesh(this);
+            let cross = MeshBuilder.CreateLineSystem(
+                "cross",
+                {
+                    lines: [
+                        [new Vector3(0, 0, 0), new Vector3(0, 0, 1)],
+                        [new Vector3(0, 0, 0), new Vector3(0, 1, 0)],
+                        [new Vector3(-1, 0, 0), new Vector3(1, 0, 0)],
+                    ]
+                },
+                this.getScene()
+            );
+            cross.parent = this;
             this.material = colliderHitMaterial;
         }
     }

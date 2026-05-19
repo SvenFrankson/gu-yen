@@ -2,6 +2,7 @@ import { Vector3, Mesh, Axis, MeshBuilder } from "@babylonjs/core";
 import { SphereCollider, QuaternionFromZYAxis, SphereCollidersIntersection } from "babylonjs-tiaratumgames-tools";
 import { Polypode } from "./Polypode";
 import { MinMax } from "../Number";
+import { SphereChuncksIntersection } from "../voxel-engine/TmpMath";
 
     export interface IScorpionTailProps {
         length: number;
@@ -81,7 +82,7 @@ import { MinMax } from "../Number";
                     this.debugColliderMesh.material = this.polypode.debugColliderMaterial;
                 }
                 this.tailCollider!.recomputeWorldCenter();
-                let intersections = SphereCollidersIntersection(this.tailCollider!.center, this.tailCollider!.radius, this.polypode.terrain);
+                let intersections = SphereChuncksIntersection(this.tailCollider!.center, this.tailCollider!.radius, this.polypode.chuncks);
                 let n = intersections.length;
                 for (let j = 0; j < n; j++) {
                     let intersection = intersections[j];
