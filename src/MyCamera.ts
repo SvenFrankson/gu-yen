@@ -135,7 +135,7 @@ export class MyCamera extends UniversalCamera {
         }
         if (this.game.terrain && this.editionMode !== 0) {
             let ray = this._scene.createPickingRay(this._scene.pointerX, this._scene.pointerY, Matrix.Identity(), this);
-            let pickInfos = ray.intersectsMeshes(this.player.chuncks.map(c => c.mesh!).filter(m => m));
+            let pickInfos = ray.intersectsMeshes(this.player.chuncks.flatMap(c => c.meshes!).filter(m => m));
             for (let pickInfo of pickInfos) {
                 if (pickInfo && pickInfo.hit && pickInfo.pickedPoint) {
                     let p = pickInfo.pickedPoint;

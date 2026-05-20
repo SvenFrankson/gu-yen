@@ -114,6 +114,7 @@ export class FloatingBlocksDetector {
     }
 
     public findFloatingBlocks(iGlobal0: number, jGlobal0: number, kGlobal0: number): UniqueList<Chunck> | undefined {
+        return;
         this.reset();
         this.iGlobal0 = iGlobal0;
         this.jGlobal0 = jGlobal0;

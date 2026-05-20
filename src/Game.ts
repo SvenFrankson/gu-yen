@@ -25,6 +25,7 @@ import { ChunckDataGeneratorDataSets } from "./voxel-engine/TerrainGen/ChunckDat
 import { AngleFromTo } from "./Math2D";
 import { registerBuiltInLoaders } from "@babylonjs/loaders/dynamic";
 import { Phasm } from "./sumuqan/Phasm";
+import { BlockPoleVertexData } from "./voxel-engine/BlockPoleVertexData";
 registerBuiltInLoaders();
 
 export class Game {
@@ -161,6 +162,7 @@ export class Game {
         miniMap.setGame(this);
 
         ChunckVertexData.InitializeData("meshes/chunck-parts.gltf", this.scene).then(async () => {
+            await BlockPoleVertexData.InitializeData("meshes/poleblocks.gltf", this.scene);
             // initialize plugin
             const havokInstance = await HavokPhysics({
                 locateFile: () => {
@@ -201,7 +203,7 @@ export class Game {
             });
 
             this.terrain.initialize();
-            this.terrain.chunckManager.setDistance(50);
+            this.terrain.chunckManager.setDistance(100);
             this.terrain.sunDir.copyFrom(light.direction);
 
             let noiseTexture = new CubicNoiseTexture(this.scene);

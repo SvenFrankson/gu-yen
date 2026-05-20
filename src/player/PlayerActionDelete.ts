@@ -40,7 +40,7 @@ export class PlayerActionDelete extends PlayerAction {
             }
 
             let aimRay = new Ray(this.player.head.absolutePosition, this.player.head.forward, 8);
-            let pickInfos = aimRay.intersectsMeshes(this.player.chuncks.map(c => c.mesh!).filter(m => m));
+            let pickInfos = aimRay.intersectsMeshes(this.player.chuncks.flatMap(c => c.meshes!).filter(m => m));
             for (let pickInfo of pickInfos) {
                 if (pickInfo && pickInfo.hit && pickInfo.pickedPoint) {
                     let p = pickInfo.pickedPoint.subtractInPlace(pickInfo.getNormal(true)!.scale(0.1));

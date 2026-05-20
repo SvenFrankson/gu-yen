@@ -296,7 +296,7 @@ export class ChunckDataGeneratorDataSets extends ChunckDataGenerator {
                 }
             }
             
-            await NextFrame();
+            //await NextFrame();
 
             for (let i: number = -m; i < chunck.chunckLengthIJ + m; i++) {
                 for (let j: number = -m; j < chunck.chunckLengthIJ + m; j++) {
@@ -364,7 +364,7 @@ export class ChunckDataGeneratorDataSets extends ChunckDataGenerator {
                 }
             }
 
-            await NextFrame();
+            //await NextFrame();
             
             let buildingTileI = Math.floor(chunck.iPos / this.terrain.chunckCountIJ * this.buildingTiles.size);
             let buildingTileJ = Math.floor(chunck.jPos / this.terrain.chunckCountIJ * this.buildingTiles.size); 
@@ -378,7 +378,7 @@ export class ChunckDataGeneratorDataSets extends ChunckDataGenerator {
                 }
             }
 
-            await NextFrame();
+            //await NextFrame();
             
             let treeTileI = Math.floor(chunck.iPos / this.terrain.chunckCountIJ * this.treeTiles.size);
             let treeTileJ = Math.floor(chunck.jPos / this.terrain.chunckCountIJ * this.treeTiles.size);

@@ -203,7 +203,7 @@ export class Player extends Mesh {
                     ray.direction.z += 0.1 * Math.random() - 0.05;
                     ray.direction.normalize();
                 }
-                let pickInfos = ray.intersectsMeshes(this.chuncks.map(c => c.mesh!).filter(m => m));
+                let pickInfos = ray.intersectsMeshes(this.chuncks.flatMap(c => c.meshes!).filter(m => m));
                 for (let pickInfo of pickInfos) {
                     if (pickInfo && pickInfo.hit && pickInfo.pickedPoint) {
                         this.targetPosition = pickInfo.pickedPoint;

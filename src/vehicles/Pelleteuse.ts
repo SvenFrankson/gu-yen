@@ -143,7 +143,7 @@ export class Pelleteuse extends Vehicle implements IVehicle {
                 }
             }
             else {
-                let pickInfos = ray.intersectsMeshes(this.controler.chuncks.map(c => c.mesh!).filter(m => m));
+                let pickInfos = ray.intersectsMeshes(this.controler.chuncks.flatMap(c => c.meshes!).filter(m => m));
                 for (let pickInfo of pickInfos) {
                     if (pickInfo && pickInfo.hit && pickInfo.pickedPoint) {
                         pickedPoint = pickInfo.pickedPoint;

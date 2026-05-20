@@ -145,8 +145,8 @@ export class Phasm extends Polypode {
         if (this.game.player) {
             if (this.game.player.chuncks) {
                 this.game.player.chuncks.forEach(chunck => {
-                    if (chunck && chunck.mesh) {
-                        this.terrain.push(chunck.mesh);
+                    if (chunck && chunck.meshes) {
+                        this.terrain.push(...chunck.meshes);
                     }
                 })
             }
@@ -157,7 +157,7 @@ export class Phasm extends Polypode {
                 let ijk = this.game.terrain.getChunckAndIJKAtPos(this.position, 0, false);
                 if (ijk) {
                     let chunck = ijk.chunck;
-                    this.terrain = [chunck.mesh!];
+                    this.terrain = [...chunck.meshes!];
                     this.chuncks = [chunck];
                     let i0 = ijk.ijk.i < this.game.terrain.chunckLengthIJ * 0.5 ? -1 : 0;
                     let j0 = ijk.ijk.j < this.game.terrain.chunckLengthIJ * 0.5 ? -1 : 0;
@@ -166,7 +166,7 @@ export class Phasm extends Polypode {
                             if (i != 0 || j != 0) {
                                 let c = this.game.terrain.getChunck(chunck.level, chunck.iPos + i, chunck.jPos + j);
                                 if (c) {
-                                    this.terrain.push(c.mesh!);
+                                    this.terrain.push(...c.meshes!);
                                     this.chuncks.push(c);
                                 }
                             }

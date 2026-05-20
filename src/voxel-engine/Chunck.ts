@@ -66,6 +66,7 @@ export class Chunck {
 
     public position: Vector3;
     public barycenter: Vector3;
+    public viewpointSqrDistance: number = 0;
     public iGlobalOffset: number = 0;
     public jGlobalOffset: number = 0;
     public kGlobalOffset: number = 0;
@@ -155,6 +156,7 @@ export class Chunck {
     }
 
     public mesh: Mesh | undefined;
+    public meshes: Mesh[] | undefined;
     public shellMesh: Mesh | undefined;
 
     private _registered: boolean = false;
@@ -706,54 +708,82 @@ export class Chunck {
                     await this.initializeData();
                 }
                 let sides = 0b0;
+                /*
                 for (let i = 0; i < 6; i++) {
                     let adj = this.adjacents[i];
                     if (adj && adj.level === this.level && adj.subdivided) {
                         sides |= 0b1 << i;
                     }
                 }
+                */
 
                 if (force || !this.mesh || sides != this._lastDrawnSides) {
-                    let vertexData = await this.terrain.chunckBuilder.BuildMesh(this, sides, analyticOccurence);
-                    if (vertexData) {
-                        if (!this.mesh) {
-                            this.mesh = new Mesh(this.name + "-mesh");
-                            //this.mesh.scaling.copyFromFloats(0.99, 0.99, 0.99)
-                        }
-                        vertexData.applyToMesh(this.mesh);
-                        this.mesh.position.copyFrom(this.position);
+                    for (let i = 0; i < 2; i++) {
+                        for (let j = 0; j < 2; j++) {
+                            let vertexData = await this.terrain.chunckBuilder.BuildMesh(
+                                this,
+                                sides,
+                                {
+                                    i0: i * this.chunckLengthIJ / 2,
+                                    j0: j * this.chunckLengthIJ / 2,
+                                    i1: (i + 1) * this.chunckLengthIJ / 2,
+                                    j1: (j + 1) * this.chunckLengthIJ / 2
+                                },
+                                analyticOccurence
+                            );
+                            if (vertexData) {
+                                if (!this.mesh) {
+                                    this.mesh = new Mesh(this.name + "-mesh");
+                                    //this.mesh.scaling.copyFromFloats(0.99, 0.99, 0.99)
+                                }
+                                if (!this.meshes) {
+                                    this.meshes = [];
+                                }
+                                if (!this.meshes[i + 2 * j]) {
+                                    this.meshes[i + 2 * j] = new Mesh(this.name + "-mesh-" + i + "-" + j);
+                                    this.meshes[i + 2 * j].parent = this.mesh;
+                                }
+                                vertexData.applyToMesh(this.meshes[i + 2 * j]);
+                            }
+                            else {
+                                console.warn("ChunckMeshBuilder failed");
+                            }
 
-                        /*
-                        if (forcePhysic) {
-                            this.updatePhysic();
-                        }
-                        else {
-                            clearTimeout(this._updatePhysicTimeout);
-                            this._updatePhysicTimeout = setTimeout(() => {
-                                this.updatePhysic();
-                            }, 500);
-                        }
-                        */
+                            if (this.mesh && this.meshes) {
+                                this.mesh.position.copyFrom(this.position);
 
-                        if (this.terrain.customChunckMaterialSet) {
-                            this.terrain.customChunckMaterialSet(this);
+                                /*
+                                if (forcePhysic) {
+                                    this.updatePhysic();
+                                }
+                                else {
+                                    clearTimeout(this._updatePhysicTimeout);
+                                    this._updatePhysicTimeout = setTimeout(() => {
+                                        this.updatePhysic();
+                                    }, 500);
+                                }
+                                */
+
+                                if (this.terrain.customChunckMaterialSet) {
+                                    this.terrain.customChunckMaterialSet(this);
+                                }
+                                else {
+                                    this.meshes.forEach(m => m.material = this.terrain.getMaterial(this.level));
+                                }
+                                //this.mesh.material = this.terrain.testMaterials[this.level];
+                                this.mesh.freezeWorldMatrix();
+                                this.meshes.forEach(m => m.freezeWorldMatrix());
+                            }
+
+                            this._lastDrawnSides = sides;
+                            if (this.terrain.useAnalytics && analyticOccurence && vertexData.positions) {
+                                let t1 = performance.now();
+                                let dt = t1 - t0;
+                                analyticOccurence.duration = dt;
+                                analyticOccurence.triangleCount = vertexData.positions.length / 3;
+                                this.analytic.addBuildOccurence(analyticOccurence);
+                            }
                         }
-                        else {
-                            this.mesh.material = this.terrain.getMaterial(this.level);
-                        }
-                        //this.mesh.material = this.terrain.testMaterials[this.level];
-                        this.mesh.freezeWorldMatrix();
-                    }
-                    else {
-                        console.warn("ChunckMeshBuilder failed");
-                    }
-                    this._lastDrawnSides = sides;
-                    if (this.terrain.useAnalytics && analyticOccurence && vertexData.positions) {
-                        let t1 = performance.now();
-                        let dt = t1 - t0;
-                        analyticOccurence.duration = dt;
-                        analyticOccurence.triangleCount = vertexData.positions.length / 3;
-                        this.analytic.addBuildOccurence(analyticOccurence);
                     }
                 }
             }
@@ -783,6 +813,10 @@ export class Chunck {
     public disposeMesh(): void {
         if (this.mesh) {
             this.mesh.dispose();
+        }
+        while (this.meshes && this.meshes.length > 0) {
+            let m = this.meshes.pop();
+            m?.dispose();
         }
         this.mesh = undefined;
         this.terrain.scene.onBeforeRenderObservable.removeCallback(this.updateGlobalLight3DTexture);
@@ -996,7 +1030,7 @@ export class Chunck {
             }
         }
         if (this.level > 1) {
-            //this.unregister();
+            this.unregister();
         }
         this.disposeMesh();
         return this.children;

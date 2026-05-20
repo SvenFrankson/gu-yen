@@ -252,6 +252,29 @@ export class ChunckManager {
         if (this.debugRenderDistMesh) {
             this.debugRenderDistMesh.position.copyFrom(this._viewpoint);
         }
+
+        for (let n = 0; n < 0; n++) {
+            let r1 = Math.floor(Math.random() * this.chuncks.length);
+            let r2 = Math.floor(Math.random() * this.chuncks.length);
+            let n1 = Math.min(r1, r2);
+            let n2 = Math.max(r1, r2);
+            let c1 = this.chuncks.get(n1);
+            let c2 = this.chuncks.get(n2);
+            if (c1 && c2 && c1 != c2) {
+                c1.viewpointSqrDistance = Vector3.DistanceSquared(this._viewpoint, c1.barycenter);
+                c2.viewpointSqrDistance = Vector3.DistanceSquared(this._viewpoint, c2.barycenter);
+                if (c2.level > c1.level) {
+                    this.chuncks.array[n1] = c2;
+                    this.chuncks.array[n2] = c1;
+                }
+                else if (c1.level === c2.level) {
+                    if (c1.viewpointSqrDistance > c2.viewpointSqrDistance) {
+                        this.chuncks.array[n1] = c2;
+                        this.chuncks.array[n2] = c1;
+                    }
+                }
+            }
+        }
         
         let t0 = performance.now();
         let t = t0;
@@ -265,6 +288,7 @@ export class ChunckManager {
             dir.y = 0;
             
             let srqDistance = dir.lengthSquared();
+            chunck.viewpointSqrDistance = srqDistance;
             let computedChunckLevelSubdivide = this._getChunckLevelSubdivide(srqDistance);
             if (chunck.level > computedChunckLevelSubdivide) {
                 let children = chunck.subdivide();
