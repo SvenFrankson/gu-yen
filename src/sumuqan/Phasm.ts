@@ -4,7 +4,7 @@ import { ToonMaterial } from "../ToonMaterial";
 import { Polypode } from "./Polypode";
 import { KneeMode } from "./Leg";
 import { AngleFromToAround, IsFinite, Rotate, SphereCollider } from "babylonjs-tiaratumgames-tools";
-import { GetGLTFMeshDataArray } from "../VertexDataUtils";
+import { ColorizeVertexDataInPlace, GetGLTFMeshDataArray } from "../VertexDataUtils";
 
 class PhasmController {
 
@@ -176,8 +176,8 @@ export class Phasm extends Polypode {
         this.updateBodyCollidersMeshes();
 
         this.debugPovMaterial = povMaterial;
-        this.showCollisionDebug = true;
-        this.showPOVDebug = true;
+        this.showCollisionDebug = false;
+        this.showPOVDebug = false;
 
         if (this.showCollisionDebug) {
             let cross = MeshBuilder.CreateLineSystem(
@@ -217,6 +217,10 @@ export class Phasm extends Polypode {
         color.b *= 0.7 + 0.6 * Math.random();
         //droneMaterial.setDiffuse(color);
         //droneMaterial.setUseVertexColor(false);
+
+        datas?.forEach(d => {
+            ColorizeVertexDataInPlace(d.vertexData, color);
+        });
 
         this.legs.forEach(leg => {
             datas![0].vertexData.applyToMesh(leg.upperLeg);

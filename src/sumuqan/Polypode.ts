@@ -548,7 +548,7 @@ export class Polypode extends Mesh {
                             legToMove = this.rightLegs[i];
                             targetPosition = targetRight;
                             targetNormal = normalRight!;
-                            DrawDebugPoint(targetPosition, 60, Color3.Red(), 1);
+                            //DrawDebugPoint(targetPosition, 60, Color3.Red(), 1);
                         }
                     }
 
@@ -576,7 +576,7 @@ export class Polypode extends Mesh {
                             legToMove = this.leftLegs[i];
                             targetPosition = targetLeft;
                             targetNormal = normalLeft!;
-                            DrawDebugPoint(targetPosition, 60, Color3.Red(), 1);
+                            //DrawDebugPoint(targetPosition, 60, Color3.Red(), 1);
                         }
                     }
                 }
@@ -644,9 +644,9 @@ export class Polypode extends Mesh {
                 let intersection = intersections[j];
                 if (intersection.hit) {
                     collideWithTerrain = true;
-                    let disp = intersection.normal!.scale(0.5 * intersection.depth / n);
+                    let disp = intersection.normal!.scale(0.1 * intersection.depth / n);
                     this.body.position.addInPlace(disp);
-                    this.position.addInPlace(disp.scale(0.5));
+                    this.position.addInPlace(disp.scale(0.1));
                     //let dp = bodyCollider.center.subtract(this.body.position);
                     //let n = intersection.normal!;
                     //let axis = Vector3.Cross(dp, n).normalize();
