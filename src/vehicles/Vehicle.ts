@@ -2,7 +2,7 @@ import { Mesh } from "@babylonjs/core/Meshes/mesh";
 import { GetGLTFMeshDataArray } from "babylonjs-tiaratumgames-tools";
 import { Color3, MeshBuilder, PhysicsBody, PhysicsMotionType, PhysicsShapeConvexHull, Plane, Ray, Space, StandardMaterial, Vector3 } from "@babylonjs/core";
 import { Game } from "../Game";
-import { Chunck } from "../voxel-engine/Chunck";
+import { Chunck, ChunckMesh } from "../voxel-engine/Chunck";
 import { Angle, AngleFromToAround, Rotate, RotateInPlace } from "babylonjs-tiaratumgames-tools";
 import { BlockType } from "../voxel-engine/BlockType";
 import { FloatingBlocksDetector } from "../voxel-engine/FloatingBlocksDetector";
@@ -96,24 +96,8 @@ export class Vehicle extends Mesh implements IVehicle {
 
             let grounded = false;
             let targetY = this.position.y;       
-            let ijk = this.game.terrain.getChunckAndIJKAtPos(this.position, 0, false);
-            let chuncks: Chunck[] = []
-            if (ijk) {
-                let chunck = ijk.chunck;
-                chuncks = [chunck];
-                let i0 = ijk.ijk.i < this.game.terrain.chunckLengthIJ * 0.5 ? -1 : 0;
-                let j0 = ijk.ijk.j < this.game.terrain.chunckLengthIJ * 0.5 ? -1 : 0;
-                for (let i = i0; i <= i0 + 1; i++) {
-                    for (let j = j0; j <= j0 + 1; j++) {
-                        if (i != 0 || j != 0) {
-                            let c = this.game.terrain.getChunck(chunck.level, chunck.iPos + i, chunck.jPos + j);
-                            if (c) {
-                                chuncks.push(c);
-                            }
-                        }
-                    }
-                }
-
+            let chunckMeshes: ChunckMesh[] = this.game.terrain.getMeshesAtWorldPosition(this.position) || [];
+            if (chunckMeshes.length > 0) {
                 let p00 = Vector3.TransformCoordinates(new Vector3(-this.width * 0.5, 2, -this.length * 0.5), this.getWorldMatrix());
                 let p10 = Vector3.TransformCoordinates(new Vector3(this.width * 0.5, 2, -this.length * 0.5), this.getWorldMatrix());
                 let p01 = Vector3.TransformCoordinates(new Vector3(-this.width * 0.5, 2, this.length * 0.5), this.getWorldMatrix());
@@ -134,30 +118,30 @@ export class Vehicle extends Mesh implements IVehicle {
                 let dig01: number = 2 + this.height;
                 let dig11: number = 2 + this.height;
 
-                for (let chunck of chuncks) {
+                for (let chunckMesh of chunckMeshes) {
                     if (!intersect00) {
-                        let hit00 = ray00.intersectsMesh(chunck.mesh!, false);
+                        let hit00 = ray00.intersectsMesh(chunckMesh, false);
                         if (hit00 && hit00.pickedPoint) {
                             intersect00 = hit00.pickedPoint;
                             dig00 = Vector3.Distance(hit00.pickedPoint, p00);
                         }
                     }
                     if (!intersect10) {
-                        let hit10 = ray10.intersectsMesh(chunck.mesh!, false);
+                        let hit10 = ray10.intersectsMesh(chunckMesh, false);
                         if (hit10 && hit10.pickedPoint) {
                             intersect10 = hit10.pickedPoint;
                             dig10 = Vector3.Distance(hit10.pickedPoint, p10);
                         }
                     }
                     if (!intersect01) {
-                        let hit01 = ray01.intersectsMesh(chunck.mesh!, false);
+                        let hit01 = ray01.intersectsMesh(chunckMesh, false);
                         if (hit01 && hit01.pickedPoint) {
                             intersect01 = hit01.pickedPoint;
                             dig01 = Vector3.Distance(hit01.pickedPoint, p01);
                         }
                     }
                     if (!intersect11) {
-                        let hit11 = ray11.intersectsMesh(chunck.mesh!, false);
+                        let hit11 = ray11.intersectsMesh(chunckMesh, false);
                         if (hit11 && hit11.pickedPoint) {
                             intersect11 = hit11.pickedPoint;
                             dig11 = Vector3.Distance(hit11.pickedPoint, p11);
@@ -210,7 +194,7 @@ export class Vehicle extends Mesh implements IVehicle {
             this.velocity = this.forward.scale(forwardVelocity).add(this.right.scale(rightVelocity)).add(this.up.scale(upVelocity));
             this.velocity.y -= 9.81 * dt;
             if (this.position.y < targetY) {
-                this.velocity.y += 100 * (targetY - this.position.y) * dt;
+                this.velocity.y += 100 * Math.min(0.5, targetY - this.position.y) * dt;
                 if (this.velocity.y < 0) {
                     this.velocity.y = - this.velocity.y * 0.1;
                 }

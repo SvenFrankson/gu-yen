@@ -752,8 +752,6 @@ export class Chunck {
                                 }
                                 if (!this.meshes[i + this.terrain.meshesPerChunckSide * j]) {
                                     this.meshes[i + this.terrain.meshesPerChunckSide * j] = new ChunckMesh(this.name + "-mesh-" + i + "-" + j, this);
-                                    this.meshes[i + this.terrain.meshesPerChunckSide * j].position.copyFromFloats(i * 0.01, 0, j * 0.01);
-                                    this.meshes[i + this.terrain.meshesPerChunckSide * j].scaling.copyFromFloats(0.999, 0.999, 0.999);
                                     this.meshes[i + this.terrain.meshesPerChunckSide * j].parent = this.mesh;
                                 }
                                 vertexData.applyToMesh(this.meshes[i + this.terrain.meshesPerChunckSide * j]);

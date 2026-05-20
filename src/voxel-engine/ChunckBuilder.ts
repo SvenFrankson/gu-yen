@@ -219,7 +219,12 @@ export class ChunckMeshBuilder {
                             clonedData[ii + jj * l + kk * l * l] = data;
                             references[ii + jj * l + kk * l * l] |= 0b1 << 0;
                             poleReferences[ii + jj * l + (kk + 1) * l * l] |= 0b1 << 5;
+                            poleReferences[ii + jj * l + (kk - 1) * l * l] |= 0b1 << 6;
                             if (ii > 0) {
+                                poleReferences[(ii - 1) + jj * l + kk * l * l] |= 0b1 << 2;
+                                if (ii < l - 1) {
+                                    //poleReferences[(ii + 1) + jj * l + kk * l * l] |= 0b1 << 1;
+                                }
                                 references[(ii - 1) + jj * l + kk * l * l] |= 0b1 << 1;
                                 if (jj > 0) {
                                     references[(ii - 1) + (jj - 1) * l + kk * l * l] |= 0b1 << 2;
@@ -447,6 +452,14 @@ export class ChunckMeshBuilder {
             //console.log("VerticesCount = " + (vertexData.positions?.length / 3) + " TrianglesCount = " + (vertexData.indices?.length / 3));
             if (poleVertexDatas.length > 0) {
                 let mergedPoleVertexData = MergeVertexDatas(...poleVertexDatas);
+                let uv1s = [];
+                let uv2s = [];
+                for (let i = 0; i < mergedPoleVertexData.positions!.length / 3; i++) {
+                    uv1s.push(BlockType.Rust / 32 + 1 / 64, BlockType.Rust / 32 + 1 / 64);
+                    uv2s.push(BlockType.Rust / 32 + 1 / 64, 0);
+                }
+                mergedPoleVertexData.uvs = uv1s;
+                mergedPoleVertexData.uvs2 = uv2s;
                 vertexData = MergeVertexDatas(vertexData, mergedPoleVertexData);
             }
         }

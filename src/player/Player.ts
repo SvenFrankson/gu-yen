@@ -17,7 +17,7 @@ import { BlockType } from "../voxel-engine/BlockType";
 
 export class Player extends Mesh {
 
-    public debugCage: Mesh;
+    //public debugCage: Mesh;
     public canUsePointerLock: boolean = true;
     public isPointerLocked: boolean = false;
 
@@ -53,14 +53,14 @@ export class Player extends Mesh {
     constructor(public game: Game) {
         super("player", null);
 
-        this.debugCage = MeshBuilder.CreateLineSystem("player-debug-cage", {
-            lines: [
-                [new Vector3(0, -2, 0), new Vector3(0, 2, 0)],
-                [new Vector3(1, -2, 0), new Vector3(1, 2, 0)],
-                [new Vector3(1, -2, 1), new Vector3(1, 2, 1)],
-                [new Vector3(0, -2, 1), new Vector3(0, 2, 1)]
-            ]
-        });
+        //this.debugCage = MeshBuilder.CreateLineSystem("player-debug-cage", {
+        //    lines: [
+        //        [new Vector3(0, -2, 0), new Vector3(0, 2, 0)],
+        //        [new Vector3(1, -2, 0), new Vector3(1, 2, 0)],
+        //        [new Vector3(1, -2, 1), new Vector3(1, 2, 1)],
+        //        [new Vector3(0, -2, 1), new Vector3(0, 2, 1)]
+        //    ]
+        //});
         this.head = new TransformNode("player-head", game.scene);
         this.head.parent = this;
         this.head.position.y = 1.8;
@@ -173,9 +173,9 @@ export class Player extends Mesh {
 
     private _update = () => {
         if (this.game.terrain) {
-            this.debugCage.position.copyFrom(this.position);
-            this.debugCage.position.x = Math.floor(this.debugCage.position.x);
-            this.debugCage.position.z = Math.floor(this.debugCage.position.z);
+            //this.debugCage.position.copyFrom(this.position);
+            //this.debugCage.position.x = Math.floor(this.debugCage.position.x);
+            //this.debugCage.position.z = Math.floor(this.debugCage.position.z);
             localStorage.setItem("last-pos", JSON.stringify([this.absolutePosition.x, this.absolutePosition.y, this.absolutePosition.z, this.rotation.x, this.rotation.y, this.rotation.z]));
 
             let chunckMeshes = this.game.terrain.getMeshesAtWorldPosition(this.position);
