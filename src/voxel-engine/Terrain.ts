@@ -3,7 +3,7 @@ import { Engine } from "@babylonjs/core/Engines/engine";
 import { StandardMaterial } from "@babylonjs/core/Materials/standardMaterial";
 import { Material } from "@babylonjs/core/Materials/material";
 import { Vector3 } from "@babylonjs/core/Maths/math.vector";
-import { Chunck } from "./Chunck";
+import { Chunck, ChunckMesh } from "./Chunck";
 import { ChunckManager } from "./ChunckManager";
 import { ChunckMeshBuilder } from "./ChunckBuilder";
 import { TerrainAnalytic } from "./TerrainAnalytic";
@@ -14,6 +14,7 @@ import { FloorPow2Exponent, Pow2 } from "../Number";
 import { BlockType } from "./BlockType";
 import { ChunckDataGeneratorFactory } from "./TerrainGen/ChunckDataGeneratorFactory";
 import { GeoConverter } from "../map/Geo";
+import { Mesh } from "@babylonjs/core";
 
 export interface ITerrainProperties {
     //randSeed?: Nabu.RandSeed,
@@ -56,6 +57,7 @@ export class Terrain {
     public readonly chunckSizeIJ_m: number;
     public readonly chunckSizeK_m: number;
     public readonly chunckCountIJ: number = 1024;
+    public readonly meshesPerChunckSide: number = 4;
     public readonly terrainLengthIJ: number;
     public readonly halfTerrainLengthIJ: number;
     public readonly terrainSizeIJ_m: number;
@@ -222,6 +224,43 @@ export class Terrain {
                 ijk: centerOnEvenIJK ? chunck.getEvenIJKAtPos(pos) : chunck.getIJKAtPos(pos)
             }
         }
+    }
+
+    public getMeshAtWorldPosition(pos: Vector3): ChunckMesh | undefined {
+        let meshIGlobal = Math.floor((pos.x + this.blockSizeIJ_m * 0.5 + this.halfTerrainSizeIJ_m) / (this.chunckSizeIJ_m / this.meshesPerChunckSide));
+        let meshJGlobal = Math.floor((pos.z + this.blockSizeIJ_m * 0.5 + this.halfTerrainSizeIJ_m) / (this.chunckSizeIJ_m / this.meshesPerChunckSide));
+        let chunckIPos = Math.floor(meshIGlobal / this.meshesPerChunckSide);
+        let chunckJPos = Math.floor(meshJGlobal / this.meshesPerChunckSide);
+        let chunck = this.getChunck(0, chunckIPos, chunckJPos);
+        if (chunck && chunck.meshes) {
+            let meshI = meshIGlobal % this.meshesPerChunckSide;
+            let meshJ = meshJGlobal % this.meshesPerChunckSide;
+            return chunck.meshes[meshI + this.meshesPerChunckSide * meshJ];
+        }
+        return undefined;
+    }
+
+    public getMeshesAtWorldPosition(pos: Vector3): ChunckMesh[] | undefined {
+        let meshI0Global = Math.floor((pos.x + this.blockSizeIJ_m * 0.5 + this.halfTerrainSizeIJ_m) / (this.chunckSizeIJ_m / this.meshesPerChunckSide));
+        let meshJ0Global = Math.floor((pos.z + this.blockSizeIJ_m * 0.5 + this.halfTerrainSizeIJ_m) / (this.chunckSizeIJ_m / this.meshesPerChunckSide));
+        let meshes: ChunckMesh[] | undefined = [];
+        for (let i = -1; i <= 1; i++) {
+            for (let j = -1; j <= 1; j++) {
+                let meshIGlobal = meshI0Global + i;
+                let meshJGlobal = meshJ0Global + j;
+                let chunckIPos = Math.floor(meshIGlobal / this.meshesPerChunckSide);    
+                let chunckJPos = Math.floor(meshJGlobal / this.meshesPerChunckSide);
+                let chunck = this.getChunck(0, chunckIPos, chunckJPos);
+                if (chunck && chunck.meshes) {
+                    let meshI = (meshIGlobal - chunckIPos * this.meshesPerChunckSide) % this.meshesPerChunckSide;
+                    let meshJ = (meshJGlobal - chunckJPos * this.meshesPerChunckSide) % this.meshesPerChunckSide;
+                    if (chunck.meshes[meshI + this.meshesPerChunckSide * meshJ]) {
+                        meshes.push(chunck.meshes[meshI + this.meshesPerChunckSide * meshJ]);
+                    }
+                }
+            }
+        }
+        return meshes.length > 0 ? meshes : undefined;
     }
 
     public globalIJKToWorldPos(iGlobal: number, jGlobal: number, kGlobal: number): Vector3 {

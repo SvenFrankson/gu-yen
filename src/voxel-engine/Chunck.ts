@@ -33,6 +33,13 @@ enum AdjacentAxis {
     JNext = 3
 }
 
+export class ChunckMesh extends Mesh {
+
+    constructor(name: string, public chunck: Chunck) {
+        super(name, chunck.terrain.scene);
+    }
+}
+
 export class Chunck {
 
     private _analytic?: ChunckAnalytic;
@@ -157,7 +164,7 @@ export class Chunck {
     }
 
     public mesh: Mesh | undefined;
-    public meshes: Mesh[] | undefined;
+    public meshes: ChunckMesh[] | undefined;
     public shellMesh: Mesh | undefined;
 
     private _registered: boolean = false;
@@ -718,18 +725,17 @@ export class Chunck {
                 }
                 */
 
-                let n = 4;
                 if (force || !this.mesh || sides != this._lastDrawnSides) {
-                    for (let i = 0; i < n; i++) {
-                        for (let j = 0; j < n; j++) {
+                    for (let i = 0; i < this.terrain.meshesPerChunckSide; i++) {
+                        for (let j = 0; j < this.terrain.meshesPerChunckSide; j++) {
                             let vertexData = await this.terrain.chunckBuilder.BuildMesh(
                                 this,
                                 sides,
                                 {
-                                    i0: i * this.chunckLengthIJ / n,
-                                    j0: j * this.chunckLengthIJ / n,
-                                    i1: (i + 1) * this.chunckLengthIJ / n,
-                                    j1: (j + 1) * this.chunckLengthIJ / n
+                                    i0: i * this.chunckLengthIJ / this.terrain.meshesPerChunckSide,
+                                    j0: j * this.chunckLengthIJ / this.terrain.meshesPerChunckSide,
+                                    i1: (i + 1) * this.chunckLengthIJ / this.terrain.meshesPerChunckSide,
+                                    j1: (j + 1) * this.chunckLengthIJ / this.terrain.meshesPerChunckSide
                                 },
                                 analyticOccurence
                             );
@@ -744,11 +750,13 @@ export class Chunck {
                                 if (!this.meshes) {
                                     this.meshes = [];
                                 }
-                                if (!this.meshes[i + n * j]) {
-                                    this.meshes[i + n * j] = new Mesh(this.name + "-mesh-" + i + "-" + j);
-                                    this.meshes[i + n * j].parent = this.mesh;
+                                if (!this.meshes[i + this.terrain.meshesPerChunckSide * j]) {
+                                    this.meshes[i + this.terrain.meshesPerChunckSide * j] = new ChunckMesh(this.name + "-mesh-" + i + "-" + j, this);
+                                    this.meshes[i + this.terrain.meshesPerChunckSide * j].position.copyFromFloats(i * 0.01, 0, j * 0.01);
+                                    this.meshes[i + this.terrain.meshesPerChunckSide * j].scaling.copyFromFloats(0.999, 0.999, 0.999);
+                                    this.meshes[i + this.terrain.meshesPerChunckSide * j].parent = this.mesh;
                                 }
-                                vertexData.applyToMesh(this.meshes[i + n * j]);
+                                vertexData.applyToMesh(this.meshes[i + this.terrain.meshesPerChunckSide * j]);
                             }
                             else {
                                 console.warn("ChunckMeshBuilder failed");

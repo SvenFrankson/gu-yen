@@ -154,25 +154,9 @@ export class Phasm extends Polypode {
 
         setInterval(() => {
             if (this.game.terrain) {
-                let ijk = this.game.terrain.getChunckAndIJKAtPos(this.position, 0, false);
-                if (ijk) {
-                    let chunck = ijk.chunck;
-                    this.terrain = [...chunck.meshes!];
-                    this.chuncks = [chunck];
-                    let i0 = ijk.ijk.i < this.game.terrain.chunckLengthIJ * 0.5 ? -1 : 0;
-                    let j0 = ijk.ijk.j < this.game.terrain.chunckLengthIJ * 0.5 ? -1 : 0;
-                    for (let i = i0; i <= i0 + 1; i++) {
-                        for (let j = j0; j <= j0 + 1; j++) {
-                            if (i != 0 || j != 0) {
-                                let c = this.game.terrain.getChunck(chunck.level, chunck.iPos + i, chunck.jPos + j);
-                                if (c) {
-                                    this.terrain.push(...c.meshes!);
-                                    this.chuncks.push(c);
-                                }
-                            }
-                        }
-                    }
-                }
+                let chunckMeshes = this.game.terrain.getMeshesAtWorldPosition(this.position);
+                this.terrain = chunckMeshes ? chunckMeshes : [];
+                this.chuncks = chunckMeshes ? chunckMeshes.map(m => m.chunck).filter((c, index, self) => self.indexOf(c) === index) : [];
             }
         }, 500);
 

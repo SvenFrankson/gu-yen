@@ -17,6 +17,7 @@ import { BlockType } from "../voxel-engine/BlockType";
 
 export class Player extends Mesh {
 
+    public debugCage: Mesh;
     public canUsePointerLock: boolean = true;
     public isPointerLocked: boolean = false;
 
@@ -27,6 +28,7 @@ export class Player extends Mesh {
     public head: TransformNode;
     public vehicle: Vehicle | undefined;
     public chuncks: Chunck[] = [];
+    public chunckMeshes: Mesh[] = [];
     public targetPosition?: Vector3;
     public targetSpeed: number = 1;
     public currentSpeed: number = 0;
@@ -51,6 +53,14 @@ export class Player extends Mesh {
     constructor(public game: Game) {
         super("player", null);
 
+        this.debugCage = MeshBuilder.CreateLineSystem("player-debug-cage", {
+            lines: [
+                [new Vector3(0, -2, 0), new Vector3(0, 2, 0)],
+                [new Vector3(1, -2, 0), new Vector3(1, 2, 0)],
+                [new Vector3(1, -2, 1), new Vector3(1, 2, 1)],
+                [new Vector3(0, -2, 1), new Vector3(0, 2, 1)]
+            ]
+        });
         this.head = new TransformNode("player-head", game.scene);
         this.head.parent = this;
         this.head.position.y = 1.8;
@@ -163,26 +173,14 @@ export class Player extends Mesh {
 
     private _update = () => {
         if (this.game.terrain) {
+            this.debugCage.position.copyFrom(this.position);
+            this.debugCage.position.x = Math.floor(this.debugCage.position.x);
+            this.debugCage.position.z = Math.floor(this.debugCage.position.z);
             localStorage.setItem("last-pos", JSON.stringify([this.absolutePosition.x, this.absolutePosition.y, this.absolutePosition.z, this.rotation.x, this.rotation.y, this.rotation.z]));
 
-            let ijk = this.game.terrain.getChunckAndIJKAtPos(this.position, 0, false);
-            this.chuncks = [];
-            if (ijk) {
-                let chunck = ijk.chunck;
-                this.chuncks = [chunck];
-                let i0 = ijk.ijk.i < this.game.terrain.chunckLengthIJ * 0.5 ? -1 : 0;
-                let j0 = ijk.ijk.j < this.game.terrain.chunckLengthIJ * 0.5 ? -1 : 0;
-                for (let i = i0; i <= i0 + 1; i++) {
-                    for (let j = j0; j <= j0 + 1; j++) {
-                        if (i != 0 || j != 0) {
-                            let c = this.game.terrain.getChunck(chunck.level, chunck.iPos + i, chunck.jPos + j);
-                            if (c) {
-                                this.chuncks.push(c);
-                            }
-                        }
-                    }
-                }
-            }
+            let chunckMeshes = this.game.terrain.getMeshesAtWorldPosition(this.position);
+            this.chunckMeshes = chunckMeshes ? chunckMeshes : [];
+            this.chuncks = chunckMeshes ? chunckMeshes.map(m => m.chunck).filter((c, index, self) => self.indexOf(c) === index) : [];
 
             if (this.vehicle) {
                 this.position.copyFrom(this.vehicle.position);

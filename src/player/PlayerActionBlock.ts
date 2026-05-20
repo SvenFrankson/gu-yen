@@ -40,7 +40,7 @@ export class PlayerActionBlock extends PlayerAction {
             }
 
             let aimRay = new Ray(this.player.head.absolutePosition, this.player.head.forward, 8);
-            let pickInfos = aimRay.intersectsMeshes(this.player.chuncks.flatMap(c => c.meshes!).filter(m => m));
+            let pickInfos = aimRay.intersectsMeshes(this.player.chunckMeshes.filter(m => m));
             for (let pickInfo of pickInfos) {
                 if (pickInfo && pickInfo.hit && pickInfo.pickedPoint) {
                     let p = pickInfo.pickedPoint.addInPlace(pickInfo.getNormal(true)!.scale(0.25));
