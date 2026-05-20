@@ -15,6 +15,7 @@ import { Constants } from "@babylonjs/core/Engines/constants";
 import { PhysicsBody } from "@babylonjs/core/Physics/v2/physicsBody";
 import { PhysicsMotionType, PhysicsShapeMesh } from "@babylonjs/core";
 import { crunchDataString, uncrunchDataString } from "./TerrainGen/RawProp/VoxelDrawing";
+import { NextFrame } from "../Tools";
 
 export var DRAW_CHUNCK_MARGIN: number = 2;
 
@@ -717,20 +718,24 @@ export class Chunck {
                 }
                 */
 
+                let n = 4;
                 if (force || !this.mesh || sides != this._lastDrawnSides) {
-                    for (let i = 0; i < 2; i++) {
-                        for (let j = 0; j < 2; j++) {
+                    for (let i = 0; i < n; i++) {
+                        for (let j = 0; j < n; j++) {
                             let vertexData = await this.terrain.chunckBuilder.BuildMesh(
                                 this,
                                 sides,
                                 {
-                                    i0: i * this.chunckLengthIJ / 2,
-                                    j0: j * this.chunckLengthIJ / 2,
-                                    i1: (i + 1) * this.chunckLengthIJ / 2,
-                                    j1: (j + 1) * this.chunckLengthIJ / 2
+                                    i0: i * this.chunckLengthIJ / n,
+                                    j0: j * this.chunckLengthIJ / n,
+                                    i1: (i + 1) * this.chunckLengthIJ / n,
+                                    j1: (j + 1) * this.chunckLengthIJ / n
                                 },
                                 analyticOccurence
                             );
+                            if (performance.now() - t0 > 10) {
+                                await NextFrame();
+                            }
                             if (vertexData) {
                                 if (!this.mesh) {
                                     this.mesh = new Mesh(this.name + "-mesh");
@@ -739,11 +744,11 @@ export class Chunck {
                                 if (!this.meshes) {
                                     this.meshes = [];
                                 }
-                                if (!this.meshes[i + 2 * j]) {
-                                    this.meshes[i + 2 * j] = new Mesh(this.name + "-mesh-" + i + "-" + j);
-                                    this.meshes[i + 2 * j].parent = this.mesh;
+                                if (!this.meshes[i + n * j]) {
+                                    this.meshes[i + n * j] = new Mesh(this.name + "-mesh-" + i + "-" + j);
+                                    this.meshes[i + n * j].parent = this.mesh;
                                 }
-                                vertexData.applyToMesh(this.meshes[i + 2 * j]);
+                                vertexData.applyToMesh(this.meshes[i + n * j]);
                             }
                             else {
                                 console.warn("ChunckMeshBuilder failed");

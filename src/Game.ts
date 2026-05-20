@@ -179,7 +179,7 @@ export class Game {
             let buildingDatas = await fetch("buildings.json").then(res => res.json());
             let textureSize = 1024;
             let squareSize = 64;
-            let chunckLengthIJ = 32;
+            let chunckLengthIJ = 64;
             let chunckCountIJ = textureSize * squareSize / chunckLengthIJ;
             console.log("chunckCountIJ: " + chunckCountIJ);
             this.terrain = new Terrain({

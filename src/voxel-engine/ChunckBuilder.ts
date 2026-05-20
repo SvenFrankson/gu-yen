@@ -280,7 +280,7 @@ export class ChunckMeshBuilder {
             profile_buildReferencesArray();
         }
 
-        await NextFrame();
+        //await NextFrame();
 
         if (analyticOccurence) {
             analyticOccurence.firstNonEmptyReferenceK = firstNonEmptyReferenceK;
@@ -385,8 +385,6 @@ export class ChunckMeshBuilder {
         else {
             profile_fillVertexDataArrays();
         }
-
-        await NextFrame();
         
         let profile_postProcessVertexDataArrays = () => {
             if (positions.length === 0 || indices.length === 0) {
