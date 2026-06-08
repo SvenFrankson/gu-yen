@@ -106,6 +106,17 @@ export function drawBuilding(buildingData: IBuildingData, chunck: Chunck, chunck
                 let jTop = Math.round(p1.y + (p4.y - p1.y) * nn / stairW);
                 let kTop = h0 + (f + 1) * floorHeight;
             }*/
+           
+            let iPole = Math.round(p3.x);
+            let jPole = Math.round(p3.y);
+            if (iPole >= -m && iPole < chunck.chunckLengthIJ + m) {
+                if (jPole >= -m && jPole < chunck.chunckLengthIJ + m) {
+                    for (let k = 1; k < floorHeight; k++) {
+                        let h = h0 + f * floorHeight + k;
+                        chunck.setRawData(BlockType.MetalPole, iPole + m, jPole + m, h);
+                    }
+                }
+            }
             if (f % 2 === 0) {
                 RasterizeTriangles([p1, p2, p3, p1, p3, p4], (i, j) => {
                     let d = new Vector2(i, j).subtract(p2);

@@ -10,8 +10,79 @@ import { IChunckAnalyticBuildOccurence } from "./ChunckAnalytic";
 import { IJK, IsVeryFinite, MinMax } from "../Number";
 import { NextFrame } from "../Tools";
 import { CreateBoxVertexData } from "@babylonjs/core";
-import { CloneVertexData, MergeVertexDatas, ScaleVertexDataInPlace, TranslateVertexDataInPlace } from "babylonjs-tiaratumgames-tools";
+import { CloneVertexData, ScaleVertexDataInPlace, TranslateVertexDataInPlace } from "babylonjs-tiaratumgames-tools";
 import { BlockPoleVertexData } from "./BlockPoleVertexData";
+
+function MergeVertexDatas(...datas: VertexData[]): VertexData {
+    let mergedData = new VertexData();
+    
+    let posLength = datas.reduce((sum, data) => { return sum + (data.positions ? data.positions.length : 0); }, 0);
+    let indexLength = datas.reduce((sum, data) => { return sum + (data.indices ? data.indices.length : 0); }, 0);
+    let normalLength = datas.reduce((sum, data) => { return sum + (data.normals ? data.normals.length : 0); }, 0);
+    let uvLength = datas.reduce((sum, data) => { return sum + (data.uvs ? data.uvs.length : 0); }, 0);
+    let uv2Length = datas.reduce((sum, data) => { return sum + (data.uvs2 ? data.uvs2.length : 0); }, 0);
+    let colorLength = datas.reduce((sum, data) => { return sum + (data.colors ? data.colors.length : 0); }, 0);
+
+    let positions = new Float32Array(posLength);
+    let indices = new Uint32Array(indexLength);
+    let normals = new Float32Array(normalLength);
+    let uvs = new Float32Array(uvLength);
+    let uvs2 = new Float32Array(uv2Length);
+    let colors = new Float32Array(colorLength);
+
+    let useColors = false;
+    for (let i = 0; i < datas.length; i++) {
+        if (datas[i].colors) {
+            useColors = true;
+        }
+    }
+
+    let offset: number = 0;
+    let indexOffset: number = 0;
+    for (let i = 0; i < datas.length; i++) {
+        let data = datas[i];
+        if (data.positions) {
+            positions.set(data.positions, offset * 3);
+            if (data.indices) {
+                indices.set(data.indices.map(index => { return index + offset; }), indexOffset);
+                indexOffset += data.indices.length;
+            }
+            if (data.normals) {
+                normals.set(data.normals, offset * 3);
+            }
+            if (data.uvs) {
+                uvs.set(data.uvs, offset * 2);
+            }
+            if (data.uvs2) {
+                uvs2.set(data.uvs2, offset * 2);
+            }
+            if (data.colors) {
+                colors.set(data.colors, offset * 4);
+            }
+            else if (useColors) {
+                for (let j = 0; j < data.positions.length / 3; j++) {
+                    colors.set([1, 1, 1, 1], offset * 4);
+                }
+            }
+            offset += data.positions.length / 3;
+        }
+    }
+
+    mergedData.positions = positions;
+    mergedData.indices = indices;
+    mergedData.normals = normals;
+    if (uvs.length > 0) {
+        mergedData.uvs = uvs;
+    }
+    if (uvs2.length > 0) {
+        mergedData.uvs2 = uvs2;
+    }
+    if (colors.length > 0) {
+        mergedData.colors = colors;
+    }
+
+    return mergedData;
+}
 
 export interface IChunckSubZone {
     i0: number;
@@ -451,7 +522,10 @@ export class ChunckMeshBuilder {
 
             //console.log("VerticesCount = " + (vertexData.positions?.length / 3) + " TrianglesCount = " + (vertexData.indices?.length / 3));
             if (poleVertexDatas.length > 0) {
+                console.log(poleVertexDatas.length + " poles");
                 let mergedPoleVertexData = MergeVertexDatas(...poleVertexDatas);
+                console.log((mergedPoleVertexData.positions!.length / 3).toFixed(0) + " pole vertices");
+                console.log((vertexData.positions!.length / 3).toFixed(0) + " base vertices");
                 let uv1s = [];
                 let uv2s = [];
                 for (let i = 0; i < mergedPoleVertexData.positions!.length / 3; i++) {

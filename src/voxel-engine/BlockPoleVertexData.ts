@@ -424,6 +424,8 @@ export class BlockPoleVertexData {
                 p = Math.round(p * 100) / 100;
                 return p;
             });
+            data.uvs = null;
+            data.uvs2 = null;
             //data = PlanetBlockPoleVertexData.SplitVertexDataTriangles(data);
             
             //data.positions = data.positions.map((n: number) => { return n * 0.98 + 0.01; });
