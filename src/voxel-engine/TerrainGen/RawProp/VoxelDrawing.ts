@@ -6,6 +6,7 @@ import { TerrainEditionMode } from "../../TerrainEditor/TerrainEditor";
 import { UniqueList } from "../../../UniqueList";
 import { IJK } from "../../../Number";
 import { RawProp } from "./RawProp";
+import { ChunkData } from "../ChunkData";
 
 export interface IVoxelDrawingDataSerialized {
     offset: { i: number, j: number, k: number };
@@ -89,12 +90,12 @@ export class VoxelDrawing extends RawProp {
         }
     }
 
-    public draw(i: number, j: number, k: number, chunck: Chunck): void {
+    public draw(i: number, j: number, k: number, chunck: Chunck | ChunkData): void {
         if (this.data === null || this.data.data === undefined) {
             console.warn("VoxelDrawing: No data to draw");
             return;
         }
-        let m = DRAW_CHUNCK_MARGIN;
+        let m = chunck instanceof Chunck ? DRAW_CHUNCK_MARGIN : 0;
         let affectedChuncks = new UniqueList<Chunck>();
 
         for (let ii = 0; ii < this.data.wI; ii++) {
@@ -106,7 +107,9 @@ export class VoxelDrawing extends RawProp {
                     let block = this.data.data[iIndex + jIndex * this.data.wI + kIndex * this.data.wI * this.data.dJ];
                     if (block != null && block != 0 && block != BlockType.Unknown) {
                         chunck.setRawDataSafe(block, i + ii + this.data.offset.i + m, j + jj + this.data.offset.j + m, k + kk + this.data.offset.k);
-                        affectedChuncks.push(chunck);
+                        if (chunck instanceof Chunck) {
+                            affectedChuncks.push(chunck);
+                        }
                     }
                 }
             }

@@ -5,9 +5,10 @@ import { AngleFromTo, RasterizeTriangle, RasterizeTriangles } from "../../../Mat
 import { BlockType } from "../../BlockType";
 import { IsVeryFinite } from "../../../Number";
 import { Vector2 } from "@babylonjs/core/Maths/math.vector";
+import { ChunkData } from "../ChunkData";
 
-export function drawBuilding(buildingData: IBuildingData, chunck: Chunck, chunckGenerator: ChunckDataGeneratorDataSets): void {
-    let m = DRAW_CHUNCK_MARGIN;
+export function drawBuilding(buildingData: IBuildingData, chunck: Chunck | ChunkData, chunckGenerator: ChunckDataGeneratorDataSets): void {
+    let m = chunck instanceof Chunck ? DRAW_CHUNCK_MARGIN : 0;
 
     let heightMap = chunckGenerator.getDataIfReady();
     if (!heightMap) {

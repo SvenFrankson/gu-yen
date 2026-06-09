@@ -10,6 +10,7 @@ import { Terrain } from "../Terrain";
 import { NextFrame } from "../../Tools";
 import * as earcut from "earcut"
 import { drawBuilding } from "./building/BuildingMaker";
+import { ChunkData } from "./ChunkData";
 
 export interface ITreeData {
     lat: number;
@@ -239,8 +240,8 @@ export class ChunckDataGeneratorDataSets extends ChunckDataGenerator {
         return h;
     }
 
-    public async initializeData(chunck: Chunck): Promise<boolean> {
-        let m = DRAW_CHUNCK_MARGIN;
+    public async initializeData(chunck: Chunck | ChunkData): Promise<boolean> {
+        let m = chunck instanceof Chunck ? DRAW_CHUNCK_MARGIN : 0;
 
         if (!chunck.dataInitialized) {
             let heightMap = await this._getData();
@@ -345,7 +346,7 @@ export class ChunckDataGeneratorDataSets extends ChunckDataGenerator {
                     }
 
                     for (let k: number = 0; k <= chunck.chunckLengthK; k++) {
-                        let kGlobal = k * chunck.levelFactor;
+                        let kGlobal = k;
                         if (kGlobal <= maxRock) {
                             chunck.setRawData(BlockType.Rock, i + m, j + m, k);
                         }
@@ -398,6 +399,10 @@ export class ChunckDataGeneratorDataSets extends ChunckDataGenerator {
                         }
                     }
                 }
+            }
+
+            for (let k = 0; k < chunck.dataSizeK; k++) {
+                chunck.updateIsEmptyIsFull(k);
             }
 
             return true;

@@ -10,6 +10,7 @@ import { ChunckDataGeneratorFlat } from "./ChunckDataGeneratorFlat";
 import { ChunckDataGeneratorPNG } from "./ChunckDataGeneratorPNG";
 import { treesVoxelDrawingDatas } from "./RawProp/Tree";
 import { AngleFromTo } from "../../Math2D";
+import { ChunckDataGeneratorFromManager, ChunkDataManager } from "./ChunkDataManager";
 
 export class ChunckDataGeneratorFactory {
     
@@ -48,32 +49,32 @@ export class ChunckDataGeneratorFactory {
             return chunckDataGenerator;
         }
         else if (props.type === GeneratorType.DataSets) {
-            let chunckDataGenerator = new ChunckDataGeneratorDataSets(terrain);
-            chunckDataGenerator.url = props.url as string;
-            chunckDataGenerator.noiseUrl = props.noiseUrl as string;
-            chunckDataGenerator.squareSize = props.squareSize as number;
-            chunckDataGenerator.treeTiles = props.treeTiles as IDataTilesCollection<IDataTile<ITreeData>>;
+            let chunkManagerGenerator = new ChunckDataGeneratorDataSets(terrain);
+            chunkManagerGenerator.url = props.url as string;
+            chunkManagerGenerator.noiseUrl = props.noiseUrl as string;
+            chunkManagerGenerator.squareSize = props.squareSize as number;
+            chunkManagerGenerator.treeTiles = props.treeTiles as IDataTilesCollection<IDataTile<ITreeData>>;
 
             let dLat = Math.atan2(16384, terrain.geoConverter.radius) / Math.PI * 180;
             let dLong = Math.atan2(16384, terrain.geoConverter.radius * Math.cos(terrain.geoConverter.latZero * Math.PI / 180)) / Math.PI * 180;
 
-            chunckDataGenerator.lat0 = terrain.geoConverter.latZero - dLat;
-            chunckDataGenerator.long0 = terrain.geoConverter.longZero - dLong;
-            chunckDataGenerator.lat1 = terrain.geoConverter.latZero + dLat;
-            chunckDataGenerator.long1 = terrain.geoConverter.longZero + dLong;
+            chunkManagerGenerator.lat0 = terrain.geoConverter.latZero - dLat;
+            chunkManagerGenerator.long0 = terrain.geoConverter.longZero - dLong;
+            chunkManagerGenerator.lat1 = terrain.geoConverter.latZero + dLat;
+            chunkManagerGenerator.long1 = terrain.geoConverter.longZero + dLong;
 
-            chunckDataGenerator.treeTiles.tiles.forEach(tile => {
+            chunkManagerGenerator.treeTiles.tiles.forEach(tile => {
                 tile.dataArray.forEach(t => {
                     t.n = Math.floor(Math.random() * treesVoxelDrawingDatas.length);
-                    let x = (t.long - chunckDataGenerator.long0) / (chunckDataGenerator.long1 - chunckDataGenerator.long0);
-                    let y = (t.lat - chunckDataGenerator.lat0) / (chunckDataGenerator.lat1 - chunckDataGenerator.lat0);
+                    let x = (t.long - chunkManagerGenerator.long0) / (chunkManagerGenerator.long1 - chunkManagerGenerator.long0);
+                    let y = (t.lat - chunkManagerGenerator.lat0) / (chunkManagerGenerator.lat1 - chunkManagerGenerator.lat0);
                     t.iGlobal = Math.floor(x * terrain.chunckLengthIJ * terrain.chunckCountIJ);
                     t.jGlobal = Math.floor(y * terrain.chunckLengthIJ * terrain.chunckCountIJ);
                 });
             });
 
             
-            chunckDataGenerator.treeTiles = props.treeTiles as IDataTilesCollection<IDataTile<ITreeData>>;
+            chunkManagerGenerator.treeTiles = props.treeTiles as IDataTilesCollection<IDataTile<ITreeData>>;
             if (props.roadTiles) {
                 let tags: UniqueList<string> = new UniqueList<string>();
                 let widthByType: { [type: string]: number } = {};
@@ -97,8 +98,8 @@ export class ChunckDataGeneratorFactory {
                 widthByType["track"] = 2;
                 widthByType["corridor"] = 2;
                 widthByType["elevator"] = 2;
-                chunckDataGenerator.roadTiles = props.roadTiles as IDataTilesCollection<IDataTile<IRoadData>>;
-                for (let roadTile of chunckDataGenerator.roadTiles.tiles) {
+                chunkManagerGenerator.roadTiles = props.roadTiles as IDataTilesCollection<IDataTile<IRoadData>>;
+                for (let roadTile of chunkManagerGenerator.roadTiles.tiles) {
                     for (let roadData of roadTile.dataArray) {
                         roadData.w = widthByType[roadData.type] ?? 2;
                         roadData.w *= 2;
@@ -109,8 +110,8 @@ export class ChunckDataGeneratorFactory {
                 console.log("road tags: " + tags.array.join(", "));
             }
             if (props.buildingTiles) {
-                chunckDataGenerator.buildingTiles = props.buildingTiles as IDataTilesCollection<IDataTile<IBuildingData>>;
-                for (let buildingTile of chunckDataGenerator.buildingTiles.tiles) {
+                chunkManagerGenerator.buildingTiles = props.buildingTiles as IDataTilesCollection<IDataTile<IBuildingData>>;
+                for (let buildingTile of chunkManagerGenerator.buildingTiles.tiles) {
                     for (let buildingData of buildingTile.dataArray) {
 
                         let edgeSum = 0;
@@ -151,6 +152,8 @@ export class ChunckDataGeneratorFactory {
                 }
             }
 
+            let manager = new ChunkDataManager(chunkManagerGenerator, terrain);
+            let chunckDataGenerator = new ChunckDataGeneratorFromManager(manager, terrain);
             return chunckDataGenerator;
         }
         let chunckDataGenerator = new ChunckDataGeneratorFlat(terrain);

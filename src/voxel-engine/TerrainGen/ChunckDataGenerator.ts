@@ -3,6 +3,7 @@ import { Chunck } from "../Chunck";
 import { BlockType } from "../BlockType";
 import { MapAttribute } from "../Save/GameSave";
 import { IBuildingData, IDataTile, IDataTilesCollection, IRoadData, ITreeData } from "./ChunckDataGeneratorDataSets";
+import { ChunkData } from "./ChunkData";
 
 export enum GeneratorType {
     NotAGenerator,
@@ -33,6 +34,6 @@ export abstract class ChunckDataGenerator {
 
     }
 
-    public abstract initializeData(chunck: Chunck): Promise<boolean>;
+    public abstract initializeData(chunck: Chunck | ChunkData): Promise<boolean>;
     public abstract getProps(): IChunckGeneratorProperties;
 }

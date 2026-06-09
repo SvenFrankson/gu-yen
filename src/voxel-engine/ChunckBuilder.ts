@@ -522,10 +522,7 @@ export class ChunckMeshBuilder {
 
             //console.log("VerticesCount = " + (vertexData.positions?.length / 3) + " TrianglesCount = " + (vertexData.indices?.length / 3));
             if (poleVertexDatas.length > 0) {
-                console.log(poleVertexDatas.length + " poles");
                 let mergedPoleVertexData = MergeVertexDatas(...poleVertexDatas);
-                console.log((mergedPoleVertexData.positions!.length / 3).toFixed(0) + " pole vertices");
-                console.log((vertexData.positions!.length / 3).toFixed(0) + " base vertices");
                 let uv1s = [];
                 let uv2s = [];
                 for (let i = 0; i < mergedPoleVertexData.positions!.length / 3; i++) {

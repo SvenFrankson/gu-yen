@@ -739,7 +739,7 @@ export class Chunck {
                                 },
                                 analyticOccurence
                             );
-                            if (performance.now() - t0 > 10) {
+                            if (performance.now() - t0 > 15) {
                                 await NextFrame();
                             }
                             if (vertexData) {

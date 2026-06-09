@@ -26,6 +26,9 @@ import { AngleFromTo } from "./Math2D";
 import { registerBuiltInLoaders } from "@babylonjs/loaders/dynamic";
 import { Phasm } from "./sumuqan/Phasm";
 import { BlockPoleVertexData } from "./voxel-engine/BlockPoleVertexData";
+import { DebugPerf } from "./DebugPerf";
+import { DebugDisplayTextValue } from "./DebugDisplayTextValue";
+import { DebugDisplayFrameValue } from "./DebugDisplayFrameValue";
 registerBuiltInLoaders();
 
 export class Game {
@@ -118,6 +121,10 @@ export class Game {
             this.skybox.position.z = this.camera.position.z;
         });
 
+        let debugPerf = new DebugPerf(this);
+        debugPerf.initialize();
+        debugPerf.show();
+
         this.canvas.addEventListener("keydown", async (event) => {
             if (event.code === "Numpad0") {
                 if (this.terrain) {
@@ -179,7 +186,7 @@ export class Game {
             let buildingDatas = await fetch("buildings.json").then(res => res.json());
             let textureSize = 1024;
             let squareSize = 64;
-            let chunckLengthIJ = 64;
+            let chunckLengthIJ = 32;
             let chunckCountIJ = textureSize * squareSize / chunckLengthIJ;
             console.log("chunckCountIJ: " + chunckCountIJ);
             this.terrain = new Terrain({
@@ -199,11 +206,12 @@ export class Game {
                 chunckLengthIJ: chunckLengthIJ,
                 chunckLengthK: 256,
                 chunckCountIJ: chunckCountIJ,
-                useAnalytics: true
+                useAnalytics: true,
+                useLocalStorage: false
             });
 
             this.terrain.initialize();
-            this.terrain.chunckManager.setDistance(150);
+            this.terrain.chunckManager.setDistance(100);
             this.terrain.sunDir.copyFrom(light.direction);
 
             let noiseTexture = new CubicNoiseTexture(this.scene);
@@ -331,3 +339,5 @@ export class Game {
 
 //window["Game"] = Game;
 customElements.define("mini-map", Minimap);
+customElements.define("debug-display-frame-value", DebugDisplayFrameValue);
+customElements.define("debug-display-text-value", DebugDisplayTextValue);

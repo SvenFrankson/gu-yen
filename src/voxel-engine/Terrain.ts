@@ -57,7 +57,7 @@ export class Terrain {
     public readonly chunckSizeIJ_m: number;
     public readonly chunckSizeK_m: number;
     public readonly chunckCountIJ: number = 1024;
-    public readonly meshesPerChunckSide: number = 4;
+    public readonly meshesPerChunckSide: number = 2;
     public readonly terrainLengthIJ: number;
     public readonly halfTerrainLengthIJ: number;
     public readonly terrainSizeIJ_m: number;
