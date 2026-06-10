@@ -15,6 +15,7 @@ import { BlockType } from "./BlockType";
 import { ChunckDataGeneratorFactory } from "./TerrainGen/ChunckDataGeneratorFactory";
 import { GeoConverter } from "../map/Geo";
 import { Mesh } from "@babylonjs/core";
+import { ChunkDataManager } from "./TerrainGen/ChunkDataManager";
 
 export interface ITerrainProperties {
     //randSeed?: Nabu.RandSeed,
@@ -57,7 +58,7 @@ export class Terrain {
     public readonly chunckSizeIJ_m: number;
     public readonly chunckSizeK_m: number;
     public readonly chunckCountIJ: number = 1024;
-    public readonly meshesPerChunckSide: number = 2;
+    public readonly meshesPerChunckSide: number = 4;
     public readonly terrainLengthIJ: number;
     public readonly halfTerrainLengthIJ: number;
     public readonly terrainSizeIJ_m: number;
@@ -73,6 +74,7 @@ export class Terrain {
     public root: Chunck | undefined;
     public geoConverter: GeoConverter;
     public chunckManager: ChunckManager;
+    public chunkDataManager: ChunkDataManager | null = null;
     public chunckBuilder: ChunckMeshBuilder;
     public save: GameSave;
     public scene: Scene;
@@ -185,7 +187,6 @@ export class Terrain {
         this.chunckDataGenerator = ChunckDataGeneratorFactory.CreateGenerator(this, prop.generatorProps ? prop.generatorProps : { type: GeneratorType.Flat, blockType: BlockType.Grass });
         this.useLocalStorage = prop.useLocalStorage ? true : false;
         this.chunckDataGeneratorSave = new ChunckDataGeneratorFromSave(this);
-
         this.save = new GameSave(prop);
     }
 

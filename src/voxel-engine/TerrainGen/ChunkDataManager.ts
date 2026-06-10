@@ -1,4 +1,6 @@
-import { NextFrame } from "../../Tools";
+import { SHARE_SERVICE_PATH } from "../../Game";
+import { compressUInt8Array, decompressUInt8Array, NextFrame } from "../../Tools";
+import { BlockType } from "../BlockType";
 import { Chunck, DRAW_CHUNCK_MARGIN } from "../Chunck";
 import { ITerrainData } from "../Save/GameSave";
 import { Terrain } from "../Terrain";
@@ -11,7 +13,6 @@ export class ChunkDataManager {
     public generator: ChunckDataGenerator;
     private loadedChunkData: ChunkData[] = [];
 
-
     constructor(generator: ChunckDataGenerator, terrain: Terrain) {
         this.generator = generator;
         this.terrain = terrain;
@@ -22,18 +23,76 @@ export class ChunkDataManager {
         if (!chunkData) {
             chunkData = new ChunkData(iPos, jPos, this.terrain);
             this.loadedChunkData.push(chunkData);
-            await this.generator.initializeData(chunkData);
-            chunkData.dataInitialized = true;
+            try {
+                let response = await fetch(SHARE_SERVICE_PATH + "get_tile/" + iPos.toFixed(0) + "/" + jPos.toFixed(0), {
+                    method: "GET",
+                    mode: "cors",
+                    headers: {
+                        "Content-Type": "application/json",
+                    }
+                });
+                if (response.ok) {
+                    let data = await response.json();
+                    let inlineDataB64 = data.data;
+                    let inlineData = Uint8Array.fromBase64(inlineDataB64);
+                    chunkData.deinlineData(inlineData);
+                    chunkData.dataInitialized = true;
+                    console.log("ChunkDataManager: chunk (" + iPos + ", " + jPos + ") data loaded, inlineDataLength = " + inlineData.length + " base64Length = " + inlineDataB64.length);
+                }
+                else {
+                    throw new Error("Failed to load chunk data, status: " + response.status);
+                }
+            }
+            catch (e) {
+                await this.generator.initializeData(chunkData);
+                chunkData.dataInitialized = true;
+                await this.saveChunkData(chunkData);
+            }
         }
         while (!chunkData.dataInitialized) {
             await NextFrame();
         }
         return chunkData;
     }
+
+    public async saveChunkData(chunkData: ChunkData): Promise<void> {
+        let inlineData = chunkData.inlineData();
+        let inlineDataB64 = inlineData.toBase64();
+        try {
+            let data = {
+                i: chunkData.iPos,
+                j: chunkData.jPos,
+                data: inlineDataB64
+            }
+            let headers: any = {
+                "Content-Type": "application/json",
+            };
+            let dataString = JSON.stringify(data);
+            
+            await fetch(SHARE_SERVICE_PATH + "set_tile", {
+                method: "POST",
+                mode: "cors",
+                headers: headers,
+                body: dataString,
+            });
+            console.log("ChunkDataManager: chunk (" + chunkData.iPos + ", " + chunkData.jPos + ") data initialized and sent, inlineDataLength = " + inlineData.length + " base64Length = " + inlineDataB64.length);
+        }
+        catch (e) {
+            console.error("Error publishing chunk data: ", e);
+            ChunckDataGeneratorFromManager.dontTryIfFailed = true;
+        }
+    }
+
+    public async setData(v: BlockType, i: number, j: number, k: number, iPos: number, jPos: number): Promise<void> {
+        let chunkData = await this.getChunkData(iPos, jPos);
+        chunkData.setRawData(v, i, j, k);
+        await this.saveChunkData(chunkData);
+    }
 }
 
 export class ChunckDataGeneratorFromManager extends ChunckDataGenerator {
 
+    public static dontTryIfFailed = false;
     public manager: ChunkDataManager;
 
     constructor(manager: ChunkDataManager, terrain: Terrain) {
@@ -48,6 +107,11 @@ export class ChunckDataGeneratorFromManager extends ChunckDataGenerator {
             chunkDataCore[i] = [];
             for (let j = 0; j <= 2; j++) {
                 let chunkData = await this.manager.getChunkData(chunck.iPos + i - 1, chunck.jPos + j - 1);
+                let inlineData = chunkData.inlineData();
+                //inlineData = decompressUInt8Array(compressUInt8Array(inlineData));
+                let inlineDataB64 = inlineData.toBase64();
+                chunkData.deinlineData(inlineData);
+                //console.log("inlineDataLength = " + inlineData.length + " base64Length = " + inlineDataB64.length);
                 chunkDataCore[i][j] = chunkData;
             }
         }

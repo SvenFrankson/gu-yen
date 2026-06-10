@@ -1127,4 +1127,46 @@ export class Chunck {
             this.updateIsEmptyIsFull(k);
         }
     }
+
+    public inlineData(): Uint8Array {
+        let size = 0;
+        for (let k = 0; k < this._dataSizeK; k++) {
+            if (this._data[k].length === 1) {
+                size += 2;
+            }
+            else {
+                size += 1 + this._data[k].length;
+            }
+        }
+        let inlineData = new Uint8Array(size);
+        let offset = 0;
+        for (let k = 0; k < this._dataSizeK; k++) {
+            if (this._data[k].length === 1) {
+                inlineData[offset] = 1;
+                inlineData[offset + 1] = this._data[k][0];
+                offset += 2;
+            }
+            else {
+                inlineData[offset] = 0;
+                inlineData.set(this._data[k], offset + 1);
+                offset += 1 + this._data[k].length;
+            }
+        }
+        return inlineData;
+    }
+
+    public deinlineData(inlineData: Uint8Array): void {
+        let offset = 0;
+        for (let k = 0; k < this._dataSizeK; k++) {
+            let f = inlineData[offset] === 1;
+            if (f) {
+                this._data[k] = new Uint8Array([inlineData[offset + 1]]);
+                offset += 2;
+            }
+            else {
+                this._data[k] = inlineData.slice(offset + 1, offset + 1 + this.dataSizeSquare);
+                offset += 1 + this.dataSizeSquare;
+            }
+        }
+    }
 }

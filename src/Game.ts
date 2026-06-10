@@ -31,6 +31,11 @@ import { DebugDisplayTextValue } from "./DebugDisplayTextValue";
 import { DebugDisplayFrameValue } from "./DebugDisplayFrameValue";
 registerBuiltInLoaders();
 
+export var SHARE_SERVICE_PATH: string = "https://guyen.tiaratum.com/index.php/";
+if (location.host.startsWith("127.0.0.1") || location.host.startsWith("localhost")) {
+    SHARE_SERVICE_PATH = "http://localhost/index.php/";
+}
+
 export class Game {
 
     public static Instance: Game;
@@ -186,7 +191,7 @@ export class Game {
             let buildingDatas = await fetch("buildings.json").then(res => res.json());
             let textureSize = 1024;
             let squareSize = 64;
-            let chunckLengthIJ = 32;
+            let chunckLengthIJ = 64;
             let chunckCountIJ = textureSize * squareSize / chunckLengthIJ;
             console.log("chunckCountIJ: " + chunckCountIJ);
             this.terrain = new Terrain({

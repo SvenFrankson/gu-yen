@@ -372,7 +372,7 @@ void main() {
 
    float depthX = vPositionW.x - cameraPosition.x;
    float depthZ = vPositionW.z - cameraPosition.z;
-   float depth = sqrt(depthX * depthX + depthZ * depthZ) / 150.;
+   float depth = sqrt(depthX * depthX + depthZ * depthZ) / 250.;
    depth = max(min(depth, 1.), 0.);
    depth = depth * depth;
    color *= debugColor * lightFactor;

@@ -152,8 +152,8 @@ export class ChunckDataGeneratorFactory {
                 }
             }
 
-            let manager = new ChunkDataManager(chunkManagerGenerator, terrain);
-            let chunckDataGenerator = new ChunckDataGeneratorFromManager(manager, terrain);
+            terrain.chunkDataManager = new ChunkDataManager(chunkManagerGenerator, terrain);
+            let chunckDataGenerator = new ChunckDataGeneratorFromManager(terrain.chunkDataManager, terrain);
             return chunckDataGenerator;
         }
         let chunckDataGenerator = new ChunckDataGeneratorFlat(terrain);

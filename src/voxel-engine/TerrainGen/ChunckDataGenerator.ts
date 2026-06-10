@@ -12,7 +12,8 @@ export enum GeneratorType {
     MapSimple,
     PNG,
     DataSets,
-    Empty
+    Empty,
+    Manager
 }
 
 export interface IChunckGeneratorProperties {

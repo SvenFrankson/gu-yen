@@ -1,4 +1,5 @@
 import { IJK } from "../../Number";
+import { compressUInt8Array, decompressUInt8Array } from "../../Tools";
 import { BlockType } from "../BlockType";
 import { Terrain } from "../Terrain";
 
@@ -152,5 +153,48 @@ export class ChunkData {
         let k = Math.floor(kGlobal);
         
         return { i: i, j: j, k: k };
+    }
+
+    public inlineData(): Uint8Array {
+        let size = 0;
+        for (let k = 0; k < this._dataSizeK; k++) {
+            if (this._data[k].length === 1) {
+                size += 1;
+            }
+            else {
+                size += 1 + this._data[k].length;
+            }
+        }
+        let inlineData = new Uint8Array(size);
+        let offset = 0;
+        for (let k = 0; k < this._dataSizeK; k++) {
+            if (this._data[k].length === 1) {
+                inlineData[offset] = this._data[k][0];
+                offset += 1;
+            }
+            else {
+                inlineData[offset] = BlockType.Unknown;
+                inlineData.set(this._data[k], offset + 1);
+                offset += 1 + this._data[k].length;
+            }
+        }
+        return compressUInt8Array(inlineData);
+    }
+
+    public deinlineData(inlineData: Uint8Array): void {
+        this._data = [];
+        inlineData = decompressUInt8Array(inlineData);
+        let offset = 0;
+        for (let k = 0; k < this._dataSizeK; k++) {
+            let f = inlineData[offset] === BlockType.Unknown;
+            if (f) {
+                this._data[k] = inlineData.slice(offset + 1, offset + 1 + this.dataSizeSquare);
+                offset += 1 + this.dataSizeSquare;
+            }
+            else {
+                this._data[k] = new Uint8Array([inlineData[offset]]);
+                offset += 1;
+            }
+        }
     }
 }

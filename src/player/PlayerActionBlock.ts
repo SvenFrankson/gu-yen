@@ -67,6 +67,9 @@ export class PlayerActionBlock extends PlayerAction {
                 let ijk = this.player.aimedIJK;
                 let chunck = ijk.chunck;
                 let affectedChuncks = chunck.setData(this.blockType, ijk.ijk.i, ijk.ijk.j, ijk.ijk.k);
+                if (this.game.terrain.chunkDataManager) {
+                    this.game.terrain.chunkDataManager.setData(this.blockType, ijk.ijk.i, ijk.ijk.j, ijk.ijk.k, chunck.iPos, chunck.jPos);
+                }
                 affectedChuncks.forEach(
                     async c => await c.redrawMesh(true)
                 );
