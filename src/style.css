@@ -7,6 +7,10 @@ body,
     overflow: hidden;
 }
 
+:root {
+    --ui-color: #00ffff;
+}
+
 body {
     background: #03111a;
 }
@@ -31,7 +35,7 @@ body {
 	width: 400px;
 	padding: 10px;
 	font-size: 16px;
-	color: #00FF00;
+	color: var(--ui-color);
 	text-align: right;
 	font-family: monospace;
 	z-index: 1;
@@ -45,10 +49,72 @@ body {
     top: calc(50% - 2.5px);
     width: 5px;
     height: 5px;
-    background-color: lime;
+    background-color: var(--ui-color);
     border-radius: 50%;
     pointer-events: none;
     z-index: 1000;
+}
+
+/* Inventory UI */
+.player-inventory-title {
+    height: 40px;
+    font-size: 24px;
+    font-weight: bold;
+    text-align: left;
+    padding-left: 15px;
+    margin: 10px 0;
+    color: var(--ui-color);
+    font-family: monospace;
+    border-bottom: 1px solid var(--ui-color);
+}
+
+.player-inventory-close-button {
+    appearance: none;
+    -webkit-appearance: none;
+    -moz-appearance: none;
+    position: absolute;
+    top: 9px;
+    right: 9px;
+    width: 30px;
+    height: 30px;
+    font-size: 24px;
+    padding: 0px;
+    margin: 0px;
+    font-weight: bold;
+    background-color: var(--ui-color);
+    color: rgba(32, 32, 32, 1);
+    font-family: monospace;
+    border: 1px solid rgba(32, 32, 32, 1);
+    border-radius: 3px;
+    cursor: pointer;
+}
+
+.player-inventory-container {
+    --width: 500px;
+    --height: 370px;
+    position: fixed;
+    top: calc(50% - var(--height) / 2);
+    right: calc(50% - var(--width) / 2);
+    border: 1px solid var(--ui-color);
+    background-color: rgba(32, 32, 32, 0.8);
+    border-radius: 5px;
+    width: var(--width);
+    height: var(--height);
+    text-align: center;
+}
+
+.player-inventory-slot {
+    display: inline-block;
+    border: 1px solid var(--ui-color);
+    background-color: rgba(32, 32, 32, 0.8);
+    border-radius: 3px;
+    color: white;
+    font-family: monospace;
+    cursor: pointer;
+    width: 50px;
+    height: 50px;
+    margin: 4px;
+    fill: var(--ui-color);
 }
 
 /* Player Action UI */
@@ -63,7 +129,7 @@ body {
 
 .player-action-slot {
 	position: relative;
-    border: 1px solid lime;
+    border: 1px solid var(--ui-color);
 	background-color: rgba(32, 32, 32, 0.8);
     border-radius: 5px;
     color: white;
@@ -75,11 +141,11 @@ body {
     width: 50px;
     height: 50px;
 	padding: 10px;
-	fill: lime;
+	fill: var(--ui-color);
 }
 
 .player-action-slot.highlighted {
-    border: 6px double lime;
+    border: 6px double var(--ui-color);
     border-radius: 10px;
 	margin: -5px;
 }
@@ -91,5 +157,5 @@ body {
 	font-size: 12px;
 	font-weight: bold;
 	font-family: monospace;
-	color: lime;
+	color: var(--ui-color);
 }

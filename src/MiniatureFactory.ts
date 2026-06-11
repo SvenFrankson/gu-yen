@@ -7,10 +7,13 @@ import { Scene } from "@babylonjs/core/scene.pure";
 import { Game } from "./Game";
 import { ScreenshotTools } from "@babylonjs/core/Misc/screenshotTools.pure";
 import { MeshBuilder } from "@babylonjs/core/Meshes/meshBuilder";
-import { BlockType, BlockTypeColors } from "./voxel-engine/BlockType";
+import { BlockType, BlockTypeColors, IsPole } from "./voxel-engine/BlockType";
 import { ColorizeVertexDataInPlace, CreateBeveledBox, CreateBeveledBoxVertexData } from "babylonjs-tiaratumgames-tools";
 import { NextFrame } from "./Tools";
 import { Mesh } from "@babylonjs/core/Meshes/mesh.pure";
+import { MakeStandardMaterial } from "./MaterialUtils";
+import { Color3 } from "@babylonjs/core/Maths/math.color.pure";
+import { StandardMaterial } from "@babylonjs/core/Materials/standardMaterial.pure";
 
 export class MiniatureFactory {
 
@@ -18,6 +21,7 @@ export class MiniatureFactory {
     public scene: Scene;
     public light: HemisphericLight;
     public camera: ArcRotateCamera;
+    public baseMaterial: StandardMaterial;
 
     private _cachedData: Map<string, string> = new Map<string, string>();
 
@@ -35,6 +39,7 @@ export class MiniatureFactory {
         this.camera.orthoRight = 1;
         this.camera.orthoBottom = - 1;
         this.camera.orthoLeft = - 1;
+        this.baseMaterial = MakeStandardMaterial(this.scene, new Color3(1, 1, 1), 0.1, 0.2);
     }
 
     public async makeBlockIconString(block: BlockType): Promise<string | undefined> {
@@ -78,8 +83,19 @@ export class MiniatureFactory {
             await NextFrame();
         }
         this._working = true;
-        let brickVertexData = CreateBeveledBoxVertexData({ size: 2 * this.game.terrain!.blockSizeIJ_m });
+        let h = 2 * this.game.terrain!.blockSizeIJ_m;
+        let w = h;
+        let d = h;
+        if (IsPole(block as BlockType)) {
+            w = h / 5;
+            d = h / 5;
+        }
+        let brickVertexData = CreateBeveledBoxVertexData({ width: w, height: h, depth: d });
         let brick = new Mesh("miniature-brick", this.scene);
+        brick.renderOutline = true;
+        brick.outlineColor.copyFromFloats(0, 1, 0);
+        brick.outlineWidth = 0.03;
+        brick.material = this.baseMaterial;
         brick.alwaysSelectAsActiveMesh = true;
         let color = BlockTypeColors[block as BlockType];
         if (color) {
@@ -117,14 +133,14 @@ export class MiniatureFactory {
                 ScreenshotTools.CreateScreenshot(
                     this.engine,
                     this.camera,
-                    256,
+                    128,
                     async (data) => {
                         let img = document.createElement("img") as HTMLImageElement;
                         img.src = data;
                         img.onload = async () => {
                             let canvas = document.createElement("canvas");
-                            canvas.width = 256;
-                            canvas.height = 256;
+                            canvas.width = 128;
+                            canvas.height = 128;
                             let context = canvas.getContext("2d");
                             if (context) {
                                 context.drawImage(img, 0, 0);
@@ -149,51 +165,6 @@ export class MiniatureFactory {
                     }
                 );
             });
-        });
-    }
-
-    public debugDownloadScreenshot(): void {
-        
-        console.log("hop hip");
-
-        let box = MeshBuilder.CreateBox("box", { size: 1 }, this.scene);
-        
-        this.engine.runRenderLoop(() => {
-            this.scene.render();
-        })
-
-        requestAnimationFrame(() => {
-            ScreenshotTools.CreateScreenshot(
-                this.engine,
-                this.camera,
-                256,
-                (data) => {
-                    console.log("hello");
-                    let img = document.createElement("img") as HTMLImageElement;
-                    img.src = data;
-                    img.onload = () => {
-                        console.log("hoy hoy");
-                        let canvas = document.createElement("canvas");
-                        canvas.width = 256;
-                        canvas.height = 256;
-                        let context = canvas.getContext("2d");
-                        if (context) {
-                            context.drawImage(img, 0, 0);
-                        }
-
-                        var tmpLink = document.createElement( 'a' );
-                        tmpLink.download = "test.png";
-                        tmpLink.href = canvas.toDataURL();  
-                        
-                        document.body.appendChild( tmpLink );
-                        tmpLink.click(); 
-                        document.body.removeChild( tmpLink );
-
-                        box.dispose();
-                        this.engine.stopRenderLoop();
-                    }
-                }
-            );
         });
     }
 }

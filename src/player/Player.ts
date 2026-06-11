@@ -14,6 +14,7 @@ import { Vehicle } from "../vehicles/Vehicle";
 import { Car } from "../vehicles/Car";
 import { PlayerActionBall } from "./PlayerActionBall";
 import { BlockType } from "../voxel-engine/BlockType";
+import { PlayerInventory } from "./PlayerInventory";
 
 export class Player extends Mesh {
 
@@ -22,6 +23,7 @@ export class Player extends Mesh {
     public isPointerLocked: boolean = false;
 
     public playerActionManager: PlayerActionManager;
+    public playerInventory: PlayerInventory;
     public action?: PlayerAction;
     public defaultAction: PlayerActionDefault;
 
@@ -66,6 +68,7 @@ export class Player extends Mesh {
         this.head.position.y = 1.8;
 
         this.playerActionManager = new PlayerActionManager(this);
+        this.playerInventory = new PlayerInventory(this);
         this.defaultAction = new PlayerActionDefault(this);
 
         this.game.scene.onBeforeRenderObservable.add(this._update);
@@ -98,6 +101,9 @@ export class Player extends Mesh {
                 else {
                     this.fly = !this.fly;
                 }
+            }
+            else if (event.code === "KeyI") {
+                this.playerInventory.show();
             }
             for (let i = 0; i < 10; i++) {
                 if (event.code === "Digit" + i) {
@@ -217,12 +223,26 @@ export class Player extends Mesh {
         }
     }
 
+    public lockPointer(): void {
+        if (this.canUsePointerLock) {
+            this.game.canvas.requestPointerLock().then(() => {
+                this.game.canvas.focus();
+                this.isPointerLocked = true;
+            });
+        }
+    }
+    
+    public unlockPointer(): void {
+        if (this.canUsePointerLock) {
+            document.exitPointerLock();
+            this.isPointerLocked = false;
+        }
+    }
+
     private _pointerIsDown: boolean = false;
     private _pointerDown = (e: PointerEvent) => {
         if (this.canUsePointerLock) {
-            this.game.canvas.requestPointerLock().then(() => {
-                this.isPointerLocked = true;
-            });
+            this.lockPointer();
             if (this.isPointerLocked) {
                 if (this.vehicle instanceof Pelleteuse && !this.vehicle.digging) {
                     this.vehicle.digging = true;

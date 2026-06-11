@@ -33,6 +33,10 @@ export enum BlockType {
     MetalPole
 }
 
+export function IsPole(blockType: BlockType): boolean {
+    return blockType === BlockType.MetalPole;
+}
+
 export var BlockTypeColors: Color3[] = [];
 BlockTypeColors[BlockType.None] = new Color3(1, 0, 0);
 BlockTypeColors[BlockType.Water] = new Color3(0.0, 0.5, 1.0);
@@ -56,3 +60,4 @@ BlockTypeColors[BlockType.WhiteConcrete] = Color3.FromHexString("#d6c5c5");
 BlockTypeColors[BlockType.YellowConcrete] = Color3.FromHexString("#e6d784");
 BlockTypeColors[BlockType.GrayConcrete] = Color3.FromHexString("#b1aea6");
 BlockTypeColors[BlockType.BlackConcrete] = Color3.FromHexString("#6b635a");
+BlockTypeColors[BlockType.MetalPole] = new Color3(0.839, 0.431, 0.02);
