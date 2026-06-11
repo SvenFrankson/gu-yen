@@ -31,9 +31,9 @@ export class MyCamera extends UniversalCamera {
         this.speed = 0.2;
 
         this.pointer = MeshBuilder.CreateBox("pointer", { size: 0.5 }, game.scene);
-        let cyanMaterial = MakeStandardMaterial(new Color3(0.5, 1, 1), 0, 0.3);
+        let cyanMaterial = MakeStandardMaterial(game.scene, new Color3(0.5, 1, 1), 0, 0.3);
         cyanMaterial.alpha = 0.5;
-        let redMaterial = MakeStandardMaterial(new Color3(1, 0.5, 0.5), 0, 0.3);
+        let redMaterial = MakeStandardMaterial(game.scene, new Color3(1, 0.5, 0.5), 0, 0.3);
         redMaterial.alpha = 0.5;
 
         this.game.scene.onBeforeRenderObservable.add(this._update);

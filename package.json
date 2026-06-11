@@ -14,7 +14,6 @@
     "@babylonjs/inspector": "*",
     "@babylonjs/loaders": "*",
     "@types/earcut": "^3.0.0",
-    "babylonjs-extra-meshes-kit": "*",
     "babylonjs-tiaratumgames-tools": "*",
     "typescript": "~6.0.2",
     "vite": "^8.0.4"

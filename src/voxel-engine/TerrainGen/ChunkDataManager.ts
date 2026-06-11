@@ -32,12 +32,12 @@ export class ChunkDataManager {
                     }
                 });
                 if (response.ok) {
-                    let data = await response.json();
-                    let inlineDataB64 = data.data;
+                    let dataText = await response.text();
+                    let data = JSON.parse(dataText);
+                    let inlineDataB64 = data.dataText;
                     let inlineData = Uint8Array.fromBase64(inlineDataB64);
                     chunkData.deinlineData(inlineData);
                     chunkData.dataInitialized = true;
-                    console.log("ChunkDataManager: chunk (" + iPos + ", " + jPos + ") data loaded, inlineDataLength = " + inlineData.length + " base64Length = " + inlineDataB64.length);
                 }
                 else {
                     throw new Error("Failed to load chunk data, status: " + response.status);
@@ -75,24 +75,45 @@ export class ChunkDataManager {
                 headers: headers,
                 body: dataString,
             });
-            console.log("ChunkDataManager: chunk (" + chunkData.iPos + ", " + chunkData.jPos + ") data initialized and sent, inlineDataLength = " + inlineData.length + " base64Length = " + inlineDataB64.length);
         }
         catch (e) {
-            console.error("Error publishing chunk data: ", e);
-            ChunckDataGeneratorFromManager.dontTryIfFailed = true;
+            console.error("Error saving chunk data: ", e);
         }
     }
 
-    public async setData(v: BlockType, i: number, j: number, k: number, iPos: number, jPos: number): Promise<void> {
+    public async setBlock(v: BlockType, i: number, j: number, k: number, iPos: number, jPos: number): Promise<void> {
         let chunkData = await this.getChunkData(iPos, jPos);
         chunkData.setRawData(v, i, j, k);
-        await this.saveChunkData(chunkData);
+        //await this.saveChunkData(chunkData);
+        try {
+            let data = {
+                iTile: chunkData.iPos,
+                jTile: chunkData.jPos,
+                i: i,
+                j: j,
+                k: k,
+                value: v
+            }
+            let headers: any = {
+                "Content-Type": "application/json",
+            };
+            let dataString = JSON.stringify(data);
+            
+            const response = await fetch(SHARE_SERVICE_PATH + "set_block", {
+                method: "POST",
+                mode: "cors",
+                headers: headers,
+                body: dataString,
+            });
+        }
+        catch (e) {
+            console.error("Error publishing chunk data: ", e);
+        }
     }
 }
 
 export class ChunckDataGeneratorFromManager extends ChunckDataGenerator {
 
-    public static dontTryIfFailed = false;
     public manager: ChunkDataManager;
 
     constructor(manager: ChunkDataManager, terrain: Terrain) {
@@ -107,11 +128,6 @@ export class ChunckDataGeneratorFromManager extends ChunckDataGenerator {
             chunkDataCore[i] = [];
             for (let j = 0; j <= 2; j++) {
                 let chunkData = await this.manager.getChunkData(chunck.iPos + i - 1, chunck.jPos + j - 1);
-                let inlineData = chunkData.inlineData();
-                //inlineData = decompressUInt8Array(compressUInt8Array(inlineData));
-                let inlineDataB64 = inlineData.toBase64();
-                chunkData.deinlineData(inlineData);
-                //console.log("inlineDataLength = " + inlineData.length + " base64Length = " + inlineDataB64.length);
                 chunkDataCore[i][j] = chunkData;
             }
         }

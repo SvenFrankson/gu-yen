@@ -26,6 +26,12 @@ export class PlayerActionManager {
             icon.setAttribute("viewBox", "0 0 16 16");
             slot.appendChild(icon);
 
+            let canvasContainer = document.createElement("div");
+            canvasContainer.classList.add("player-action-canvas-container");
+            canvasContainer.setAttribute("width", "100%");
+            canvasContainer.setAttribute("height", "100%");
+            slot.appendChild(canvasContainer);
+
             let index = document.createElement("div");
             index.classList.add("player-action-slot-index");
             index.textContent = i.toString();
@@ -55,7 +61,18 @@ export class PlayerActionManager {
 
     public linkAction(slotIndex: number, action: PlayerAction): void {
         this.actions[slotIndex] = action;
-        let slot = this.actionSlotElements[slotIndex].querySelector("svg")!;
-        slot.innerHTML = action.svgIcon;
+        let svgIconContainer = this.actionSlotElements[slotIndex].querySelector("svg")!;
+        let canvasContainer = this.actionSlotElements[slotIndex].querySelector<HTMLDivElement>(".player-action-canvas-container")!;
+        if (action.svgIcon) {
+            svgIconContainer.innerHTML = action.svgIcon;
+            svgIconContainer.style.display = "block";
+            canvasContainer.style.display = "none";
+        }
+        else if (action.canvasIcon) {
+            canvasContainer.innerHTML = "";
+            canvasContainer.appendChild(action.canvasIcon);
+            canvasContainer.style.display = "block";
+            svgIconContainer.style.display = "none";
+        }
     }
 }

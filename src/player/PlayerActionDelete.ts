@@ -19,7 +19,7 @@ export class PlayerActionDelete extends PlayerAction {
 
         this.blockPointer = MeshBuilder.CreateBox("block-pointer", { size: 0.5 }, player.game.scene);
         this.blockPointer.scaling.copyFromFloats(1.05, 1.05, 1.05);
-        let redMaterial = MakeStandardMaterial(new Color3(1, 0.5, 0.5), 0, 0.3);
+        let redMaterial = MakeStandardMaterial(player._scene, new Color3(1, 0.5, 0.5), 0, 0.3);
         redMaterial.alpha = 0.5;
         this.blockPointer.material = redMaterial;
     }

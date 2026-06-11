@@ -26,9 +26,9 @@ export class PlayerActionBall extends PlayerAction {
         ball.parent = this.player.head;
         ball.position.copyFromFloats(0, - 0.5, 5);
         ball.isVisible = false;
-        this.redMat = MakeStandardMaterial(Color3.Red());
+        this.redMat = MakeStandardMaterial(player._scene, Color3.Red());
         this.redMat.alpha = 0.5;
-        this.greenMat = MakeStandardMaterial(Color3.Green());
+        this.greenMat = MakeStandardMaterial(player._scene, Color3.Green());
         this.greenMat.alpha = 0.5;
         ball.material = this.greenMat;
 

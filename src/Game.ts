@@ -29,6 +29,12 @@ import { BlockPoleVertexData } from "./voxel-engine/BlockPoleVertexData";
 import { DebugPerf } from "./DebugPerf";
 import { DebugDisplayTextValue } from "./DebugDisplayTextValue";
 import { DebugDisplayFrameValue } from "./DebugDisplayFrameValue";
+import { MiniatureFactory } from "./MiniatureFactory";
+import { BlockType } from "./voxel-engine/BlockType";
+import { PlayerActionBlock } from "./player/PlayerActionBlock";
+import { PlayerActionDelete } from "./player/PlayerActionDelete";
+import { PlayerActionTreeGenerator } from "./player/PlayerActionTreeGenerator";
+import { PlayerActionBall } from "./player/PlayerActionBall";
 registerBuiltInLoaders();
 
 export var SHARE_SERVICE_PATH: string = "https://guyen.tiaratum.com/index.php/";
@@ -47,6 +53,7 @@ export class Game {
     public floatingBlocksDetector: FloatingBlocksDetector | undefined;
     public player: Player;
     public geoConverter: GeoConverter = new GeoConverter();
+    public miniatureFactory: MiniatureFactory;
     public skybox: Mesh;
 
     constructor(public canvas: HTMLCanvasElement) {
@@ -173,6 +180,8 @@ export class Game {
         document.body.appendChild(miniMap);
         miniMap.setGame(this);
 
+        this.miniatureFactory = new MiniatureFactory(this);
+
         ChunckVertexData.InitializeData("meshes/chunck-parts.gltf", this.scene).then(async () => {
             await BlockPoleVertexData.InitializeData("meshes/poleblocks.gltf", this.scene);
             // initialize plugin
@@ -240,6 +249,17 @@ export class Game {
 
             this.floatingBlocksDetector = new FloatingBlocksDetector(this.terrain);
 
+            this.player.playerActionManager.linkAction(1, await PlayerActionBlock.Create(this.player, BlockType.Grass));
+            this.player.playerActionManager.linkAction(2, await PlayerActionBlock.Create(this.player, BlockType.Dirt));
+            this.player.playerActionManager.linkAction(3, await PlayerActionBlock.Create(this.player, BlockType.Wood));
+            this.player.playerActionManager.linkAction(4, await PlayerActionBlock.Create(this.player, BlockType.Rock));
+            this.player.playerActionManager.linkAction(5, await PlayerActionBlock.Create(this.player, BlockType.Asphalt));
+            this.player.playerActionManager.linkAction(6, await PlayerActionBlock.Create(this.player, BlockType.WhiteAsphalt));
+            this.player.playerActionManager.linkAction(9, await PlayerActionBlock.Create(this.player, BlockType.MetalPole));
+            this.player.playerActionManager.linkAction(0, new PlayerActionDelete(this.player));
+
+            //this.player.playerActionManager.linkAction(3, new PlayerActionTreeGenerator(this.player));
+            //this.player.playerActionManager.linkAction(4, new PlayerActionBall(this.player));
             /*
             this.terrain.customChunckMaterialSet = (chunck: Chunck) => {
                 if (chunck.mesh && !(chunck.mesh.material instanceof TerrainMaterial)) {

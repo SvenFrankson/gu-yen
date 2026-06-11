@@ -61,8 +61,8 @@ export class Pelleteuse extends Vehicle implements IVehicle {
         let toonMaterial = new ToonMaterial("test", game.scene);
         this.material = toonMaterial;
 
-        this.red = MakeStandardMaterial(new Color3(1, 0.2, 0.2));
-        this.green = MakeStandardMaterial(new Color3(0.2, 1, 0.2));
+        this.red = MakeStandardMaterial(this.game.scene, new Color3(1, 0.2, 0.2));
+        this.green = MakeStandardMaterial(this.game.scene, new Color3(0.2, 1, 0.2));
 
         this.cabine = new VehiclePart("pelleteuse_cabine", this);
         this.cabine.material = this.material;
@@ -88,7 +88,7 @@ export class Pelleteuse extends Vehicle implements IVehicle {
 
         this.pointer = MeshBuilder.CreateBox("pointer", { size: 0.5 }, game.scene);
         this.pointer.scaling.copyFromFloats(1.05, 1.05, 1.05);
-        let redMaterial = MakeStandardMaterial(new Color3(1, 0.5, 0.5), 0, 0.3);
+        let redMaterial = MakeStandardMaterial(this.game.scene, new Color3(1, 0.5, 0.5), 0, 0.3);
         redMaterial.alpha = 0.5;
         this.pointer.material = redMaterial;
     }

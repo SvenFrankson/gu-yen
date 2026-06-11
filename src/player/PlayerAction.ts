@@ -10,6 +10,7 @@ import { VehiclePart } from "../vehicles/Vehicle";
 export abstract class PlayerAction {
 
     public svgIcon: string = "";
+    public canvasIcon: HTMLCanvasElement | undefined = undefined;
 
     public get game(): Game {
         return this.player.game;

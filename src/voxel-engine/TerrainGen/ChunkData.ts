@@ -121,8 +121,8 @@ export class ChunkData {
         }
         
         let firstBlock = this._data[k][0];
-        for (let i = 0; i <= this.chunckLengthIJ; i++) {
-            for (let j = 0; j <= this.chunckLengthIJ; j++) {
+        for (let i = 0; i < this.chunckLengthIJ; i++) {
+            for (let j = 0; j < this.chunckLengthIJ; j++) {
                 let block = this.getRawData(i, j, k);
                 if (block != firstBlock) {
                     return;

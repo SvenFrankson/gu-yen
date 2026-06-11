@@ -68,12 +68,6 @@ export class Player extends Mesh {
         this.playerActionManager = new PlayerActionManager(this);
         this.defaultAction = new PlayerActionDefault(this);
 
-        this.playerActionManager.linkAction(1, new PlayerActionBlock(this, BlockType.Grass));
-        this.playerActionManager.linkAction(2, new PlayerActionDelete(this));
-        this.playerActionManager.linkAction(3, new PlayerActionTreeGenerator(this));
-        this.playerActionManager.linkAction(4, new PlayerActionBall(this));
-        this.playerActionManager.linkAction(5, new PlayerActionBlock(this, BlockType.MetalPole));
-
         this.game.scene.onBeforeRenderObservable.add(this._update);
 
         this.game.canvas.addEventListener("keydown", (event) => {
