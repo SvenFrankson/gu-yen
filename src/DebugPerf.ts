@@ -52,7 +52,7 @@ export class DebugPerf {
             this._frameRate.setAttribute("label", "Frame Rate");
             this._frameRate.setAttribute("min", "0");
             this._frameRate.setAttribute("max", "144");
-            this._frameRate.style.outline = "1px solid lime";
+            this._frameRate.style.outline = "1px solid var(--ui-color)";
             this.container.appendChild(this._frameRate);
         }
 

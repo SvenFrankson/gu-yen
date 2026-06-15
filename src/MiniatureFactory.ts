@@ -4,7 +4,7 @@ import { Engine } from "@babylonjs/core/Engines/engine.pure";
 import { HemisphericLight } from "@babylonjs/core/Lights/hemisphericLight.pure";
 import { Vector3 } from "@babylonjs/core/Maths/math.vector.pure";
 import { Scene } from "@babylonjs/core/scene.pure";
-import { Game } from "./Game";
+import { Game, UI_Color } from "./Game";
 import { ScreenshotTools } from "@babylonjs/core/Misc/screenshotTools.pure";
 import { MeshBuilder } from "@babylonjs/core/Meshes/meshBuilder";
 import { BlockType, BlockTypeColors, IsPole } from "./voxel-engine/BlockType";
@@ -93,7 +93,7 @@ export class MiniatureFactory {
         let brickVertexData = CreateBeveledBoxVertexData({ width: w, height: h, depth: d });
         let brick = new Mesh("miniature-brick", this.scene);
         brick.renderOutline = true;
-        brick.outlineColor.copyFromFloats(0, 1, 0);
+        brick.outlineColor.copyFrom(UI_Color);
         brick.outlineWidth = 0.03;
         brick.material = this.baseMaterial;
         brick.alwaysSelectAsActiveMesh = true;

@@ -1,5 +1,5 @@
 import { Vector3 } from "@babylonjs/core/Maths/math.vector";
-import { Game } from "../Game";
+import { Game, UI_Color } from "../Game";
 import { ChunckDataGeneratorDataSets } from "../voxel-engine/TerrainGen/ChunckDataGeneratorDataSets";
 
 export class Minimap extends HTMLElement {
@@ -28,7 +28,7 @@ export class Minimap extends HTMLElement {
         this.style.top = "10px";
         this.style.width = this.size.toFixed(0) + "px";
         this.style.height = this.size.toFixed(0) + "px";
-        this.style.border = "2px solid lime";
+        this.style.border = "2px solid " + UI_Color.toHexString();
         this.style.borderRadius = "10px";
         this.style.overflow = "hidden";
         
@@ -55,7 +55,7 @@ export class Minimap extends HTMLElement {
         this.currentPositionMarker = document.createElement("div");
         this.currentPositionMarker.style.width = "4px";
         this.currentPositionMarker.style.height = "4px";
-        this.currentPositionMarker.style.backgroundColor = "red";
+        this.currentPositionMarker.style.backgroundColor = UI_Color.toHexString();
         this.currentPositionMarker.style.position = "absolute";
         this.currentPositionMarker.style.zIndex = "100";
         this.appendChild(this.currentPositionMarker);
@@ -65,7 +65,7 @@ export class Minimap extends HTMLElement {
         this.coordinates.style.right = "10px";
         this.coordinates.style.bottom = "0px";
         this.coordinates.style.zIndex = "200";
-        this.coordinates.style.color = "lime";
+        this.coordinates.style.color = UI_Color.toHexString();
         this.coordinates.style.fontFamily = "monospace";
         this.coordinates.innerHTML = "coordinates";
         this.appendChild(this.coordinates);

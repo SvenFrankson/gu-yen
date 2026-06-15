@@ -12,9 +12,7 @@ export class PlayerActionBlock extends PlayerAction {
 
     public static async Create(player: Player, blockType: BlockType): Promise<PlayerActionBlock> {
         let playerActionBlock = new PlayerActionBlock(player, blockType);
-        playerActionBlock.canvasIcon = await player.game.miniatureFactory.makeBlockIcon(blockType);
-        playerActionBlock.canvasIcon.style.width = "100%";
-        playerActionBlock.canvasIcon.style.height = "100%";
+        playerActionBlock.canvasIcon = await player.game.miniatureFactory.makeBlockIconString(blockType) ?? "";
         return playerActionBlock;
     }
 

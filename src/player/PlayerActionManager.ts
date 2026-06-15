@@ -15,22 +15,24 @@ export class PlayerActionManager {
         document.body.appendChild(this.container);
 
         for (let i = 0; i < this.slotCount; i++) {
+            let slotIndex = i;
+
             let slot = document.createElement("div");
             slot.classList.add("player-action-slot");
             this.actionSlotElements.push(slot);
+            slot.addEventListener("pointerup", (e) => {
+                let draggedInventoryItem = this.player.playerInventory.draggedItem;
+                if (draggedInventoryItem) {
+                    if (draggedInventoryItem.playerAction) {
+                        this.linkAction(slotIndex, draggedInventoryItem.playerAction);
+                    }
+                    this.player.playerInventory.draggedItem = undefined;
+                }
+            });
 
-            let icon = document.createElementNS("http://www.w3.org/2000/svg", "svg");
-            icon.setAttribute("xmlns", "http://www.w3.org/2000/svg");
-            icon.setAttribute("width", "100%");
-            icon.setAttribute("height", "100%");
-            icon.setAttribute("viewBox", "0 0 16 16");
-            slot.appendChild(icon);
-
-            let canvasContainer = document.createElement("div");
-            canvasContainer.classList.add("player-action-canvas-container");
-            canvasContainer.setAttribute("width", "100%");
-            canvasContainer.setAttribute("height", "100%");
-            slot.appendChild(canvasContainer);
+            let iconContainer = document.createElement("div");
+            iconContainer.classList.add("icon-container");
+            slot.appendChild(iconContainer);
 
             let index = document.createElement("div");
             index.classList.add("player-action-slot-index");
@@ -61,18 +63,17 @@ export class PlayerActionManager {
 
     public linkAction(slotIndex: number, action: PlayerAction): void {
         this.actions[slotIndex] = action;
-        let svgIconContainer = this.actionSlotElements[slotIndex].querySelector("svg")!;
-        let canvasContainer = this.actionSlotElements[slotIndex].querySelector<HTMLDivElement>(".player-action-canvas-container")!;
-        if (action.svgIcon) {
-            svgIconContainer.innerHTML = action.svgIcon;
-            svgIconContainer.style.display = "block";
-            canvasContainer.style.display = "none";
+        let iconContainer = this.actionSlotElements[slotIndex].querySelector<HTMLDivElement>(".icon-container")!;
+        if (action && action.svgIcon) {
+            iconContainer.innerHTML = "<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'>" + action.svgIcon + "</svg>";
+            iconContainer.style.display = "block";
         }
-        else if (action.canvasIcon) {
-            canvasContainer.innerHTML = "";
-            canvasContainer.appendChild(action.canvasIcon);
-            canvasContainer.style.display = "block";
-            svgIconContainer.style.display = "none";
+        else if (action && action.canvasIcon) {
+            iconContainer.innerHTML = "<img src='" + action.canvasIcon + "'/>";
+            iconContainer.style.display = "block";
+        }
+        else {
+            iconContainer.style.display = "none";
         }
     }
 }

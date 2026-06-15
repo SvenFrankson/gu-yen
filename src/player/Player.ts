@@ -14,7 +14,7 @@ import { Vehicle } from "../vehicles/Vehicle";
 import { Car } from "../vehicles/Car";
 import { PlayerActionBall } from "./PlayerActionBall";
 import { BlockType } from "../voxel-engine/BlockType";
-import { PlayerInventory } from "./PlayerInventory";
+import { PlayerInventory } from "./inventory/PlayerInventory";
 
 export class Player extends Mesh {
 

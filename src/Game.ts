@@ -42,6 +42,8 @@ if (location.host.startsWith("127.0.0.1") || location.host.startsWith("localhost
     SHARE_SERVICE_PATH = "http://localhost/index.php/";
 }
 
+export var UI_Color: Color3 = Color3.FromHexString("#00FFFF");
+
 export class Game {
 
     public static Instance: Game;
@@ -257,6 +259,19 @@ export class Game {
             this.player.playerActionManager.linkAction(6, await PlayerActionBlock.Create(this.player, BlockType.WhiteAsphalt));
             this.player.playerActionManager.linkAction(9, await PlayerActionBlock.Create(this.player, BlockType.MetalPole));
             this.player.playerActionManager.linkAction(0, new PlayerActionDelete(this.player));
+
+            for (let blockType = BlockType.Grass; blockType <= BlockType.MetalPole; blockType++) {
+                if (blockType === BlockType.None) {
+                    continue;
+                }
+                if (blockType === BlockType.Water) {
+                    continue;
+                }
+                if (blockType === BlockType.Unknown) {
+                    continue;
+                }
+                await this.player.playerInventory.addItemByName("block-" + BlockType[blockType]);
+            }
 
             //this.player.playerActionManager.linkAction(3, new PlayerActionTreeGenerator(this.player));
             //this.player.playerActionManager.linkAction(4, new PlayerActionBall(this.player));

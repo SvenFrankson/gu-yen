@@ -104,6 +104,7 @@ body {
 }
 
 .player-inventory-slot {
+    position: relative;
     display: inline-block;
     border: 1px solid var(--ui-color);
     background-color: rgba(32, 32, 32, 0.8);
@@ -114,7 +115,58 @@ body {
     width: 50px;
     height: 50px;
     margin: 4px;
+    padding: 0px;
     fill: var(--ui-color);
+    vertical-align: text-top;
+    user-select: none;
+}
+
+.player-inventory-slot:hover {
+    border: 2px solid var(--ui-color);
+    margin: 3px;
+}
+
+.player-inventory-slot .label {
+    position: absolute;
+    width: fit-content;
+    max-width: calc(100% - 8px);
+    overflow: hidden;
+    left: 0px;
+    right: 0px;
+    padding: 0px 4px;
+    font-size: 12px;
+    font-weight: bold;
+    font-family: monospace;
+    color: var(--ui-color);
+    border-radius: 3px;
+    background-color: rgba(32, 32, 32, 0.8);
+    z-index: 1;
+}
+
+.player-inventory-slot:hover .label {
+    max-width: 500px;
+    background-color: rgba(32, 32, 32, 1);
+    border: 2px solid var(--ui-color);
+    margin: -2px;
+    z-index: 2;
+}
+
+.player-inventory-slot .icon-container {
+    width: 50px;
+    height: 50px;
+    pointer-events: none;
+}
+
+.player-inventory-slot .icon-container svg {
+    width: 100%;
+    height: 100%;
+    pointer-events: none;
+}
+
+.player-inventory-slot .icon-container img {
+    width: 100%;
+    height: 100%;
+    pointer-events: none;
 }
 
 /* Player Action UI */
@@ -142,12 +194,31 @@ body {
     height: 50px;
 	padding: 10px;
 	fill: var(--ui-color);
+    user-select: none;
 }
 
 .player-action-slot.highlighted {
     border: 6px double var(--ui-color);
     border-radius: 10px;
 	margin: -5px;
+}
+
+.player-action-slot .icon-container {
+    width: 50px;
+    height: 50px;
+    pointer-events: none;
+}
+
+.player-action-slot .icon-container svg {
+    width: 100%;
+    height: 100%;
+    pointer-events: none;
+}
+
+.player-action-slot .icon-container img {
+    width: 100%;
+    height: 100%;
+    pointer-events: none;
 }
 
 .player-action-slot-index {

@@ -81,7 +81,7 @@ export class DebugDisplayFrameValue extends HTMLElement {
             this.appendChild(container);
 
             this._valuesElement = document.createElementNS("http://www.w3.org/2000/svg", "path");
-            this._valuesElement.setAttribute("stroke", "#00FF00");
+            this._valuesElement.setAttribute("stroke", "var(--ui-color)");
             this._valuesElement.setAttribute("stroke-width", "2");
             container.appendChild(this._valuesElement);
 

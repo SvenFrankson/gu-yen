@@ -5,11 +5,9 @@ import { Color3 } from "@babylonjs/core/Maths/math.color";
 // 3) Incrementing array size in terrainToon fragment shader
 // 4) Initializing with a color in PlanetMaterial.ts
 
-export var BlockTypeNames: string[] = ["None", "Water", "Grass", "SparseGrass", "Dirt", "Sand", "Rock", "Wood", "Leaf", "Laterite", "Basalt", "Snow", "Ice", "Regolith", "Asphalt", "Rust", "Unknown"];
-
 export enum BlockType {
     None = 0,
-    Water = 1,
+    Water,
     Grass,
     SparseGrass,
     Dirt,
@@ -32,6 +30,32 @@ export enum BlockType {
     BlackConcrete,
     MetalPole
 }
+
+export var BlockTypeNames: string[] = [
+    "None",
+    "Water",
+    "Grass",
+    "SparseGrass",
+    "Dirt",
+    "Sand",
+    "Rock",
+    "Wood",
+    "Leaf",
+    "Laterite",
+    "Basalt",
+    "Snow",
+    "Ice",
+    "Regolith",
+    "Asphalt",
+    "Rust",
+    "Unknown",
+    "WhiteAsphalt",
+    "WhiteConcrete",
+    "YellowConcrete",
+    "GrayConcrete",
+    "BlackConcrete",
+    "MetalPole"
+];
 
 export function IsPole(blockType: BlockType): boolean {
     return blockType === BlockType.MetalPole;
