@@ -4,13 +4,10 @@ import { Vector3, Quaternion } from "@babylonjs/core/Maths/math.vector.pure";
 import { Mesh } from "@babylonjs/core/Meshes/mesh.pure";
 import { MeshBuilder } from "@babylonjs/core/Meshes/meshBuilder";
 import { Game } from "../Game";
-import { ToonMaterial } from "../ToonMaterial";
-import { Polypode } from "./Polypode";
-import { KneeMode } from "./Leg";
+import { Humanoid } from "./Humanoid";
 import { AngleFromToAround, IsFinite, SphereCollider } from "babylonjs-tiaratumgames-tools";
-import { ColorizeVertexDataInPlace, GetGLTFMeshDataArray } from "../VertexDataUtils";
 
-class PhasmController {
+class HumanController {
 
     public destination: Vector3 = Vector3.Zero();
     public timer: number = Infinity;
@@ -18,13 +15,13 @@ class PhasmController {
 
     public debug: Mesh;
 
-    constructor(public phasm: Phasm) {
+    constructor(public human: Human) {
         this.debug = new Mesh("debug");
         //CreateSphereVertexData({ diameter: 0.1 }).applyToMesh(this.debug);
     }
 
     public updateExplorerDestination(): boolean {
-        this.destination = this.phasm.game.player.absolutePosition;
+        this.destination = this.human.game.player.absolutePosition;
         this.destination.y += 1;
         this.debug.position.copyFrom(this.destination);
         
@@ -33,12 +30,12 @@ class PhasmController {
 
     public update(): void {
         if (this.stop) {
-            this.phasm.speed = 0;
-            this.phasm.rotationSpeed = 0;
+            this.human.speed = 0;
+            this.human.rotationSpeed = 0;
             return;
         }
 
-        let dt = this.phasm.getScene().getEngine().getDeltaTime() / 1000;
+        let dt = this.human.getScene().getEngine().getDeltaTime() / 1000;
 
         this.timer += dt;
         if (this.timer > 30) {
@@ -55,9 +52,9 @@ class PhasmController {
             return;
         }
 
-        let dirDestination = this.destination.subtract(this.phasm.position);
-        let rightDestination = Vector3.Cross(this.phasm.localNormal, dirDestination);
-        this.phasm.targetUp = Vector3.Cross(dirDestination, rightDestination).normalize();
+        let dirDestination = this.destination.subtract(this.human.position);
+        let rightDestination = Vector3.Cross(this.human.localNormal, dirDestination);
+        this.human.targetUp = Vector3.Cross(dirDestination, rightDestination).normalize();
         let distDestination = dirDestination.length();
         if (distDestination < 0.4) {
             if (this.updateExplorerDestination()) {
@@ -72,63 +69,37 @@ class PhasmController {
             }
         }
         
-        this.phasm.speed = distDestination * 0.5;
-        this.phasm.speed = Math.max(Math.min(this.phasm.speed, 2 * this.phasm.size), 0);
-        let alphaDestination = AngleFromToAround(dirDestination, this.phasm.forward, this.phasm.up);
-        this.phasm.rotationSpeed = 0;
+        this.human.speed = (distDestination - 3) * 0.5 ;
+        this.human.speed = Math.max(Math.min(this.human.speed, 1), 0);
+        let alphaDestination = AngleFromToAround(dirDestination, this.human.forward, this.human.up);
+        this.human.rotationSpeed = 0;
         if (alphaDestination > Math.PI / 64) {
-            this.phasm.rotationSpeed = - 0.5;
+            this.human.rotationSpeed = - 1;
         }
         else if (alphaDestination < - Math.PI / 64) {
-            this.phasm.rotationSpeed = 0.5;
+            this.human.rotationSpeed = 1;
         }
     }
 }
 
-export class Phasm extends Polypode {
+export class Human extends Humanoid {
 
-    public controller: PhasmController;
+    public controller: HumanController;
     public destination: Vector3 = Vector3.Zero();
 
     constructor(public game: Game) {
-        super("phasm", {
-            size: 1 + 20 * Math.random(),
-            legPairsCount: 3,
-            headAnchor: (new Vector3(0, 0.04, 0.25)),
-            hipAnchors: [
-                new Vector3(0.12, 0.026, -0.217),
-                new Vector3(0.08, 0, 0),
-                new Vector3(0.037, 0.028, 0.22)
-            ],
-            footTargets: [
-                new Vector3(0.25, -.2, -0.5),
-                new Vector3(0.35, -.2, 0),
-                new Vector3(0.2, -.2, 0.5)
-            ],
+        super("human", {
+            size: 1,
+            headAnchor: (new Vector3(0, 0.6, 0.1)),
             footThickness: 0,
-            upperLegLength: 0.27,
-            lowerLegLength: 0.31,
-            legScales: [1.1, 0.9, 1],
-            stepHeight: 0.1,
-            stepDuration: 0.15,
+            upperLegLength: 0.5,
+            lowerLegLength: 0.5,
+            stepHeight: 0.2,
+            stepDuration: 0.5,
             stepSimultaneousMaxCount: 3,
-            bodyLocalOffset: new Vector3(0, 0.2, 0),
-            bodyWorldOffset: new Vector3(0, - 0.1, 0),
-            antennaAnchor: new Vector3(0.045, 0.041, 0.065),
-            antennaLength: 0.5,
-            scorpionTailProps: {
-                length: 7,
-                dist: 0.11,
-                distGeometricFactor: 0.9,
-                anchor: new Vector3(0, 0.035, - 0.28)
-            }
+            bodyLocalOffset: new Vector3(0, 0.6, 0),
+            bodyWorldOffset: new Vector3(0, - 0.1, 0)
         }, game.scene);
-        this.rightLegs[0].kneeMode = KneeMode.Backward;
-        this.leftLegs[0].kneeMode = KneeMode.Backward;
-        this.rightLegs[1].kneeMode = KneeMode.Backward;
-        this.leftLegs[1].kneeMode = KneeMode.Backward;
-        this.rightLegs[2].kneeMode = KneeMode.Outward;
-        this.leftLegs[2].kneeMode = KneeMode.Outward;
 
         let povMaterial = new StandardMaterial("debug-pov-material", this.game.scene);
         povMaterial.diffuseColor = new Color3(0.5, 0.5, 1);
@@ -164,24 +135,19 @@ export class Phasm extends Polypode {
             }
         }, 500);
 
-        this.controller = new PhasmController(this);
+        this.controller = new HumanController(this);
 
         this.debugColliderMaterial = colliderMaterial;
         this.debugColliderHitMaterial = colliderHitMaterial;
 
-        let headCollider = new SphereCollider(new Vector3(0, 0, 0.05), 0.12, this.head);
         let bodyCollider = new SphereCollider(Vector3.Zero(), 0.13, this.body);
-        let assCollider = new SphereCollider(new Vector3(0, 0, - 0.2), 0.14, this.body);
-        this.bodyColliders.push(headCollider, bodyCollider, assCollider);
-
-        let tailEndCollider = new SphereCollider(Vector3.Zero(), 0.15, this.tail!.tailSegments[6]);
-        this.tail!.tailCollider = tailEndCollider;
+        this.bodyColliders.push(bodyCollider);
 
         this.updateBodyCollidersMeshes();
 
         this.debugPovMaterial = povMaterial;
-        this.showCollisionDebug = false;
-        this.showPOVDebug = false;
+        this.showCollisionDebug = true;
+        this.showPOVDebug = true;
 
         if (this.showCollisionDebug) {
             let cross = MeshBuilder.CreateLineSystem(
@@ -204,49 +170,12 @@ export class Phasm extends Polypode {
         await super.initialize();
         this.rotationQuaternion = Quaternion.Identity();
         this.getScene().onBeforeRenderObservable.add(this._updateDrone);
+        console.log("human initialized");
     }
 
     public async instantiate(): Promise<void> {
-        let datas = await GetGLTFMeshDataArray("meshes/phasm.gltf", this.getScene());
-        console.log(datas);
-        datas?.splice(0, 1);
-        datas?.sort((d1, d2) => {
-            return parseInt(d1.name.split("-")[0]) - parseInt(d2.name.split("-")[0]);
-        });
-
-        let droneMaterial = new ToonMaterial("drone-material", this.getScene());
-        let color = Color3.FromHexString("#9e6120");
-        color.r *= 0.7 + 0.6 * Math.random();
-        color.g *= 0.7 + 0.6 * Math.random();
-        color.b *= 0.7 + 0.6 * Math.random();
-        //droneMaterial.setDiffuse(color);
-        //droneMaterial.setUseVertexColor(false);
-
-        datas?.forEach(d => {
-            ColorizeVertexDataInPlace(d.vertexData, color);
-        });
-
-        this.legs.forEach(leg => {
-            datas![0].vertexData.applyToMesh(leg.upperLeg);
-            datas![1].vertexData.applyToMesh(leg.lowerLeg);
-            leg.upperLeg.material = droneMaterial;
-            leg.lowerLeg.material = droneMaterial;
-        })
-
-        datas![2].vertexData.applyToMesh(this.body);
-        datas![3].vertexData.applyToMesh(this.head);
-        datas![11].vertexData.applyToMesh(this.antennas[0]);
-        datas![11].vertexData.applyToMesh(this.antennas[1]);
-
-        for (let i = 0; i < 7; i++) {
-            datas![4 + i].vertexData.applyToMesh(this.tail!.tailSegments[i]);
-            this.tail!.tailSegments[i].material = droneMaterial;
-        }
-
-        this.body.material = droneMaterial;
-        this.head.material = droneMaterial;
-        this.antennas[0].material = droneMaterial;
-        this.antennas[1].material = droneMaterial;
+        await super.instantiate();
+        console.log("human instantiated");
     }
 
     private _updateDrone = () => {

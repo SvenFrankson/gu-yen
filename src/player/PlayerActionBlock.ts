@@ -7,6 +7,7 @@ import { MakeStandardMaterial } from "../MaterialUtils";
 import { BlockType } from "../voxel-engine/BlockType";
 import { TerrainMaterial } from "../TerrainMaterial";
 import { PlayerAction } from "./PlayerAction";
+import { CreateBeveledBox } from "babylonjs-tiaratumgames-tools";
 
 export class PlayerActionBlock extends PlayerAction {
 
@@ -27,7 +28,7 @@ export class PlayerActionBlock extends PlayerAction {
 
         this.svgIcon = "";
 
-        this.blockPointer = MeshBuilder.CreateBox("block-pointer", { size: 0.5 }, player.game.scene);
+        this.blockPointer = CreateBeveledBox("block-pointer", { size: 0.5 }, player.game.scene);
         this.blockPointer.scaling.copyFromFloats(1.05, 1.05, 1.05);
         let redMaterial = MakeStandardMaterial(player._scene, new Color3(1, 0.5, 0.5), 0, 0.3);
         redMaterial.alpha = 0.5;

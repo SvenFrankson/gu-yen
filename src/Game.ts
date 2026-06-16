@@ -37,6 +37,8 @@ import { MiniatureFactory } from "./MiniatureFactory";
 import { BlockType } from "./voxel-engine/BlockType";
 import { PlayerActionBlock } from "./player/PlayerActionBlock";
 import { PlayerActionDelete } from "./player/PlayerActionDelete";
+import { Human } from "./humanoid/Human";
+import { ChunckDataGeneratorFromManager } from "./voxel-engine/TerrainGen/ChunkDataManager";
 registerBuiltInLoaders();
 
 export var SHARE_SERVICE_PATH: string = "https://guyen.tiaratum.com/index.php/";
@@ -145,12 +147,14 @@ export class Game {
             if (event.code === "Numpad0") {
                 if (this.terrain) {
                     let ijk = this.terrain.worldPosToGlobalIJK(new Vector3(0, 0, 0));
+                    console.log(ijk);
                     if (ijk) {
-                        if (this.terrain.chunckDataGenerator instanceof ChunckDataGeneratorDataSets) {
-                            let height = await this.terrain.chunckDataGenerator.asyncEvaluateHeight(ijk.i, ijk.j);
+                        if (this.terrain.chunckDataGenerator instanceof ChunckDataGeneratorFromManager && this.terrain.chunckDataGenerator.manager.generator instanceof ChunckDataGeneratorDataSets) {
+                            let height = await this.terrain.chunckDataGenerator.manager.generator.asyncEvaluateHeight(ijk.i, ijk.j);
                             height *= this.terrain.blockSizeK_m;
                             this.player.position = new Vector3(0, height + 4, 0);
                             this.player.targetPosition = this.player.position.clone();
+                            console.log("Player position set to: ", this.player.position.clone());
                         }
                     }
                 }
@@ -159,7 +163,7 @@ export class Game {
                 //generateRoadData(this);
             }
             else if (event.code === "Numpad2") {
-                generateBuildingData(this);
+                //generateBuildingData(this);
             }
             else if (event.code === "Numpad3") {
                 console.log("Player position: ", this.player.absolutePosition.clone());
@@ -177,6 +181,13 @@ export class Game {
                 phasm.setPosition(this.player.absolutePosition.add(this.player.forward.scale(5)));
                 phasm.instantiate();
                 phasm.initialize();
+            }
+            else if (event.code === "Numpad6") {
+                console.log("Player position: ", this.player.absolutePosition.clone());
+                let human = new Human(this);
+                human.setPosition(this.player.absolutePosition.add(this.player.forward.scale(5)));
+                human.instantiate();
+                human.initialize();
             }
         });
 
@@ -229,7 +240,7 @@ export class Game {
             });
 
             this.terrain.initialize();
-            this.terrain.chunckManager.setDistance(100);
+            this.terrain.chunckManager.setDistance(50);
             this.terrain.sunDir.copyFrom(light.direction);
 
             let noiseTexture = new CubicNoiseTexture(this.scene);

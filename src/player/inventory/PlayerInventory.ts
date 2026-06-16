@@ -120,6 +120,8 @@ export class PlayerInventory {
         for (let i = 0; i < this.slotCount; i++) {
             this.container.appendChild(this.inventorySlotElements[i]);
         }
+
+        this.hide();
     }
 
     /*

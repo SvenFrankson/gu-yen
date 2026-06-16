@@ -48,7 +48,7 @@ export class Player extends Mesh {
     }
 
     constructor(public game: Game) {
-        super("player", null);
+        super("player", game.scene);
 
         //this.debugCage = MeshBuilder.CreateLineSystem("player-debug-cage", {
         //    lines: [

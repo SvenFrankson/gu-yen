@@ -14,7 +14,7 @@ export class Antenna extends Mesh {
     public length: number = 0.5;
     
     constructor(public polypode: Polypode, public isLeft?: boolean) {
-        super(polypode.name + "-antenna-" + (isLeft ? "l" : "r"));
+        super(polypode.name + "-antenna-" + (isLeft ? "l" : "r"), polypode.getScene());
         if (this.isLeft) {
             this.alpha0 *= - 1;
         }

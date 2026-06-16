@@ -13,6 +13,7 @@ import { IsVeryFinite, MinMax } from "../Number";
 import { smoothNSec } from "../Tools";
 import { Chunck } from "../voxel-engine/Chunck";
 import { SphereChuncksIntersection } from "../voxel-engine/TmpMath";
+import { Scene } from "@babylonjs/core/scene.pure";
 
 export interface IPolypodeProps {
     size?: number;
@@ -183,8 +184,8 @@ export class Polypode extends Mesh {
 
     private _stepping: number = 0;
 
-    constructor(name: string, prop: IPolypodeProps) {
-        super(name);
+    constructor(name: string, prop: IPolypodeProps, scene: Scene) {
+        super(name, scene);
 
         if (prop && IsVeryFinite(prop.size)) {
             this.size = prop.size!;
@@ -192,19 +193,19 @@ export class Polypode extends Mesh {
         this.legPairCount = prop.legPairsCount;
 
         // Create all required meshes
-        this.body = MeshBuilder.CreateSphere("body", { diameterX: 1, diameterY: 1, diameterZ: 1.5 });
+        this.body = MeshBuilder.CreateSphere("body", { diameterX: 1, diameterY: 1, diameterZ: 1.5 }, scene);
         this.body.scaling.copyFromFloats(this.size, this.size, this.size);
         this.body.rotationQuaternion = Quaternion.Identity();
 
         for (let i = 0; i < this.legPairCount; i++) {
-            this.rightLegs[i] = new Leg();
+            this.rightLegs[i] = new Leg(this, false);
             this.rightLegs[i].kneeMode = KneeMode.Vertical;
-            this.leftLegs[i] = new Leg(true);
+            this.leftLegs[i] = new Leg(this, true);
             this.leftLegs[i].kneeMode = KneeMode.Vertical;
         }
         this.legs = [...this.rightLegs, ...this.leftLegs];
         
-        this.head = MeshBuilder.CreateSphere("head", { diameterX: 0.5, diameterY: 0.5, diameterZ: 0.75 });
+        this.head = MeshBuilder.CreateSphere("head", { diameterX: 0.5, diameterY: 0.5, diameterZ: 0.75 }, scene);
         this.head.scaling.copyFromFloats(this.size, this.size, this.size);
         this.head.rotationQuaternion = Quaternion.Identity();
 
@@ -456,7 +457,7 @@ export class Polypode extends Mesh {
     }
 
     private _update = () => {
-        let dt = this.getScene().deltaTime / 1000;
+        let dt = this.getScene().getEngine().getDeltaTime() / 1000;
         if (isNaN(dt)) {
             return;
         }

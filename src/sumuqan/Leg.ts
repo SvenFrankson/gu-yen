@@ -1,6 +1,7 @@
 import { Vector3, Quaternion } from "@babylonjs/core/Maths/math.vector.pure";
 import { Mesh } from "@babylonjs/core/Meshes/mesh.pure";
 import { ForceDistanceFromOriginInPlace, QuaternionFromZYAxisToRef, QuaternionFromYZAxisToRef } from "babylonjs-tiaratumgames-tools";
+import { Polypode } from "./Polypode";
 
 
 export enum KneeMode {
@@ -52,12 +53,12 @@ export class Leg {
         this.foot.scaling.copyFromFloats(this.scale, this.scale, this.scale);
     }
 
-    constructor(public isLeftLeg?: boolean) {
-        this.foot = new Mesh("foot");
+    constructor(public polypode: Polypode, public isLeftLeg?: boolean) {
+        this.foot = new Mesh("foot", polypode.getScene());
         this.foot.rotationQuaternion = Quaternion.Identity();
-        this.lowerLeg = new Mesh("lower-leg");
+        this.lowerLeg = new Mesh("lower-leg", polypode.getScene());
         this.lowerLeg.rotationQuaternion = Quaternion.Identity();
-        this.upperLeg = new Mesh("upper-leg");
+        this.upperLeg = new Mesh("upper-leg", polypode.getScene());
         this.upperLeg.rotationQuaternion = Quaternion.Identity();
     }
 
