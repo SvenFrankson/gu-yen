@@ -1,4 +1,5 @@
-import { Vector3, Mesh, Quaternion } from "@babylonjs/core";
+import { Vector3, Quaternion } from "@babylonjs/core/Maths/math.vector.pure";
+import { Mesh } from "@babylonjs/core/Meshes/mesh.pure";
 import { ForceDistanceFromOriginInPlace, QuaternionFromZYAxisToRef, QuaternionFromYZAxisToRef } from "babylonjs-tiaratumgames-tools";
 
 

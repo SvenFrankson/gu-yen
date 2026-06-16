@@ -1,7 +1,7 @@
-import { Scene } from "@babylonjs/core/scene";
-import { StandardMaterial } from "@babylonjs/core/Materials/standardMaterial";
-import { Mesh } from "@babylonjs/core/Meshes/mesh";
-import { Vector3 } from "@babylonjs/core/Maths/math.vector";
+import { Scene } from "@babylonjs/core/scene.pure";
+import { StandardMaterial } from "@babylonjs/core/Materials/standardMaterial.pure";
+import { Mesh } from "@babylonjs/core/Meshes/mesh.pure";
+import { Vector3 } from "@babylonjs/core/Maths/math.vector.pure";
 import { Terrain } from "./Terrain";
 import { Chunck } from "./Chunck";
 import { UniqueList } from "../UniqueList";

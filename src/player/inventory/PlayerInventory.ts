@@ -1,6 +1,4 @@
-import { Game } from "../../Game";
 import { Player } from "../Player";
-import { PlayerAction } from "../PlayerAction";
 import { PlayerInventoryItem, PlayerInventoryItemFactory } from "./PlayerInventoryItem";
 
 export class PlayerInventory {

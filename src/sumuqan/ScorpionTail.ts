@@ -1,5 +1,8 @@
-import { Vector3, Mesh, Axis, MeshBuilder } from "@babylonjs/core";
-import { SphereCollider, QuaternionFromZYAxis, SphereCollidersIntersection } from "babylonjs-tiaratumgames-tools";
+import { Axis } from "@babylonjs/core/Maths/math.axis";
+import { Vector3 } from "@babylonjs/core/Maths/math.vector.pure";
+import { Mesh } from "@babylonjs/core/Meshes/mesh.pure";
+import { MeshBuilder } from "@babylonjs/core/Meshes/meshBuilder";
+import { SphereCollider, QuaternionFromZYAxis } from "babylonjs-tiaratumgames-tools";
 import { Polypode } from "./Polypode";
 import { MinMax } from "../Number";
 import { SphereChuncksIntersection } from "../voxel-engine/TmpMath";

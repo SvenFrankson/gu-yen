@@ -1,8 +1,8 @@
-import { Scene } from "@babylonjs/core/scene";
-import { Engine } from "@babylonjs/core/Engines/engine";
-import { StandardMaterial } from "@babylonjs/core/Materials/standardMaterial";
-import { Material } from "@babylonjs/core/Materials/material";
-import { Vector3 } from "@babylonjs/core/Maths/math.vector";
+import { Scene } from "@babylonjs/core/scene.pure";
+import { Engine } from "@babylonjs/core/Engines/engine.pure";
+import { StandardMaterial } from "@babylonjs/core/Materials/standardMaterial.pure";
+import { Material } from "@babylonjs/core/Materials/material.pure";
+import { Vector3 } from "@babylonjs/core/Maths/math.vector.pure";
 import { Chunck, ChunckMesh } from "./Chunck";
 import { ChunckManager } from "./ChunckManager";
 import { ChunckMeshBuilder } from "./ChunckBuilder";
@@ -14,7 +14,6 @@ import { FloorPow2Exponent, Pow2 } from "../Number";
 import { BlockType } from "./BlockType";
 import { ChunckDataGeneratorFactory } from "./TerrainGen/ChunckDataGeneratorFactory";
 import { GeoConverter } from "../map/Geo";
-import { Mesh } from "@babylonjs/core";
 import { ChunkDataManager } from "./TerrainGen/ChunkDataManager";
 
 export interface ITerrainProperties {

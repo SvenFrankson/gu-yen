@@ -1,10 +1,10 @@
-import { PBRMaterial, StandardMaterial } from "@babylonjs/core";
+import { PBRMaterial } from "@babylonjs/core/Materials/PBR/pbrMaterial.pure";
 import { ImportMeshAsync } from "@babylonjs/core/Loading/sceneLoader";
-import { Color3 } from "@babylonjs/core/Maths/math.color";
-import { Quaternion, Vector3 } from "@babylonjs/core/Maths/math.vector";
-import { Mesh } from "@babylonjs/core/Meshes/mesh";
+import { Color3 } from "@babylonjs/core/Maths/math.color.pure";
+import { Quaternion, Vector3 } from "@babylonjs/core/Maths/math.vector.pure";
+import { Mesh } from "@babylonjs/core/Meshes/mesh.pure";
 import { VertexData } from "@babylonjs/core/Meshes/mesh.vertexData";
-import type { Scene } from "@babylonjs/core/scene";
+import type { Scene } from "@babylonjs/core/scene.pure";
 
 export interface IMeshData {
     name: string;

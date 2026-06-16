@@ -1,6 +1,7 @@
-import { Color4, MeshBuilder, Vector2, Vector3 } from "@babylonjs/core";
+import { Color4 } from "@babylonjs/core/Maths/math.color.pure";
+import { Vector2, Vector3 } from "@babylonjs/core/Maths/math.vector.pure";
+import { MeshBuilder } from "@babylonjs/core/Meshes/meshBuilder";
 import { Game } from "../Game";
-import { IsVeryFinite } from "../Number";
 import { ChunckDataGeneratorDataSets, IDataTile, IDataTilesCollection, IRoadData } from "../voxel-engine/TerrainGen/ChunckDataGeneratorDataSets";
 import { UniqueList } from "../UniqueList";
 import { CapsuleRectCheck } from "../Math2D";

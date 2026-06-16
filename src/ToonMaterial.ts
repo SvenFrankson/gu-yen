@@ -1,6 +1,7 @@
-import { Vector3, Scene, Color3, Constants, Engine, RawTexture3D, Texture } from "@babylonjs/core";
-import { ShaderMaterial } from "@babylonjs/core/Materials/shaderMaterial";
-import { BlockTypeColors } from "./voxel-engine/BlockType";
+import { Color3 } from "@babylonjs/core/Maths/math.color.pure";
+import { Vector3 } from "@babylonjs/core/Maths/math.vector.pure";
+import { Scene } from "@babylonjs/core/scene.pure";
+import { ShaderMaterial } from "@babylonjs/core/Materials/shaderMaterial.pure";
 
 export class ToonMaterial extends ShaderMaterial {
 

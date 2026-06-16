@@ -1,9 +1,13 @@
-import { Vector3, Mesh, Color3, CreateBoxVertexData, Quaternion, StandardMaterial, MeshBuilder } from "@babylonjs/core";
+import { StandardMaterial } from "@babylonjs/core/Materials/standardMaterial.pure";
+import { Color3 } from "@babylonjs/core/Maths/math.color.pure";
+import { Vector3, Quaternion } from "@babylonjs/core/Maths/math.vector.pure";
+import { Mesh } from "@babylonjs/core/Meshes/mesh.pure";
+import { MeshBuilder } from "@babylonjs/core/Meshes/meshBuilder";
 import { Game } from "../Game";
 import { ToonMaterial } from "../ToonMaterial";
 import { Polypode } from "./Polypode";
 import { KneeMode } from "./Leg";
-import { AngleFromToAround, IsFinite, Rotate, SphereCollider } from "babylonjs-tiaratumgames-tools";
+import { AngleFromToAround, IsFinite, SphereCollider } from "babylonjs-tiaratumgames-tools";
 import { ColorizeVertexDataInPlace, GetGLTFMeshDataArray } from "../VertexDataUtils";
 
 class PhasmController {

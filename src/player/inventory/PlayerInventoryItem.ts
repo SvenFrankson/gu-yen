@@ -34,7 +34,7 @@ export class PlayerInventoryItemFactory {
         playerInventoryItem.canvasIcon = await player.game.miniatureFactory.makeBlockIconString(blockType) ?? "";
         playerInventoryItem.svgIcon = "";
         playerInventoryItem.name = "block-" + BlockType[blockType];
-        playerInventoryItem.displayName = BlockType[blockType];
+            playerInventoryItem.displayName = BlockType[blockType];
         playerInventoryItem.playerAction = await PlayerActionBlock.Create(player, blockType);
         return playerInventoryItem;
     }

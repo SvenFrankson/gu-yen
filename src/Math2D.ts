@@ -1,4 +1,4 @@
-import { Vector2 } from "@babylonjs/core";
+import { Vector2 } from "@babylonjs/core/Maths/math.vector.pure";
 
 export interface Intersection2DResult {
     x: number;

@@ -1,19 +1,14 @@
-import { Mesh } from "@babylonjs/core/Meshes/mesh";
+import { Mesh } from "@babylonjs/core/Meshes/mesh.pure";
 import { Game } from "../Game";
-import { MeshBuilder } from "@babylonjs/core/Meshes/meshBuilder";
 import { Pelleteuse } from "../vehicles/Pelleteuse";
 import { Chunck } from "../voxel-engine/Chunck";
-import { Ray } from "@babylonjs/core/Culling/ray.core";
-import { Vector3, Matrix, TransformNode } from "@babylonjs/core";
+import { Ray } from "@babylonjs/core/Culling/ray.pure";
+import { Vector3 } from "@babylonjs/core/Maths/math.vector.pure";
+import { TransformNode } from "@babylonjs/core/Meshes/transformNode.pure";
 import { PlayerAction, PlayerActionDefault } from "./PlayerAction";
 import { PlayerActionManager } from "./PlayerActionManager";
-import { PlayerActionDelete } from "./PlayerActionDelete";
-import { PlayerActionBlock } from "./PlayerActionBlock";
-import { PlayerActionTreeGenerator } from "./PlayerActionTreeGenerator";
 import { Vehicle } from "../vehicles/Vehicle";
 import { Car } from "../vehicles/Car";
-import { PlayerActionBall } from "./PlayerActionBall";
-import { BlockType } from "../voxel-engine/BlockType";
 import { PlayerInventory } from "./inventory/PlayerInventory";
 
 export class Player extends Mesh {

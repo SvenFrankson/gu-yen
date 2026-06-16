@@ -1,8 +1,7 @@
 import { SHARE_SERVICE_PATH } from "../../Game";
-import { compressUInt8Array, decompressUInt8Array, NextFrame } from "../../Tools";
+import { NextFrame } from "../../Tools";
 import { BlockType } from "../BlockType";
 import { Chunck, DRAW_CHUNCK_MARGIN } from "../Chunck";
-import { ITerrainData } from "../Save/GameSave";
 import { Terrain } from "../Terrain";
 import { ChunckDataGenerator, GeneratorType, IChunckGeneratorProperties } from "./ChunckDataGenerator";
 import { ChunkData } from "./ChunkData";

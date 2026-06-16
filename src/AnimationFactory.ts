@@ -1,6 +1,6 @@
-import { Color3 } from "@babylonjs/core/Maths/math.color";
-import { Quaternion, Vector3 } from "@babylonjs/core/Maths/math.vector";
-import type { Scene } from "@babylonjs/core/scene";
+import { Color3 } from "@babylonjs/core/Maths/math.color.pure";
+import { Quaternion, Vector3 } from "@babylonjs/core/Maths/math.vector.pure";
+import type { Scene } from "@babylonjs/core/scene.pure";
 
 export interface ISceneObject {
     getScene: () => Scene;

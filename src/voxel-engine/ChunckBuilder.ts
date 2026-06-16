@@ -1,15 +1,13 @@
 import { VertexData } from "@babylonjs/core/Meshes/mesh.vertexData";
-import { Vector3 } from "@babylonjs/core/Maths/math.vector";
-import { Color3 } from "@babylonjs/core/Maths/math.color";
+import { Vector3 } from "@babylonjs/core/Maths/math.vector.pure";
+import { Color3 } from "@babylonjs/core/Maths/math.color.pure";
 import { Terrain } from "./Terrain";
 import { Chunck, DRAW_CHUNCK_MARGIN, Fillness } from "./Chunck";
 import { ChunckVertexData } from "./ChunckVertexData";
-import { ExtendedVertexData } from "./ExtendedVertexData";
 import { BlockType } from "./BlockType";
 import { IChunckAnalyticBuildOccurence } from "./ChunckAnalytic";
 import { IJK, IsVeryFinite, MinMax } from "../Number";
 import { NextFrame } from "../Tools";
-import { CreateBoxVertexData } from "@babylonjs/core";
 import { CloneVertexData, ScaleVertexDataInPlace, TranslateVertexDataInPlace } from "babylonjs-tiaratumgames-tools";
 import { BlockPoleVertexData } from "./BlockPoleVertexData";
 

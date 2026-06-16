@@ -1,13 +1,13 @@
 import { Chunck } from "./Chunck";
 import { Terrain } from "./Terrain";
-import { Mesh } from "@babylonjs/core/Meshes/mesh";
+import { Mesh } from "@babylonjs/core/Meshes/mesh.pure";
 import { BlockType } from "./BlockType";
-import { MeshBuilder } from "@babylonjs/core/Meshes/meshBuilder";
-import { Vector3 } from "@babylonjs/core/Maths/math.vector";
+import { Vector3 } from "@babylonjs/core/Maths/math.vector.pure";
 import { UniqueList } from "../UniqueList";
 import { GetBBoxFromVertexData, TranslateVertexDataInPlace } from "babylonjs-tiaratumgames-tools";
 import { PhysicsBody } from "@babylonjs/core/Physics/v2/physicsBody";
-import { PhysicsMotionType, PhysicsShapeConvexHull, PhysicsShapeCylinder, PhysicsShapeMesh } from "@babylonjs/core";
+import { PhysicsMotionType } from "@babylonjs/core/Physics/v2/IPhysicsEnginePlugin";
+import { PhysicsShapeConvexHull } from "@babylonjs/core/Physics/v2/physicsShape";
 
 export class FloatingBlocksDetector {
 

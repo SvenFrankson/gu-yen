@@ -1,8 +1,7 @@
-import { Vector3 } from "@babylonjs/core/Maths/math.vector";
+import { Vector3 } from "@babylonjs/core/Maths/math.vector.pure";
 import { Terrain } from "../../Terrain";
 import { Chunck, DRAW_CHUNCK_MARGIN } from "../../Chunck";
 import { BlockType } from "../../BlockType";
-import { TerrainEditionMode } from "../../TerrainEditor/TerrainEditor";
 import { IsVeryFinite } from "../../../Number";
 import { UniqueList } from "../../../UniqueList";
 import { DistancePointSegment } from "babylonjs-tiaratumgames-tools";

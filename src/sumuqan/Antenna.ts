@@ -1,4 +1,6 @@
-import { Mesh, Ray, Vector3 } from "@babylonjs/core";
+import { Ray } from "@babylonjs/core/Culling/ray.pure";
+import { Vector3 } from "@babylonjs/core/Maths/math.vector.pure";
+import { Mesh } from "@babylonjs/core/Meshes/mesh.pure";
 import { RayCollidersIntersection } from "babylonjs-tiaratumgames-tools";
 import { Polypode } from "./Polypode";
 import { MinMax } from "../Number";

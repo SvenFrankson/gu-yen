@@ -1,4 +1,8 @@
-import { Scene, RawTexture3D, Constants, Texture, Engine } from "@babylonjs/core";
+import { Constants } from "@babylonjs/core/Engines/constants";
+import { Engine } from "@babylonjs/core/Engines/engine.pure";
+import { RawTexture3D } from "@babylonjs/core/Materials/Textures/rawTexture3D";
+import { Texture } from "@babylonjs/core/Materials/Textures/texture.pure";
+import { Scene } from "@babylonjs/core/scene.pure";
 
 export class CubicNoiseTexture {
 

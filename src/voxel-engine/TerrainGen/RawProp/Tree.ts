@@ -1,7 +1,3 @@
-import { RawProp } from "./RawProp";
-import { RawShapeBox, RawShapeSphere } from "../RawShape/RawShape";
-import { BlockType } from "../../BlockType";
-import { Chunck } from "../../Chunck";
 import { IVoxelDrawingDataSerialized } from "./VoxelDrawing";
 
 export var treesVoxelDrawingDatas = [

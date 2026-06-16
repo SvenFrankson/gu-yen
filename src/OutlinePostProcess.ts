@@ -1,4 +1,8 @@
-import { Camera, PostProcess, Effect, FxaaPostProcess } from "@babylonjs/core";
+import { Camera } from "@babylonjs/core/Cameras/camera.pure";
+import { Effect } from "@babylonjs/core/Materials/effect.pure";
+import { FxaaPostProcess } from "@babylonjs/core/PostProcesses/fxaaPostProcess.pure";
+import { PostProcess } from "@babylonjs/core/PostProcesses/postProcess.pure";
+import "@babylonjs/core/Rendering/depthRendererSceneComponent";
 
 export class OutlinePostProcess {
     

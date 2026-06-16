@@ -1,9 +1,9 @@
-import { Engine } from "@babylonjs/core/Engines/engine";
-import type { Color3, Color4 } from "@babylonjs/core/Maths/math.color";
-import { Vector3 } from "@babylonjs/core/Maths/math.vector";
-import type { Mesh } from "@babylonjs/core/Meshes/mesh";
+import { Engine } from "@babylonjs/core/Engines/engine.pure";
+import type { Color3, Color4 } from "@babylonjs/core/Maths/math.color.pure";
+import { Vector3 } from "@babylonjs/core/Maths/math.vector.pure";
+import type { Mesh } from "@babylonjs/core/Meshes/mesh.pure";
 import { MeshBuilder } from "@babylonjs/core/Meshes/meshBuilder";
-import type { Scene } from "@babylonjs/core/scene";
+import type { Scene } from "@babylonjs/core/scene.pure";
 
 export function DrawDebugLine(from: Vector3, to: Vector3, frames: number = Infinity, color?: Color3, scene?: Scene): Mesh | undefined {
     if (!scene) {

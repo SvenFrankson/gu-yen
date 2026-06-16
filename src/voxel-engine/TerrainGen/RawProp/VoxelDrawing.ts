@@ -1,10 +1,6 @@
-import { Shape } from "../../Shape/Shape";
-import { Terrain } from "../../Terrain";
 import { Chunck, DRAW_CHUNCK_MARGIN } from "../../Chunck";
 import { BlockType } from "../../BlockType";
-import { TerrainEditionMode } from "../../TerrainEditor/TerrainEditor";
 import { UniqueList } from "../../../UniqueList";
-import { IJK } from "../../../Number";
 import { RawProp } from "./RawProp";
 import { ChunkData } from "../ChunkData";
 

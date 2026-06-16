@@ -1,15 +1,7 @@
-import { Mesh } from "@babylonjs/core/Meshes/mesh";
 import { GetGLTFMeshDataArray } from "../VertexDataUtils";
-import { Color3, MeshBuilder, PhysicsBody, PhysicsMotionType, PhysicsShapeConvexHull, Plane, Ray, Space, StandardMaterial, Vector3 } from "@babylonjs/core";
+import { Vector3 } from "@babylonjs/core/Maths/math.vector.pure";
 import { Game } from "../Game";
-import { Chunck } from "../voxel-engine/Chunck";
-import { AngleFromToAround, Rotate, RotateInPlace } from "babylonjs-tiaratumgames-tools";
-import { BlockType } from "../voxel-engine/BlockType";
-import { FloatingBlocksDetector } from "../voxel-engine/FloatingBlocksDetector";
-import { MakeStandardMaterial } from "../MaterialUtils";
-import { IsVeryFinite, StepAngle } from "../Number";
-import { TerrainMaterial } from "../TerrainMaterial";
-import { Player } from "../player/Player";
+import { AngleFromToAround } from "babylonjs-tiaratumgames-tools";
 import { ToonMaterial } from "../ToonMaterial";
 import { IVehicle, Vehicle, VehiclePart } from "./Vehicle";
 

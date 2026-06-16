@@ -4,11 +4,9 @@ import { BlockType } from "../BlockType";
 import { BicubicInterpolate, IsVeryFinite } from "../../Number";
 import { VoxelDrawing } from "./RawProp/VoxelDrawing";
 import { getTreeVoxelDrawingDataByHeight, getTreeVoxelDrawingDataByIndex } from "./RawProp/Tree";
-import { DistancePointSegment as DistancePointSegmentVec2, RasterizeTriangle } from "../../Math2D";
-import { Vector2 } from "@babylonjs/core/Maths/math.vector";
+import { DistancePointSegment as DistancePointSegmentVec2 } from "../../Math2D";
+import { Vector2 } from "@babylonjs/core/Maths/math.vector.pure";
 import { Terrain } from "../Terrain";
-import { NextFrame } from "../../Tools";
-import * as earcut from "earcut"
 import { drawBuilding } from "./building/BuildingMaker";
 import { ChunkData } from "./ChunkData";
 

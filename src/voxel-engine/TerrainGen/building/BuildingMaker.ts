@@ -4,7 +4,7 @@ import { ChunckDataGeneratorDataSets, IBuildingData } from "../ChunckDataGenerat
 import { AngleFromTo, RasterizeTriangle, RasterizeTriangles } from "../../../Math2D";
 import { BlockType } from "../../BlockType";
 import { IsVeryFinite } from "../../../Number";
-import { Vector2 } from "@babylonjs/core/Maths/math.vector";
+import { Vector2 } from "@babylonjs/core/Maths/math.vector.pure";
 import { ChunkData } from "../ChunkData";
 
 export function drawBuilding(buildingData: IBuildingData, chunck: Chunck | ChunkData, chunckGenerator: ChunckDataGeneratorDataSets): void {

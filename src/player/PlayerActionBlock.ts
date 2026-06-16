@@ -1,5 +1,7 @@
-import { Color3, Mesh, MeshBuilder, Ray } from "@babylonjs/core";
-import { Game } from "../Game";
+import { Ray } from "@babylonjs/core/Culling/ray.pure";
+import { Color3 } from "@babylonjs/core/Maths/math.color.pure";
+import { Mesh } from "@babylonjs/core/Meshes/mesh.pure";
+import { MeshBuilder } from "@babylonjs/core/Meshes/meshBuilder";
 import { Player } from "./Player";
 import { MakeStandardMaterial } from "../MaterialUtils";
 import { BlockType } from "../voxel-engine/BlockType";

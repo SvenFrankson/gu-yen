@@ -1,4 +1,3 @@
-import { Vector2 } from "@babylonjs/core/Maths/math.vector";
 import { IsVeryFinite } from "../../Number";
 import { UniqueList } from "../../UniqueList";
 import { BlockType } from "../BlockType";
@@ -9,7 +8,6 @@ import { ChunckDataGeneratorEmpty } from "./ChunckDataGeneratorEmpty";
 import { ChunckDataGeneratorFlat } from "./ChunckDataGeneratorFlat";
 import { ChunckDataGeneratorPNG } from "./ChunckDataGeneratorPNG";
 import { treesVoxelDrawingDatas } from "./RawProp/Tree";
-import { AngleFromTo } from "../../Math2D";
 import { ChunckDataGeneratorFromManager, ChunkDataManager } from "./ChunkDataManager";
 
 export class ChunckDataGeneratorFactory {

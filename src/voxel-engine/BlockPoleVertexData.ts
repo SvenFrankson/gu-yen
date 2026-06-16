@@ -1,10 +1,10 @@
 import { VertexData } from "@babylonjs/core/Meshes/mesh.vertexData";
-import { Mesh } from "@babylonjs/core/Meshes/mesh";
+import { Mesh } from "@babylonjs/core/Meshes/mesh.pure";
 import { ExtendedVertexData } from "./ExtendedVertexData";
-import { ImportMeshAsync, SceneLoader } from "@babylonjs/core/Loading/sceneLoader";
-import { ColorizeVertexDataInPlace, GetGLTFVertexData, MirrorZVertexDataInPlace, TriFlipVertexDataInPlace } from "babylonjs-tiaratumgames-tools";
-import { Scene } from "@babylonjs/core/scene";
-import { Color3 } from "@babylonjs/core/Maths/math.color";
+import { ImportMeshAsync } from "@babylonjs/core/Loading/sceneLoader";
+import { ColorizeVertexDataInPlace, MirrorZVertexDataInPlace, TriFlipVertexDataInPlace } from "babylonjs-tiaratumgames-tools";
+import { Scene } from "@babylonjs/core/scene.pure";
+import { Color3 } from "@babylonjs/core/Maths/math.color.pure";
 
 export class BlockPoleVertexData {
 

@@ -1,7 +1,7 @@
 import { ChunckDataGenerator, IChunckGeneratorProperties, GeneratorType } from "./ChunckDataGenerator";
 import { Chunck, DRAW_CHUNCK_MARGIN } from "../Chunck";
 import { BlockType } from "../BlockType";
-import { BicubicInterpolate, BilinearInterpolate, MinMax } from "../../Number";
+import { BilinearInterpolate } from "../../Number";
 
 export type Stop = { rgb: [number, number, number]; h: number };
 

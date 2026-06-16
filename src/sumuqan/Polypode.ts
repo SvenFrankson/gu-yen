@@ -1,7 +1,13 @@
-import { Vector3, Mesh, Material, MeshBuilder, Quaternion, Space, Ray, Color3 } from "@babylonjs/core";
+import { Ray } from "@babylonjs/core/Culling/ray.pure";
+import { Material } from "@babylonjs/core/Materials/material.pure";
+import { Space } from "@babylonjs/core/Maths/math.axis";
+import { Color3 } from "@babylonjs/core/Maths/math.color.pure";
+import { Vector3, Quaternion } from "@babylonjs/core/Maths/math.vector.pure";
+import { Mesh } from "@babylonjs/core/Meshes/mesh.pure";
+import { MeshBuilder } from "@babylonjs/core/Meshes/meshBuilder";
 import { Antenna } from "./Antenna";
 import { KneeMode, Leg } from "./Leg";
-import { Collider, DrawDebugHit, DrawDebugPoint, IsFinite, QuaternionFromYZAxis, QuaternionFromYZAxisToRef, QuaternionFromZYAxisToRef, RandomInSphereCut, RayCollidersIntersection, SphereCollider, SphereCollidersIntersection } from "babylonjs-tiaratumgames-tools";
+import { Collider, DrawDebugHit, IsFinite, QuaternionFromYZAxis, QuaternionFromYZAxisToRef, QuaternionFromZYAxisToRef, RandomInSphereCut, RayCollidersIntersection, SphereCollider } from "babylonjs-tiaratumgames-tools";
 import { IScorpionTailProps, ScorpionTail } from "./ScorpionTail";
 import { IsVeryFinite, MinMax } from "../Number";
 import { smoothNSec } from "../Tools";

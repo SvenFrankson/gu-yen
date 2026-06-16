@@ -1,6 +1,6 @@
-import { Color3, Matrix, Vector3 } from "@babylonjs/core";
+import { Matrix, Vector3 } from "@babylonjs/core/Maths/math.vector.pure";
 import { Chunck } from "./Chunck";
-import { DrawDebugHit, DrawDebugPoint, IBox, IIntersection, SphereBoxIntersection } from "babylonjs-tiaratumgames-tools";
+import { IBox, IIntersection, SphereBoxIntersection } from "babylonjs-tiaratumgames-tools";
 import { BlockType } from "./BlockType";
 
 export function SphereChunckIntersection(

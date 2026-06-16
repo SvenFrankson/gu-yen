@@ -1,15 +1,16 @@
-import { Axis, Mesh, MeshBuilder } from "@babylonjs/core";
-import { Quaternion, Vector3 } from "@babylonjs/core/Maths/math.vector";
+import { Axis } from "@babylonjs/core/Maths/math.axis";
+import { Mesh } from "@babylonjs/core/Meshes/mesh.pure";
+import { MeshBuilder } from "@babylonjs/core/Meshes/meshBuilder";
+import { Quaternion, Vector3 } from "@babylonjs/core/Maths/math.vector.pure";
 import { QuaternionFromYZAxis } from "babylonjs-tiaratumgames-tools"
 import { Game } from "../Game";
-import { ChunckDataGeneratorDataSets } from "../voxel-engine/TerrainGen/ChunckDataGeneratorDataSets";
 import { Terrain } from "../voxel-engine/Terrain";
 import { Line } from "../voxel-engine/Shape/Instances/Line";
 import { BlockType } from "../voxel-engine/BlockType";
 import { TerrainEditionMode } from "../voxel-engine/TerrainEditor/TerrainEditor";
 import { FatLine } from "../voxel-engine/Shape/Instances/FatLine";
 import { IDrawnBlocks } from "../voxel-engine/Shape/Shape";
-import { crunchDataString, IVoxelDrawingData, IVoxelDrawingDataSerialized } from "../voxel-engine/TerrainGen/RawProp/VoxelDrawing";
+import { crunchDataString, IVoxelDrawingDataSerialized } from "../voxel-engine/TerrainGen/RawProp/VoxelDrawing";
 
 class TreeNode {
 

@@ -1,19 +1,19 @@
-import { Engine } from "@babylonjs/core/Engines/engine";
-import { Mesh } from "@babylonjs/core/Meshes/mesh";
-import { Vector3 } from "@babylonjs/core/Maths/math.vector";
+import { Engine } from "@babylonjs/core/Engines/engine.pure";
+import { Mesh } from "@babylonjs/core/Meshes/mesh.pure";
+import { Vector3 } from "@babylonjs/core/Maths/math.vector.pure";
 import { ChunckAnalytic, IChunckAnalyticBuildOccurence } from "./ChunckAnalytic";
 import { Terrain } from "./Terrain";
 import { BlockType } from "./BlockType";
 import { IJK, Pow2 } from "../Number";
 import { IActionAffectedBlocks } from "./TerrainEditor/TerrainEditor";
 import { MeshBuilder } from "@babylonjs/core/Meshes/meshBuilder";
-import { Compress, Decompress } from "../Compress";
 import { RawTexture3D } from "@babylonjs/core/Materials/Textures/rawTexture3D";
-import { ShaderMaterial } from "@babylonjs/core/Materials/shaderMaterial";
-import { Texture } from "@babylonjs/core/Materials/Textures/texture";
+import { ShaderMaterial } from "@babylonjs/core/Materials/shaderMaterial.pure";
+import { Texture } from "@babylonjs/core/Materials/Textures/texture.pure";
 import { Constants } from "@babylonjs/core/Engines/constants";
 import { PhysicsBody } from "@babylonjs/core/Physics/v2/physicsBody";
-import { PhysicsMotionType, PhysicsShapeMesh } from "@babylonjs/core";
+import { PhysicsMotionType } from "@babylonjs/core/Physics/v2/IPhysicsEnginePlugin";
+import { PhysicsShapeMesh } from "@babylonjs/core/Physics/v2/physicsShape";
 import { crunchDataString, uncrunchDataString } from "./TerrainGen/RawProp/VoxelDrawing";
 import { NextFrame } from "../Tools";
 

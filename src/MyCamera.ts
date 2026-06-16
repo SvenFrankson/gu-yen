@@ -1,13 +1,15 @@
 
-import { ArcRotateCamera } from "@babylonjs/core/Cameras/arcRotateCamera";
-import { Vector3 } from "@babylonjs/core/Maths/math.vector";
+import { Vector3 } from "@babylonjs/core/Maths/math.vector.pure";
 import type { Game } from "./Game";
-import { Color3, FreeCamera, Matrix, Mesh, MeshBuilder, PassPostProcess, Ray, RenderTargetTexture, StandardMaterial, UniversalCamera } from "@babylonjs/core";
+import { FreeCamera } from "@babylonjs/core/Cameras/freeCamera.pure";
+import { UniversalCamera } from "@babylonjs/core/Cameras/universalCamera.pure";
+import { RenderTargetTexture } from "@babylonjs/core/Materials/Textures/renderTargetTexture.pure";
+import { Color3 } from "@babylonjs/core/Maths/math.color.pure";
+import { Matrix } from "@babylonjs/core/Maths/math.vector.pure";
+import { Mesh } from "@babylonjs/core/Meshes/mesh.pure";
+import { MeshBuilder } from "@babylonjs/core/Meshes/meshBuilder";
+import { PassPostProcess } from "@babylonjs/core/PostProcesses/passPostProcess.pure";
 import { MakeStandardMaterial } from "./MaterialUtils";
-import { Chunck } from "./voxel-engine/Chunck";
-import { BlockType } from "./voxel-engine/BlockType";
-import { FloatingBlocksDetector } from "./voxel-engine/FloatingBlocksDetector";
-import { Pelleteuse } from "./vehicles/Pelleteuse";
 import { Player } from "./player/Player";
 import { QuaternionFromZYAxis } from "babylonjs-tiaratumgames-tools";
 import { OutlinePostProcess } from "./OutlinePostProcess";

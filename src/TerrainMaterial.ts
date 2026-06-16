@@ -1,5 +1,11 @@
-import { Vector3, Scene, Color3, Constants, Engine, RawTexture3D, Texture } from "@babylonjs/core";
-import { ShaderMaterial } from "@babylonjs/core/Materials/shaderMaterial";
+import { Constants } from "@babylonjs/core/Engines/constants";
+import { Engine } from "@babylonjs/core/Engines/engine.pure";
+import { RawTexture3D } from "@babylonjs/core/Materials/Textures/rawTexture3D";
+import { Texture } from "@babylonjs/core/Materials/Textures/texture.pure";
+import { Color3 } from "@babylonjs/core/Maths/math.color.pure";
+import { Vector3 } from "@babylonjs/core/Maths/math.vector.pure";
+import { Scene } from "@babylonjs/core/scene.pure";
+import { ShaderMaterial } from "@babylonjs/core/Materials/shaderMaterial.pure";
 import { BlockTypeColors } from "./voxel-engine/BlockType";
 
 export class TerrainMaterial extends ShaderMaterial {

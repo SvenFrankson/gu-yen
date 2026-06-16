@@ -1,4 +1,4 @@
-import { Color3 } from "@babylonjs/core/Maths/math.color";
+import { Color3 } from "@babylonjs/core/Maths/math.color.pure";
 // Notice : Adding a BlockType
 // 1) BlockType in the enum
 // 2) BlockTypeNames in the list

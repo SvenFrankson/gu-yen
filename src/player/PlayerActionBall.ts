@@ -1,11 +1,10 @@
-import { Color3, Mesh, MeshBuilder, Ray, StandardMaterial } from "@babylonjs/core";
-import { Game } from "../Game";
+import { StandardMaterial } from "@babylonjs/core/Materials/standardMaterial.pure";
+import { Color3 } from "@babylonjs/core/Maths/math.color.pure";
+import { Mesh } from "@babylonjs/core/Meshes/mesh.pure";
+import { MeshBuilder } from "@babylonjs/core/Meshes/meshBuilder";
 import { Player } from "./Player";
 import { MakeStandardMaterial } from "../MaterialUtils";
-import { BlockType } from "../voxel-engine/BlockType";
-import { TerrainMaterial } from "../TerrainMaterial";
 import { PlayerAction } from "./PlayerAction";
-import { TreeGenerator } from "../devtools/TreeGenerator";
 import { SphereChunckIntersection } from "../voxel-engine/TmpMath";
 
 export class PlayerActionBall extends PlayerAction {
