@@ -6,6 +6,9 @@ import { MeshBuilder } from "@babylonjs/core/Meshes/meshBuilder";
 import { Game } from "../Game";
 import { Humanoid } from "./Humanoid";
 import { AngleFromToAround, IsFinite, SphereCollider } from "babylonjs-tiaratumgames-tools";
+import { ImportMeshAsync } from "@babylonjs/core/Loading/sceneLoader";
+import "@babylonjs/core";
+import { Space } from "@babylonjs/core";
 
 class HumanController {
 
@@ -89,16 +92,18 @@ export class Human extends Humanoid {
 
     constructor(public game: Game) {
         super("human", {
-            size: 1,
-            headAnchor: (new Vector3(0, 0.6, 0.1)),
+            hipAnchor: (new Vector3(0.25, 0, 0)),
+            footTarget: (new Vector3(0.2, 0, 0)),
+            headAnchor: (new Vector3(0, 0.8, 0.1)),
             footThickness: 0,
             upperLegLength: 0.5,
             lowerLegLength: 0.5,
-            stepHeight: 0.2,
-            stepDuration: 0.5,
+            stepHeightMin: 0.1,
+            stepHeightMax: 0.3,
+            stepDurationMin: 0.3,
+            stepDurationMax: 0.7,
             stepSimultaneousMaxCount: 3,
-            bodyLocalOffset: new Vector3(0, 0.6, 0),
-            bodyWorldOffset: new Vector3(0, - 0.1, 0)
+            bodyLocalOffset: new Vector3(0, 0.6, 0)
         }, game.scene);
 
         let povMaterial = new StandardMaterial("debug-pov-material", this.game.scene);
@@ -175,7 +180,29 @@ export class Human extends Humanoid {
 
     public async instantiate(): Promise<void> {
         await super.instantiate();
-        console.log("human instantiated");
+        const data = await ImportMeshAsync("meshes/heva-model.babylon", this.getScene());
+        console.log(data);
+        let skeleton = data.skeletons[0];
+        let root = data.meshes[0];
+
+        for (let i = 0; i < data.meshes.length; i++) {
+            let mesh = data.meshes[i];
+            mesh.alwaysSelectAsActiveMesh = true;
+            mesh.skeleton = skeleton;
+            console.log(mesh.useBones);
+        }
+
+        let rootBone = skeleton.bones[0];
+        rootBone.setPosition(this.position, Space.WORLD);
+        let neckBone = skeleton.bones.find(b => b.name === "NeckBone");
+        let t = 0;
+        let testLoop = () => {
+            t += 0.008;
+            let q = Quaternion.RotationAxis(Vector3.Up(), t);
+            neckBone!.setRotationQuaternion(q);
+        }
+        this.getScene().onBeforeRenderObservable.add(testLoop);
+        console.log("human instantiated", this.position.toString());
     }
 
     private _updateDrone = () => {

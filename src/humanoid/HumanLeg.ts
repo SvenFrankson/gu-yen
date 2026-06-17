@@ -94,5 +94,7 @@ export class HumanLeg extends Mesh {
         QuaternionFromZYAxisToRef(this._tmpZ, this.humanoid.forward, this.lowerLeg.rotationQuaternion!);
         
         QuaternionFromYZAxisToRef(this.footUp, this.footForward, this.foot.rotationQuaternion!);
+
+        this.grounded = Vector3.DistanceSquared(this.foot.position, this.footTarget) <= 0.1;
     }
 }
