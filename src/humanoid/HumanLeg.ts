@@ -2,8 +2,9 @@ import { Mesh } from "@babylonjs/core/Meshes/mesh.pure";
 import { Humanoid } from "./Humanoid";
 import { Scene } from "@babylonjs/core/scene.pure";
 import { Quaternion, Vector3 } from "@babylonjs/core/Maths/math.vector.pure";
-import { ColorizeVertexDataInPlace, CreateBeveledBoxVertexData, ForceDistanceFromOriginInPlace, QuaternionFromYZAxisToRef, QuaternionFromZYAxisToRef, TranslateVertexDataInPlace } from "babylonjs-tiaratumgames-tools";
+import { CloneVertexData, ColorizeVertexDataInPlace, CreateBeveledBoxVertexData, ForceDistanceFromOriginInPlace, MirrorXVertexDataInPlace, QuaternionFromYZAxisToRef, QuaternionFromZYAxisToRef, TranslateVertexDataInPlace } from "babylonjs-tiaratumgames-tools";
 import { MeshBuilder } from "@babylonjs/core/Meshes/meshBuilder";
+import { Human } from "./Human";
 
 export class HumanLeg extends Mesh {
 
@@ -15,7 +16,7 @@ export class HumanLeg extends Mesh {
     public lowerLegLength: number = 0.5;
     public footLength: number = 0.2;
     public get totalLength(): number {
-        return (this.upperLegLength + this.lowerLegLength) * this.scale;
+        return this.upperLegLength + this.lowerLegLength + this.footThickness;
     }
     public get totalLengthSquared(): number {
         return this.totalLength * this.totalLength;
@@ -32,16 +33,6 @@ export class HumanLeg extends Mesh {
 
     public grounded: boolean = true;
 
-    private _scale: number = 1;
-    public get scale(): number {
-        return this._scale;
-    }
-    public set scale(s: number) {
-        this._scale = s;
-        this.upperLeg.scaling.copyFromFloats(this.scale, this.scale, this.scale);
-        this.lowerLeg.scaling.copyFromFloats(this.scale, this.scale, this.scale);
-        this.foot.scaling.copyFromFloats(this.scale, this.scale, this.scale);
-    }
     private _tmpZ: Vector3 = Vector3.Forward();
 
     constructor(public humanoid: Humanoid, isLeft: boolean) {
@@ -49,17 +40,18 @@ export class HumanLeg extends Mesh {
         this.isLeft = isLeft;
         //this.upperLeg = new Mesh("upperLeg", humanoid.getScene());
         this.upperLeg = new Mesh("upperLeg", humanoid.getScene());
-        this.upperLeg.material = this.humanoid.material;
+        this.upperLeg.material = this.humanoid.debugColliderMaterial;
         this.upperLeg.rotationQuaternion = Quaternion.Identity();
         this.lowerLeg = new Mesh("lowerLeg", humanoid.getScene());
-        this.lowerLeg.material = this.humanoid.material;
+        this.lowerLeg.material = this.humanoid.debugColliderMaterial;
         this.lowerLeg.rotationQuaternion = Quaternion.Identity();
         this.foot = new Mesh("foot", humanoid.getScene());
-        this.foot.material = this.humanoid.material;
+        this.foot.material = this.humanoid.debugColliderMaterial;
         this.foot.rotationQuaternion = Quaternion.Identity();
     }
 
     public async instantiate(): Promise<void> {
+        /*
         let upperLegVertexData = CreateBeveledBoxVertexData({ width: 0.1, height: 0.1, depth: this.upperLegLength });
         TranslateVertexDataInPlace(upperLegVertexData, new Vector3(0, 0, this.upperLegLength * 0.5));
         ColorizeVertexDataInPlace(upperLegVertexData, this.humanoid.color);
@@ -72,17 +64,30 @@ export class HumanLeg extends Mesh {
         TranslateVertexDataInPlace(footVertexData, new Vector3(0, 0, this.footLength * 0.5));
         ColorizeVertexDataInPlace(footVertexData, this.humanoid.color);
         footVertexData.applyToMesh(this.foot);
+        */
+        if (this.humanoid instanceof Human) {
+            if (this.isLeft) {
+                MirrorXVertexDataInPlace(CloneVertexData(this.humanoid.upperLegVertexData!)).applyToMesh(this.upperLeg);
+                MirrorXVertexDataInPlace(CloneVertexData(this.humanoid.lowerLegVertexData!)).applyToMesh(this.lowerLeg);
+                MirrorXVertexDataInPlace(CloneVertexData(this.humanoid.footVertexData!)).applyToMesh(this.foot);
+            } else {
+                this.humanoid.upperLegVertexData!.applyToMesh(this.upperLeg);
+                this.humanoid.lowerLegVertexData!.applyToMesh(this.lowerLeg);
+                this.humanoid.footVertexData!.applyToMesh(this.foot);
+            }
+        }
     }
 
     public update(): void {
         this._kneeTarget.copyFrom(this.hipWorldPosition).addInPlace(this.footTarget).scaleInPlace(0.5).addInPlace(this.humanoid.forward);
+        let ankleTarget = this.footUp.scale(this.footThickness).add(this.footTarget);
         
         for (let n = 0; n < 3; n++) {
-            ForceDistanceFromOriginInPlace(this._kneeTarget, this.footTarget, this.lowerLegLength);
+            ForceDistanceFromOriginInPlace(this._kneeTarget, ankleTarget, this.lowerLegLength);
             ForceDistanceFromOriginInPlace(this._kneeTarget, this.hipWorldPosition, this.upperLegLength);
         }
 
-        this.foot.position.copyFrom(this.footTarget);
+        this.foot.position.copyFrom(ankleTarget);
         ForceDistanceFromOriginInPlace(this.foot.position, this._kneeTarget, this.lowerLegLength);
         this.upperLeg.position.copyFrom(this.hipWorldPosition);
         this.lowerLeg.position.copyFrom(this._kneeTarget);
@@ -95,6 +100,6 @@ export class HumanLeg extends Mesh {
         
         QuaternionFromYZAxisToRef(this.footUp, this.footForward, this.foot.rotationQuaternion!);
 
-        this.grounded = Vector3.DistanceSquared(this.foot.position, this.footTarget) <= 0.1;
+        this.grounded = Vector3.DistanceSquared(this.foot.position, ankleTarget) <= 0.1;
     }
 }

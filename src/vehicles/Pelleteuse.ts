@@ -8,7 +8,7 @@ import { Vector3 } from "@babylonjs/core/Maths/math.vector.pure";
 import { MeshBuilder } from "@babylonjs/core/Meshes/meshBuilder";
 import { Game } from "../Game";
 import { Chunck } from "../voxel-engine/Chunck";
-import { AngleFromToAround } from "babylonjs-tiaratumgames-tools";
+import { AngleFromToAround, RotateInPlace } from "babylonjs-tiaratumgames-tools";
 import { BlockType } from "../voxel-engine/BlockType";
 import { MakeStandardMaterial } from "../MaterialUtils";
 import { IsVeryFinite } from "../Number";

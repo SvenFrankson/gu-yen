@@ -3,11 +3,11 @@ import { HumanLeg } from "./HumanLeg";
 import { Scene } from "@babylonjs/core/scene.pure";
 import { Ray } from "@babylonjs/core/Culling/ray.pure";
 import { Material } from "@babylonjs/core/Materials/material.pure";
-import { Space } from "@babylonjs/core/Maths/math.axis";
+import { Axis, Space } from "@babylonjs/core/Maths/math.axis";
 import { Color3 } from "@babylonjs/core/Maths/math.color.pure";
 import { Vector3, Quaternion } from "@babylonjs/core/Maths/math.vector.pure";
 import { MeshBuilder } from "@babylonjs/core/Meshes/meshBuilder";
-import { Collider, ColorizeVertexDataInPlace, CreateBeveledBoxVertexData, DrawDebugHit, DrawDebugPoint, ForceDistanceFromOriginInPlace, IsFinite, QuaternionFromYZAxis, QuaternionFromYZAxisToRef, QuaternionFromZYAxisToRef, RandomInSphereCut, RayCollidersIntersection, SphereCollider, TranslateVertexDataInPlace } from "babylonjs-tiaratumgames-tools";
+import { Collider, ColorizeVertexDataInPlace, CreateBeveledBoxVertexData, DrawDebugHit, DrawDebugPoint, ForceDistanceFromOriginInPlace, IsFinite, QuaternionFromXYAxis, QuaternionFromYZAxis, QuaternionFromYZAxisToRef, QuaternionFromZYAxisToRef, RandomInSphereCut, RayCollidersIntersection, SphereCollider, TranslateVertexDataInPlace } from "babylonjs-tiaratumgames-tools";
 import { IsVeryFinite, MinMax } from "../Number";
 import { smoothNSec } from "../Tools";
 import { Chunck } from "../voxel-engine/Chunck";
@@ -15,6 +15,7 @@ import { SphereChuncksIntersection } from "../voxel-engine/TmpMath";
 import { Engine } from "@babylonjs/core/Engines/engine.pure";
 import { CreateBoxVertexData } from "@babylonjs/core/Meshes/Builders/boxBuilder.pure";
 import { ToonMaterial } from "../ToonMaterial";
+import { Human } from "./Human";
 
 export interface IHumanoidProps {
     hipAnchor?: Vector3;
@@ -172,7 +173,7 @@ export class Humanoid extends Mesh {
 
         // Create all required meshes
         this.body = new Mesh("body", scene);
-        this.body.material = this.material;
+        this.body.material = this._debugColliderMaterial;
         this.body.rotationQuaternion = Quaternion.Identity();
         setTimeout(() => {
             console.log(this.body)
@@ -183,7 +184,7 @@ export class Humanoid extends Mesh {
         this.legs = [this.rightLeg, this.leftLeg];
         
         this.head = new Mesh("head", scene);
-        this.head.material = this.material;
+        this.head.material = this._debugColliderMaterial;
         this.head.rotationQuaternion = Quaternion.Identity();
 
         // Apply properties
@@ -297,15 +298,10 @@ export class Humanoid extends Mesh {
     public async instantiate(): Promise<void> {
         await this.rightLeg.instantiate();
         await this.leftLeg.instantiate();
-        let bodyVertexData = CreateBoxVertexData({ width: 0.5, height: 0.8, depth: 0.5 });
-        TranslateVertexDataInPlace(bodyVertexData, new Vector3(0, 0.4, 0));
-        ColorizeVertexDataInPlace(bodyVertexData, this.color);
-        bodyVertexData.applyToMesh(this.body);
         
-        let headVertexData = CreateBoxVertexData({ width: 0.2, height: 0.3, depth: 0.2 });
-        TranslateVertexDataInPlace(headVertexData, new Vector3(0, 0.15, 0));
-        ColorizeVertexDataInPlace(headVertexData, this.color);
-        headVertexData.applyToMesh(this.head);
+        if (this instanceof Human) {
+            this.bodyVertexData?.applyToMesh(this.body);
+        }
     }
 
     public async initialize(): Promise<void> {
@@ -517,9 +513,12 @@ export class Humanoid extends Mesh {
         bodyPos.addInPlace(this.bodyLocalOffset);
 
 
-        let quatFromLeg = QuaternionFromYZAxis(this.localNormal, this.forward);
+        let footRight = this.rightLeg.foot.position.subtract(this.leftLeg.foot.position).normalize();
+        let quatFromLeg = QuaternionFromYZAxis(Axis.Y, this.forward);
+        let quatFromLeg2 = QuaternionFromXYAxis(footRight, this.localNormal);
+        let quat = Quaternion.Slerp(quatFromLeg, quatFromLeg2, 0.2);
 
-        Quaternion.SlerpToRef(this.body.rotationQuaternion!, quatFromLeg, 1 - smoothNSec(1 / dt, 0.1), this.body.rotationQuaternion!);
+        Quaternion.SlerpToRef(this.body.rotationQuaternion!, quat, 1 - smoothNSec(1 / dt, 0.1), this.body.rotationQuaternion!);
         
         QuaternionFromZYAxisToRef(this.forward, this.up, this.head.rotationQuaternion!);
 

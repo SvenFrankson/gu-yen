@@ -184,10 +184,8 @@ export class Game {
             }
             else if (event.code === "Numpad6") {
                 console.log("Player position: ", this.player.absolutePosition.clone());
-                let human = new Human(this);
+                let human = await Human.FactoryInstantiate(this);
                 human.setPosition(this.player.absolutePosition.add(this.player.forward.scale(5)));
-                human.instantiate();
-                human.initialize();
             }
         });
 

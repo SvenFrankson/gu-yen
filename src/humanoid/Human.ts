@@ -4,11 +4,11 @@ import { Vector3, Quaternion } from "@babylonjs/core/Maths/math.vector.pure";
 import { Mesh } from "@babylonjs/core/Meshes/mesh.pure";
 import { MeshBuilder } from "@babylonjs/core/Meshes/meshBuilder";
 import { Game } from "../Game";
-import { Humanoid } from "./Humanoid";
-import { AngleFromToAround, IsFinite, SphereCollider } from "babylonjs-tiaratumgames-tools";
+import { Humanoid, IHumanoidProps } from "./Humanoid";
+import { AngleFromToAround, GetGLTFMeshDataArray, IsFinite, QuaternionFromZYAxis, RotateVertexDataInPlace, SphereCollider } from "babylonjs-tiaratumgames-tools";
 import { ImportMeshAsync } from "@babylonjs/core/Loading/sceneLoader";
 import "@babylonjs/core";
-import { Space } from "@babylonjs/core";
+import { Space, VertexData } from "@babylonjs/core";
 
 class HumanController {
 
@@ -90,21 +90,8 @@ export class Human extends Humanoid {
     public controller: HumanController;
     public destination: Vector3 = Vector3.Zero();
 
-    constructor(public game: Game) {
-        super("human", {
-            hipAnchor: (new Vector3(0.25, 0, 0)),
-            footTarget: (new Vector3(0.2, 0, 0)),
-            headAnchor: (new Vector3(0, 0.8, 0.1)),
-            footThickness: 0,
-            upperLegLength: 0.5,
-            lowerLegLength: 0.5,
-            stepHeightMin: 0.1,
-            stepHeightMax: 0.3,
-            stepDurationMin: 0.3,
-            stepDurationMax: 0.7,
-            stepSimultaneousMaxCount: 3,
-            bodyLocalOffset: new Vector3(0, 0.6, 0)
-        }, game.scene);
+    constructor(public game: Game, props: IHumanoidProps = {}) {
+        super("human", props, game.scene);
 
         let povMaterial = new StandardMaterial("debug-pov-material", this.game.scene);
         povMaterial.diffuseColor = new Color3(0.5, 0.5, 1);
@@ -179,30 +166,63 @@ export class Human extends Humanoid {
     }
 
     public async instantiate(): Promise<void> {
-        await super.instantiate();
-        const data = await ImportMeshAsync("meshes/heva-model.babylon", this.getScene());
-        console.log(data);
-        let skeleton = data.skeletons[0];
-        let root = data.meshes[0];
+        await super.instantiate();        
+        console.log("human instantiated");
+    }
 
-        for (let i = 0; i < data.meshes.length; i++) {
-            let mesh = data.meshes[i];
-            mesh.alwaysSelectAsActiveMesh = true;
-            mesh.skeleton = skeleton;
-            console.log(mesh.useBones);
-        }
+    public bodyVertexData: VertexData | null = null;
+    public upperLegVertexData: VertexData | null = null;
+    public lowerLegVertexData: VertexData | null = null
+    public footVertexData: VertexData | null = null;
 
-        let rootBone = skeleton.bones[0];
-        rootBone.setPosition(this.position, Space.WORLD);
-        let neckBone = skeleton.bones.find(b => b.name === "NeckBone");
-        let t = 0;
-        let testLoop = () => {
-            t += 0.008;
-            let q = Quaternion.RotationAxis(Vector3.Up(), t);
-            neckBone!.setRotationQuaternion(q);
+    public static async FactoryInstantiate(game: Game): Promise<Human | null> {
+        let dataArray = await GetGLTFMeshDataArray("meshes/heva-robot-model.gltf", game.scene);
+        if (dataArray && dataArray.length) {
+            let body = dataArray.find(d => d.name === "0-body")!;
+            let upperLeg = dataArray.find(d => d.name === "1-upper-leg")!;
+            let lowerLeg = dataArray.find(d => d.name === "2-lower-leg")!;
+            let foot = dataArray.find(d => d.name === "3-foot")!;
+            
+            let footThickness = foot.position.y;
+            let footTarget = foot.position.clone();
+            footTarget.y = 0;
+
+            let hipAnchor = upperLeg.position.subtract(body.position);
+            let upperLegLength = lowerLeg.position.subtract(upperLeg.position).length();
+            let lowerLegLength = foot.position.subtract(lowerLeg.position).length();
+
+            let human = new Human(game, {
+                hipAnchor: hipAnchor,
+                footTarget: footTarget,
+                headAnchor: (new Vector3(0, 0.8, 0.1)),
+                footThickness: footThickness,
+                upperLegLength: upperLegLength,
+                lowerLegLength: lowerLegLength,
+                stepHeightMin: 0.1,
+                stepHeightMax: 0.3,
+                stepDurationMin: 0.3,
+                stepDurationMax: 0.7,
+                stepSimultaneousMaxCount: 3,
+                bodyLocalOffset: new Vector3(0, 0.6, 0)
+            });
+
+            human.bodyVertexData = body.vertexData;
+
+            let upperLegForward = lowerLeg.position.subtract(upperLeg.position).normalize();
+            let upperLegQ = QuaternionFromZYAxis(upperLegForward, Vector3.Forward()).invertInPlace();
+            human.upperLegVertexData = RotateVertexDataInPlace(upperLeg.vertexData, upperLegQ);
+
+            let lowerLegForward = foot.position.subtract(lowerLeg.position).normalize();
+            let lowerLegQ = QuaternionFromZYAxis(lowerLegForward, Vector3.Forward()).invertInPlace();
+            human.lowerLegVertexData = RotateVertexDataInPlace(lowerLeg.vertexData, lowerLegQ);
+
+            human.footVertexData = foot.vertexData;
+
+            human.initialize();
+            await human.instantiate();
+            return human;
         }
-        this.getScene().onBeforeRenderObservable.add(testLoop);
-        console.log("human instantiated", this.position.toString());
+        return null;
     }
 
     private _updateDrone = () => {
