@@ -7,7 +7,7 @@ import { Axis, Space } from "@babylonjs/core/Maths/math.axis";
 import { Color3 } from "@babylonjs/core/Maths/math.color.pure";
 import { Vector3, Quaternion } from "@babylonjs/core/Maths/math.vector.pure";
 import { MeshBuilder } from "@babylonjs/core/Meshes/meshBuilder";
-import { Collider, ColorizeVertexDataInPlace, CreateBeveledBoxVertexData, DrawDebugHit, DrawDebugPoint, ForceDistanceFromOriginInPlace, IsFinite, QuaternionFromXYAxis, QuaternionFromYZAxis, QuaternionFromYZAxisToRef, QuaternionFromZYAxisToRef, RandomInSphereCut, RayCollidersIntersection, SphereCollider, TranslateVertexDataInPlace } from "babylonjs-tiaratumgames-tools";
+import { Angle, Collider, ColorizeVertexDataInPlace, CreateBeveledBoxVertexData, DrawDebugHit, DrawDebugPoint, ForceDistanceFromOriginInPlace, IsFinite, QuaternionFromXYAxis, QuaternionFromYZAxis, QuaternionFromYZAxisToRef, QuaternionFromZYAxisToRef, RandomInSphereCut, RayCollidersIntersection, SphereCollider, TranslateVertexDataInPlace } from "babylonjs-tiaratumgames-tools";
 import { IsVeryFinite, MinMax } from "../Number";
 import { smoothNSec } from "../Tools";
 import { Chunck } from "../voxel-engine/Chunck";
@@ -16,13 +16,19 @@ import { Engine } from "@babylonjs/core/Engines/engine.pure";
 import { CreateBoxVertexData } from "@babylonjs/core/Meshes/Builders/boxBuilder.pure";
 import { ToonMaterial } from "../ToonMaterial";
 import { Human } from "./Human";
+import { HumanArm } from "./HumanArm";
+import { easeInOutQuad, easeInOutSine, easeInSine } from "../Easing";
 
 export interface IHumanoidProps {
+    shoulderAnchor?: Vector3;
     hipAnchor?: Vector3;
     footTarget?: Vector3;
     footThickness?: number;
     upperLegLength?: number;
     lowerLegLength?: number;
+    upperArmLength?: number;
+    lowerArmLength?: number;
+    handLength?: number;
     stepDuration?: number;
     stepDurationMin?: number;
     stepDurationMax?: number;
@@ -33,6 +39,7 @@ export interface IHumanoidProps {
     bootyShakiness?: number;
     bodyLocalOffset?: Vector3;
     headAnchor?: Vector3;
+    torsoAnchor?: Vector3;
 }
 
 export class Humanoid extends Mesh {
@@ -120,6 +127,10 @@ export class Humanoid extends Mesh {
     public mentalCheckPerFrame: number = 0;
 
     public headAnchor: Vector3 = new Vector3(0, Math.SQRT2, Math.SQRT2);
+    public torsoAnchor: Vector3 = new Vector3(0, 0.2, 0);
+
+    public leftShoulderAnchor: Vector3;
+    public rightShoulderAnchor: Vector3;
 
     public rightHipAnchor: Vector3;
     public leftHipAnchor: Vector3;
@@ -146,15 +157,19 @@ export class Humanoid extends Mesh {
     public stepDurationMax: number = 0.7;
     public stepHeightMin: number = 0.2;
     public stepHeightMax: number = 0.7;
-    public bootyShakiness: number = 0.5;
+    public bootyShakiness: number = 0.3;
 
     public bodyLocalOffset: Vector3 = Vector3.Zero();
 
     public body: Mesh;
+    public torso: Mesh;
     public head: Mesh;
     public leftLeg: HumanLeg;
     public rightLeg: HumanLeg;
     public legs: HumanLeg[] = [];
+    public leftArm: HumanArm;
+    public rightArm: HumanArm;
+    public arms: HumanArm[] = [];
 
     public color: Color3 = Color3.FromHexString("#208b9e");
 
@@ -175,13 +190,18 @@ export class Humanoid extends Mesh {
         this.body = new Mesh("body", scene);
         this.body.material = this._debugColliderMaterial;
         this.body.rotationQuaternion = Quaternion.Identity();
-        setTimeout(() => {
-            console.log(this.body)
-        }, 3000);
+
+        this.torso = new Mesh("torso", scene);
+        this.torso.material = this._debugColliderMaterial;
+        this.torso.rotationQuaternion = Quaternion.Identity();
 
         this.rightLeg = new HumanLeg(this, false);
         this.leftLeg = new HumanLeg(this, true);
         this.legs = [this.rightLeg, this.leftLeg];
+
+        this.rightArm = new HumanArm(this, false);
+        this.leftArm = new HumanArm(this, true);
+        this.arms = [this.rightArm, this.leftArm];
         
         this.head = new Mesh("head", scene);
         this.head.material = this._debugColliderMaterial;
@@ -190,6 +210,20 @@ export class Humanoid extends Mesh {
         // Apply properties
         if (IsFinite(prop.headAnchor!)) {
             this.headAnchor = prop.headAnchor!;
+        }
+        if (IsFinite(prop.torsoAnchor!)) {
+            this.torsoAnchor = prop.torsoAnchor!;
+        }
+        
+        if (prop.shoulderAnchor) {
+            // shoulderAnchors provided
+            this.rightShoulderAnchor = prop.shoulderAnchor.clone();
+            this.leftShoulderAnchor = prop.shoulderAnchor.clone();
+            this.leftShoulderAnchor.x *= -1;
+        }
+        else {
+            this.rightShoulderAnchor = new Vector3(0.25, 0, 0);
+            this.leftShoulderAnchor = new Vector3(-0.25, 0, 0);
         }
         
         if (prop.hipAnchor) {
@@ -227,6 +261,16 @@ export class Humanoid extends Mesh {
         if (isFinite(prop.lowerLegLength!)) {
             this.rightLeg.lowerLegLength = prop.lowerLegLength!;
             this.leftLeg.lowerLegLength = prop.lowerLegLength!;
+        }
+
+        if (isFinite(prop.upperArmLength!)) {
+            this.rightArm.upperArmLength = prop.upperArmLength!;
+            this.leftArm.upperArmLength = prop.upperArmLength!;
+        }
+
+        if (isFinite(prop.lowerArmLength!)) {
+            this.rightArm.lowerArmLength = prop.lowerArmLength!;
+            this.leftArm.lowerArmLength = prop.lowerArmLength!;
         }
 
         if (isFinite(prop.stepDuration!)) {
@@ -298,9 +342,13 @@ export class Humanoid extends Mesh {
     public async instantiate(): Promise<void> {
         await this.rightLeg.instantiate();
         await this.leftLeg.instantiate();
+
+        await this.rightArm.instantiate();
+        await this.leftArm.instantiate();
         
         if (this instanceof Human) {
             this.bodyVertexData?.applyToMesh(this.body);
+            this.torsoVertexData?.applyToMesh(this.torso);
         }
     }
 
@@ -326,13 +374,13 @@ export class Humanoid extends Mesh {
             let destinationNorm = targetNorm.clone();
             let destinationForward = targetForward.clone();
             let dist = 1.5 * Vector3.Distance(origin, destination);
-            let hMax = Math.min(Math.max(this.stepHeightMin, dist), this.stepHeightMax);
+            let hMax = Math.min(Math.max(this.stepHeightMin, dist * 0.3), this.stepHeightMax);
             let duration = Math.min(Math.max(this.stepDurationMin, dist), this.stepDurationMax);
-            duration *= 3 * (1 - this._fSpeed) + 1 * this._fSpeed;
             let t = 0;
             let animationCB = () => {
                 t += this.getScene().getEngine().getDeltaTime() / 1000;
                 let f = t / duration;
+                f = easeInOutSine(f) * 0.5 + f * 0.5;
                 let h = Math.sqrt(Math.sin(f * Math.PI)) * hMax;
                 if (f < 1) {
                     let p = origin.scale(1 - f).addInPlace(destination.scale(f));
@@ -361,10 +409,10 @@ export class Humanoid extends Mesh {
         if (isNaN(dt)) {
             return;
         }
-        this._fSpeed = MinMax(this.speed / 0.5, 0, 1);
+        this._fSpeed = 0.97 * this._fSpeed + 0.03 * MinMax(this.speed / 1, 0, 1);
 
         this.position.addInPlace(this.forward.scale(this.speed * dt));
-        this.rotate(this.up, this.rotationSpeed * dt, Space.WORLD);
+        this.rotate(this.up, 0.5 * this.rotationSpeed * dt, Space.WORLD);
         this.computeWorldMatrix(true);
         QuaternionFromYZAxisToRef(this.body.up.add(this.targetUp), this.forward, this.rotationQuaternion!);
         
@@ -403,6 +451,8 @@ export class Humanoid extends Mesh {
 
         Vector3.TransformCoordinatesToRef(this.leftHipAnchor, this.body.getWorldMatrix(), this.leftLeg.hipWorldPosition);
         Vector3.TransformCoordinatesToRef(this.rightHipAnchor, this.body.getWorldMatrix(), this.rightLeg.hipWorldPosition);
+        Vector3.TransformCoordinatesToRef(this.leftShoulderAnchor, this.torso.getWorldMatrix(), this.leftArm.shoulderWorldPosition);
+        Vector3.TransformCoordinatesToRef(this.rightShoulderAnchor, this.torso.getWorldMatrix(), this.rightArm.shoulderWorldPosition);
         Vector3.TransformCoordinatesToRef(this.headAnchor, this.body.getWorldMatrix(), this.head.position);
 
         let m = this.computeWorldMatrix(true);
@@ -503,28 +553,51 @@ export class Humanoid extends Mesh {
         this.leftLeg.update();
         this.rightLeg.update();
 
-        let bodyPos = Vector3.Zero();
+        let dFoot = this.rightLeg.foot.position.subtract(this.leftLeg.foot.position);
+        let dFootZ = Vector3.Dot(dFoot, this.forward);
+        this.rightArm.handTarget.copyFrom(this.body.position).addInPlace(this.forward.scale(- dFootZ * 0.5)).addInPlace(this.right.scale(0.2)).addInPlace(this.up.scale(- 0.1));
+        this.leftArm.handTarget.copyFrom(this.body.position).addInPlace(this.forward.scale(dFootZ * 0.5)).addInPlace(this.right.scale(- 0.2)).addInPlace(this.up.scale(- 0.1));
 
-        this.bodyLocalOffset.copyFromFloats(0, this.rightLeg.totalLength * 0.95, 0);
-        this.bodyLocalOffset.addInPlace(this.forward.scale(0.1 * this._fSpeed));
+        this.rightArm.update();
+        this.leftArm.update();
+
+        let bodyPos = Vector3.Zero();
+        let deltaFoot = this.rightLeg.foot.position.subtract(this.leftLeg.foot.position);
+
+        let maxOffsetHeight = this.rightLeg.totalLength - this.rightHipAnchor.y;
+        
+        let ll = this.rightLeg.totalLengthSquared;
+        let df = deltaFoot.scale(0.5).lengthSquared();
+        this.bodyLocalOffset.y = 0;
+        if (ll > df) {
+            this.bodyLocalOffset.y = Math.sqrt(ll - df);
+            this.bodyLocalOffset.y = Math.min(this.bodyLocalOffset.y, maxOffsetHeight) + 0.05;
+        }
+        //this.bodyLocalOffset.x = this.body.forward.x * 0.5 * this._fSpeed;
+        //this.bodyLocalOffset.z = this.body.forward.z * 0.5 * this._fSpeed;
 
         bodyPos.copyFrom(this.rightLeg.footTarget).addInPlace(this.leftLeg.footTarget).scaleInPlace(0.5);
         bodyPos.y = Math.min(this.rightLeg.footTarget.y, this.leftLeg.footTarget.y);
         bodyPos.addInPlace(this.bodyLocalOffset);
 
+        let baseQuat = QuaternionFromYZAxis(Axis.Y, this.forward);
 
-        let footRight = this.rightLeg.foot.position.subtract(this.leftLeg.foot.position).normalize();
-        let quatFromLeg = QuaternionFromYZAxis(Axis.Y, this.forward);
-        let quatFromLeg2 = QuaternionFromXYAxis(footRight, this.localNormal);
-        let quat = Quaternion.Slerp(quatFromLeg, quatFromLeg2, 0.2);
+        let quatFromLeg = QuaternionFromXYAxis(deltaFoot, this.localNormal);
+        let bodyQuat = Quaternion.Slerp(baseQuat, quatFromLeg, this.bootyShakiness);
 
-        Quaternion.SlerpToRef(this.body.rotationQuaternion!, quat, 1 - smoothNSec(1 / dt, 0.1), this.body.rotationQuaternion!);
+        Quaternion.SlerpToRef(this.body.rotationQuaternion!, bodyQuat, 1 - smoothNSec(1 / dt, 0.1), this.body.rotationQuaternion!);
         
         QuaternionFromZYAxisToRef(this.forward, this.up, this.head.rotationQuaternion!);
 
         Vector3.LerpToRef(this.body.position, bodyPos, 1 - smoothNSec(1 / dt, 0.1), this.body.position);
 
-        //console.log(this.body.position, this.position);
+        this.torso.position.copyFrom(this.torsoAnchor);
+        Vector3.TransformCoordinatesToRef(this.torso.position, this.body.getWorldMatrix(), this.torso.position);
+        let handRight = this.rightArm.hand.position.subtract(this.leftArm.hand.position).normalize();
+        let quatFromArm = QuaternionFromXYAxis(handRight, this.localNormal);
+        let torsoQuat = Quaternion.Slerp(baseQuat, quatFromArm, 0.2);
+
+        Quaternion.SlerpToRef(this.torso.rotationQuaternion!, torsoQuat, 1 - smoothNSec(1 / dt, 0.1), this.torso.rotationQuaternion!);
 
         // Terrain collision [v]
         let collideWithTerrain = false;
@@ -567,11 +640,15 @@ export class Humanoid extends Mesh {
         // [^] Terrain collision
         
         // Prevent overstrech [v]
+        let angle = Angle(this.forward, this.body.forward);
+        let angleStrech = (angle - Math.PI / 8) / (Math.PI / 4 - Math.PI / 8);
+        angleStrech = Math.min(Math.max(angleStrech, 0), 1);
         let footAnchor = this.body.position.clone();
         footAnchor.y = Math.min(this.leftLeg.footTarget.y, this.rightLeg.footTarget.y);
+        this.position.y = this.position.y * 0.9 + footAnchor.y * 0.1;
         let dir = this.position.subtract(footAnchor);
         let l = dir.length();
-        let maxL = 1;
+        let maxL = 1 * (1 - angleStrech);
         if (l > maxL) {
             dir.scaleInPlace(1 / l);
             this.position.copyFrom(dir).scaleInPlace(maxL).addInPlace(footAnchor);

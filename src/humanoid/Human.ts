@@ -8,7 +8,9 @@ import { Humanoid, IHumanoidProps } from "./Humanoid";
 import { AngleFromToAround, GetGLTFMeshDataArray, IsFinite, QuaternionFromZYAxis, RotateVertexDataInPlace, SphereCollider } from "babylonjs-tiaratumgames-tools";
 import { ImportMeshAsync } from "@babylonjs/core/Loading/sceneLoader";
 import "@babylonjs/core";
-import { Space, VertexData } from "@babylonjs/core";
+import { Axis, Space, VertexData } from "@babylonjs/core";
+import { ChunckDataGeneratorFromManager } from "../voxel-engine/TerrainGen/ChunkDataManager";
+import { ChunckDataGeneratorDataSets } from "../voxel-engine/TerrainGen/ChunckDataGeneratorDataSets";
 
 class HumanController {
 
@@ -23,10 +25,14 @@ class HumanController {
         //CreateSphereVertexData({ diameter: 0.1 }).applyToMesh(this.debug);
     }
 
-    public updateExplorerDestination(): boolean {
-        this.destination = this.human.game.player.absolutePosition;
-        this.destination.y += 1;
-        this.debug.position.copyFrom(this.destination);
+    public async updateExplorerDestination(): Promise<boolean> {
+        this.destination = this.human.position.add(new Vector3(Math.random() * 30 - 15, 0, Math.random() * 30 - 15));
+        if (this.human.game.terrain!.chunckDataGenerator instanceof ChunckDataGeneratorFromManager && this.human.game.terrain!.chunckDataGenerator.manager.generator instanceof ChunckDataGeneratorDataSets) {
+            let ijk = this.human.game.terrain!.worldPosToGlobalIJK(this.destination);
+            let height = await this.human.game.terrain!.chunckDataGenerator.manager.generator.asyncEvaluateHeight(ijk.i, ijk.j);
+            height *= this.human.game.terrain!.blockSizeK_m;
+            this.destination.y = height;
+        }
         
         return true;
     }
@@ -42,16 +48,14 @@ class HumanController {
 
         this.timer += dt;
         if (this.timer > 30) {
-            if (this.updateExplorerDestination()) {
-                this.timer = 0;
-                return;
-            }
+            this.updateExplorerDestination();
+            this.timer = 0;
+            return;
         }
 
         if (!this.destination || !IsFinite(this.destination)) {
-            if (this.updateExplorerDestination()) {
-                this.timer = 0;
-            }
+            this.updateExplorerDestination();
+            this.timer = 0;
             return;
         }
 
@@ -60,19 +64,18 @@ class HumanController {
         this.human.targetUp = Vector3.Cross(dirDestination, rightDestination).normalize();
         let distDestination = dirDestination.length();
         if (distDestination < 0.4) {
-            if (this.updateExplorerDestination()) {
-                this.timer = 0;
-                if (Math.random() > 0.5) {
-                    this.stop = true;
-                    setTimeout(() => {
-                        this.stop = false;
-                    }, Math.random() * 15000);
-                }
-                return;
+            this.updateExplorerDestination();
+            this.timer = 0;
+            if (Math.random() > 0.5) {
+                this.stop = true;
+                setTimeout(() => {
+                    this.stop = false;
+                }, Math.random() * 5000);
             }
+            return;
         }
         
-        this.human.speed = (distDestination - 3) * 0.5 ;
+        this.human.speed = (distDestination + 1) * 0.5 ;
         this.human.speed = Math.max(Math.min(this.human.speed, 1), 0);
         let alphaDestination = AngleFromToAround(dirDestination, this.human.forward, this.human.up);
         this.human.rotationSpeed = 0;
@@ -171,9 +174,13 @@ export class Human extends Humanoid {
     }
 
     public bodyVertexData: VertexData | null = null;
+    public torsoVertexData: VertexData | null = null;
     public upperLegVertexData: VertexData | null = null;
     public lowerLegVertexData: VertexData | null = null
     public footVertexData: VertexData | null = null;
+    public upperArmVertexData: VertexData | null = null;
+    public lowerArmVertexData: VertexData | null = null;
+    public handVertexData: VertexData | null = null
 
     public static async FactoryInstantiate(game: Game): Promise<Human | null> {
         let dataArray = await GetGLTFMeshDataArray("meshes/heva-robot-model.gltf", game.scene);
@@ -182,31 +189,53 @@ export class Human extends Humanoid {
             let upperLeg = dataArray.find(d => d.name === "1-upper-leg")!;
             let lowerLeg = dataArray.find(d => d.name === "2-lower-leg")!;
             let foot = dataArray.find(d => d.name === "3-foot")!;
+            let torso = dataArray.find(d => d.name === "4-torso")!;
+            let upperArm = dataArray.find(d => d.name === "5-upper-arm")!;
+            let lowerArm = dataArray.find(d => d.name === "6-lower-arm")!;
+            let hand = dataArray.find(d => d.name === "7-hand")!;
             
             let footThickness = foot.position.y;
             let footTarget = foot.position.clone();
             footTarget.y = 0;
 
             let hipAnchor = upperLeg.position.subtract(body.position);
+            let shoulderAnchor = upperArm.position.subtract(torso.position);
+            let torsoAnchor = torso.position.subtract(body.position);
             let upperLegLength = lowerLeg.position.subtract(upperLeg.position).length();
             let lowerLegLength = foot.position.subtract(lowerLeg.position).length();
+            let upperArmLength = lowerArm.position.subtract(upperArm.position).length();
+            let lowerArmLength = hand.position.subtract(lowerArm.position).length();
 
             let human = new Human(game, {
                 hipAnchor: hipAnchor,
+                shoulderAnchor: shoulderAnchor,
                 footTarget: footTarget,
                 headAnchor: (new Vector3(0, 0.8, 0.1)),
+                torsoAnchor: torsoAnchor,
                 footThickness: footThickness,
                 upperLegLength: upperLegLength,
                 lowerLegLength: lowerLegLength,
-                stepHeightMin: 0.1,
-                stepHeightMax: 0.3,
-                stepDurationMin: 0.3,
+                upperArmLength: upperArmLength,
+                lowerArmLength: lowerArmLength,
+                handLength: 0.2,
+                stepHeightMin: 0.0,
+                stepHeightMax: 0.15,
+                stepDurationMin: 0.7,
                 stepDurationMax: 0.7,
                 stepSimultaneousMaxCount: 3,
                 bodyLocalOffset: new Vector3(0, 0.6, 0)
             });
 
             human.bodyVertexData = body.vertexData;
+            human.torsoVertexData = torso.vertexData;
+
+            let upperArmForward = lowerArm.position.subtract(upperArm.position).normalize();
+            let upperArmQ = QuaternionFromZYAxis(upperArmForward, Vector3.Forward()).invertInPlace();
+            human.upperArmVertexData = RotateVertexDataInPlace(upperArm.vertexData, upperArmQ);
+
+            let lowerArmForward = hand.position.subtract(lowerArm.position).normalize();
+            let lowerArmQ = QuaternionFromZYAxis(lowerArmForward, Vector3.Forward()).invertInPlace();
+            human.lowerArmVertexData = RotateVertexDataInPlace(lowerArm.vertexData, lowerArmQ);
 
             let upperLegForward = lowerLeg.position.subtract(upperLeg.position).normalize();
             let upperLegQ = QuaternionFromZYAxis(upperLegForward, Vector3.Forward()).invertInPlace();
@@ -217,6 +246,10 @@ export class Human extends Humanoid {
             human.lowerLegVertexData = RotateVertexDataInPlace(lowerLeg.vertexData, lowerLegQ);
 
             human.footVertexData = foot.vertexData;
+            
+            let handForward = Axis.X;
+            let handQ = QuaternionFromZYAxis(handForward, Vector3.Up()).invertInPlace();
+            human.handVertexData = RotateVertexDataInPlace(hand.vertexData, handQ);
 
             human.initialize();
             await human.instantiate();

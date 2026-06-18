@@ -5,6 +5,9 @@ import { Quaternion, Vector3 } from "@babylonjs/core/Maths/math.vector.pure";
 import { CloneVertexData, ColorizeVertexDataInPlace, CreateBeveledBoxVertexData, ForceDistanceFromOriginInPlace, MirrorXVertexDataInPlace, QuaternionFromYZAxisToRef, QuaternionFromZYAxisToRef, TranslateVertexDataInPlace } from "babylonjs-tiaratumgames-tools";
 import { MeshBuilder } from "@babylonjs/core/Meshes/meshBuilder";
 import { Human } from "./Human";
+import { MakeStandardMaterial } from "../MaterialUtils";
+import { Color3 } from "@babylonjs/core/Maths/math.color.pure";
+import { StandardMaterial } from "@babylonjs/core/Materials/standardMaterial.pure";
 
 export class HumanLeg extends Mesh {
 
@@ -35,6 +38,9 @@ export class HumanLeg extends Mesh {
 
     private _tmpZ: Vector3 = Vector3.Forward();
 
+    private groundedMaterial: StandardMaterial;
+    private ungroundedMaterial: StandardMaterial;
+
     constructor(public humanoid: Humanoid, isLeft: boolean) {
         super("leg", humanoid.getScene());
         this.isLeft = isLeft;
@@ -48,6 +54,9 @@ export class HumanLeg extends Mesh {
         this.foot = new Mesh("foot", humanoid.getScene());
         this.foot.material = this.humanoid.debugColliderMaterial;
         this.foot.rotationQuaternion = Quaternion.Identity();
+
+        this.groundedMaterial = MakeStandardMaterial(this.humanoid.getScene(), new Color3(0, 1, 0));
+        this.ungroundedMaterial = MakeStandardMaterial(this.humanoid.getScene(), new Color3(1, 0, 0));
     }
 
     public async instantiate(): Promise<void> {
@@ -79,10 +88,10 @@ export class HumanLeg extends Mesh {
     }
 
     public update(): void {
-        this._kneeTarget.copyFrom(this.hipWorldPosition).addInPlace(this.footTarget).scaleInPlace(0.5).addInPlace(this.humanoid.forward);
+        this._kneeTarget.copyFrom(this.hipWorldPosition).addInPlace(this.footTarget).scaleInPlace(0.5).addInPlace(this.humanoid.forward.scale(0.1));
         let ankleTarget = this.footUp.scale(this.footThickness).add(this.footTarget);
         
-        for (let n = 0; n < 3; n++) {
+        for (let n = 0; n < 6; n++) {
             ForceDistanceFromOriginInPlace(this._kneeTarget, ankleTarget, this.lowerLegLength);
             ForceDistanceFromOriginInPlace(this._kneeTarget, this.hipWorldPosition, this.upperLegLength);
         }
@@ -100,6 +109,7 @@ export class HumanLeg extends Mesh {
         
         QuaternionFromYZAxisToRef(this.footUp, this.footForward, this.foot.rotationQuaternion!);
 
-        this.grounded = Vector3.DistanceSquared(this.foot.position, ankleTarget) <= 0.1;
+        this.grounded = Vector3.DistanceSquared(this.foot.position, ankleTarget) <= 0.01;
+        this.foot.material = this.grounded ? this.groundedMaterial : this.ungroundedMaterial;
     }
 }
