@@ -12,6 +12,7 @@ import { Axis, Space, VertexData } from "@babylonjs/core";
 import { ChunckDataGeneratorFromManager } from "../voxel-engine/TerrainGen/ChunkDataManager";
 import { ChunckDataGeneratorDataSets } from "../voxel-engine/TerrainGen/ChunckDataGeneratorDataSets";
 import { HumanoidProp, MoveMode } from "./HumanoidProp";
+import { easeInOutSine, easeInSine, easeOutSine } from "../Easing";
 
 class HumanController {
 
@@ -76,7 +77,7 @@ class HumanController {
             return;
         }
         
-        this.human.targetSpeed = (distDestination + 1) * 0.5 ;
+        this.human.targetSpeed = (distDestination) * 0.5 ;
         let alphaDestination = AngleFromToAround(dirDestination, this.human.forward, this.human.up);
         this.human.rotationSpeed = 0;
         if (alphaDestination > Math.PI / 64) {
@@ -135,7 +136,7 @@ export class Human extends Humanoid {
 
         this.updateBodyCollidersMeshes();
 
-        this.showCollisionDebug = false;
+        this.showCollisionDebug = true;
 
         if (this.showCollisionDebug) {
             let cross = MeshBuilder.CreateLineSystem(
@@ -218,6 +219,8 @@ export class Human extends Humanoid {
             prop.walkStyle[MoveMode.Walk].stepFSkip = 1;
             prop.walkStyle[MoveMode.Walk].handAmplitude = 0.7;
             prop.walkStyle[MoveMode.Walk].handBodyDY = -0.1;
+            prop.walkStyle[MoveMode.Walk].stepEasing = easeInOutSine;
+            prop.walkStyle[MoveMode.Walk].stepEasingFactor = 0.5;
             prop.walkStyle[MoveMode.Walk].bodyOffsetUpdate = (fSpeed: number, deltaFoot: Vector3, bodyOffsetRef: Vector3) => {
                 let maxOffsetHeight = prop.totalLegLength - prop.rightHipAnchor.y;
                 let ll = prop.totalLegLengthSquared;
@@ -231,11 +234,13 @@ export class Human extends Humanoid {
             }
 
             prop.walkStyle[MoveMode.Run].bootyShakiness = 0.2;
-            prop.walkStyle[MoveMode.Run].stepHeight = 0.3;
+            prop.walkStyle[MoveMode.Run].stepHeight = 0.4;
             prop.walkStyle[MoveMode.Run].stepDuration = 0.6;
             prop.walkStyle[MoveMode.Run].stepFSkip = 0.7;
             prop.walkStyle[MoveMode.Run].handAmplitude = 0.9;
             prop.walkStyle[MoveMode.Run].handBodyDY = 0.15;
+            prop.walkStyle[MoveMode.Run].stepEasing = easeOutSine;
+            prop.walkStyle[MoveMode.Run].stepEasingFactor = 0.2;
             prop.walkStyle[MoveMode.Run].bodyOffsetUpdate = (fSpeed: number, deltaFoot: Vector3, bodyOffsetRef: Vector3) => {
                 let maxOffsetHeight = prop.totalLegLength - prop.rightHipAnchor.y;
                 let ll = prop.totalLegLengthSquared;
@@ -243,16 +248,16 @@ export class Human extends Humanoid {
                 bodyOffsetRef.copyFromFloats(0, 0.5 * maxOffsetHeight, 0);
                 if (ll > df) {
                     bodyOffsetRef.y = Math.sqrt(ll - df);
-                    bodyOffsetRef.y = Math.min(bodyOffsetRef.y, maxOffsetHeight) - 0.1 * fSpeed;
+                    bodyOffsetRef.y = Math.min(bodyOffsetRef.y, maxOffsetHeight);
                 }
                 bodyOffsetRef.z = 0.3 * fSpeed;
             }
 
             let rSteps = Math.floor(Math.random() * 3) + 1;
             for (let n = 0; n < rSteps; n++) {
-                prop.randomize();
-                prop.randomize();
-                prop.randomize();
+                //prop.randomize();
+                //prop.randomize();
+                //prop.randomize();
             }
 
             let human = new Human(game, prop);

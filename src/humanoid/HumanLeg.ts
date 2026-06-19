@@ -41,13 +41,13 @@ export class HumanLeg extends Mesh {
         this.isLeft = isLeft;
         //this.upperLeg = new Mesh("upperLeg", humanoid.getScene());
         this.upperLeg = new Mesh("upperLeg", humanoid.getScene());
-        this.upperLeg.material = this.humanoid.debugColliderMaterial;
+        this.upperLeg.material = this.humanoid.material;
         this.upperLeg.rotationQuaternion = Quaternion.Identity();
         this.lowerLeg = new Mesh("lowerLeg", humanoid.getScene());
-        this.lowerLeg.material = this.humanoid.debugColliderMaterial;
+        this.lowerLeg.material = this.humanoid.material;
         this.lowerLeg.rotationQuaternion = Quaternion.Identity();
         this.foot = new Mesh("foot", humanoid.getScene());
-        this.foot.material = this.humanoid.debugColliderMaterial;
+        this.foot.material = this.humanoid.material;
         this.foot.rotationQuaternion = Quaternion.Identity();
 
         this.groundedMaterial = MakeStandardMaterial(this.humanoid.getScene(), new Color3(0, 1, 0));

@@ -33,6 +33,7 @@ export class ToonMaterial extends ShaderMaterial {
         this.setLightInvDir(Vector3.One().normalize());
         
         this.updateDebugColor();
+        this.updateDiffuseColor();
 
         this.getScene().onBeforeRenderObservable.add(this._update);
     }
@@ -56,6 +57,18 @@ export class ToonMaterial extends ShaderMaterial {
     public setLightInvDir(p: Vector3): void {
         this._lightInvDirW.copyFrom(p);
         this.setVector3("lightInvDirW", this._lightInvDirW);
+    }
+
+    private _diffuseColor: Color3 = Color3.White();
+    public get diffuseColor(): Color3 {
+        return this._diffuseColor;
+    }
+    public setDiffuseColor(c: Color3) {
+        this._diffuseColor = c;
+        this.updateDiffuseColor();
+    }
+    public updateDiffuseColor(): void {
+        this.setColor3("diffuseColor", this._diffuseColor);
     }
 
     private _debugColor: Color3 = Color3.White();

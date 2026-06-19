@@ -41,13 +41,13 @@ export class HumanArm extends Mesh {
         this.isLeft = isLeft;
         //this.upperArm = new Mesh("upperArm", humanoid.getScene());
         this.upperArm = new Mesh("upperArm", humanoid.getScene());
-        this.upperArm.material = this.humanoid.debugColliderMaterial;
+        this.upperArm.material = this.humanoid.material;
         this.upperArm.rotationQuaternion = Quaternion.Identity();
         this.lowerArm = new Mesh("lowerArm", humanoid.getScene());
-        this.lowerArm.material = this.humanoid.debugColliderMaterial;
+        this.lowerArm.material = this.humanoid.material;
         this.lowerArm.rotationQuaternion = Quaternion.Identity();
         this.hand = new Mesh("hand", humanoid.getScene());
-        this.hand.material = this.humanoid.debugColliderMaterial;
+        this.hand.material = this.humanoid.material;
         this.hand.rotationQuaternion = Quaternion.Identity();
     }
 

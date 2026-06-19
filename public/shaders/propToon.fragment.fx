@@ -3,6 +3,7 @@ precision highp float;
 precision mediump sampler3D;
  
 uniform vec3 lightInvDirW;
+uniform vec3 diffuseColor;
 uniform vec3 debugColor;
 uniform vec3 cameraPosition;
 uniform float rangeRadius_m;
@@ -19,7 +20,7 @@ out vec4 outColor;
  
 void main() {
    int colorIndex = 0;
-   vec3 color = vColor.rgb;
+   vec3 color = diffuseColor * vColor.rgb;
 
    float sunLightFactor = (dot(vNormalW, lightInvDirW) + 1.) * 0.5;
    float lightFactor = sunLightFactor;

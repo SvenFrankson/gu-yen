@@ -16,6 +16,8 @@ export class WalkStyleProp {
     public stepHeight: number = 0.2;
     public stepDuration: number = 0.6;
     public stepFSkip: number = 1;
+    public stepEasing: (f: number) => number = (f: number) => { return f; };
+    public stepEasingFactor: number = 0.5;
     public bootyShakiness: number = 0;
     public handAmplitude: number = 1;
     public handBodyDY: number = 0;
@@ -40,6 +42,7 @@ export class WalkStyleProp {
         this.bootyShakiness += myRand(-0.05, 0.05);
         this.handAmplitude += myRand(-0.1, 0.1);
         this.handBodyDY += myRand(-0.05, 0.05);
+        this.stepEasingFactor += myRand(-0.1, 0.1);
     }
 }
 
