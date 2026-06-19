@@ -1,5 +1,9 @@
 import { Vector3 } from "@babylonjs/core/Maths/math.vector.pure";
 
+export function myRand(min: number, max: number): number {
+    return Math.random() * (max - min) + min;
+}
+
 export enum MoveMode {
     Idle,
     Walk,
@@ -13,6 +17,8 @@ export class WalkStyleProp {
     public stepDuration: number = 0.6;
     public stepFSkip: number = 1;
     public bootyShakiness: number = 0;
+    public handAmplitude: number = 1;
+    public handBodyDY: number = 0;
 
     constructor(public prop: HumanoidProp) {
         this.bodyOffsetUpdate = (fSpeed: number, deltaFoot: Vector3, bodyOffsetRef: Vector3) => {
@@ -25,6 +31,15 @@ export class WalkStyleProp {
                 bodyOffsetRef.y = Math.min(bodyOffsetRef.y, maxOffsetHeight) + 0.05 * fSpeed ;
             }
         }
+    }
+
+    public randomize(): void {
+        this.stepHeight += myRand(-0.05, 0.05);
+        this.stepDuration += myRand(-0.1, 0.1);
+        this.stepFSkip += myRand(-0.1, 0.1);
+        this.bootyShakiness += myRand(-0.05, 0.05);
+        this.handAmplitude += myRand(-0.1, 0.1);
+        this.handBodyDY += myRand(-0.05, 0.05);
     }
 }
 
@@ -77,5 +92,12 @@ export class HumanoidProp {
         this.rightFootTarget.copyFrom(this.footTarget);
         this.leftFootTarget.copyFrom(this.footTarget);
         this.leftFootTarget.x *= -1;
+    }
+
+    public randomize(): void {
+        for (let walkStyle of this.walkStyle) {
+            walkStyle.randomize();
+        }
+        this.recompute();
     }
 }

@@ -256,7 +256,9 @@ export class Humanoid extends Mesh {
 
                 let origin = legTarget;
                 origin.y += 1;
-                DrawDebugPoint(origin, 3, Color3.Blue(), 0.2);
+                if (this.showCollisionDebug) {
+                    DrawDebugPoint(origin, 3, Color3.Blue(), 0.2);
+                }
                 let dir = Vector3.Down();
                 let ray = new Ray(origin, dir, 3);
                 let intersection = RayCollidersIntersection(ray, this.terrain);
@@ -271,7 +273,9 @@ export class Humanoid extends Mesh {
                         legToMove = this.rightLeg;
                         targetPosition = targetRight;
                         targetNormal = normalRight!;
-                        DrawDebugPoint(targetPosition, 60, Color3.Red(), 1);
+                        if (this.showCollisionDebug) {
+                            DrawDebugPoint(targetPosition, 60, Color3.Red(), 1);
+                        }
                     }
                 }
 
@@ -282,7 +286,9 @@ export class Humanoid extends Mesh {
 
                 origin = legTarget;
                 origin.y += 1;
-                DrawDebugPoint(origin, 3, Color3.Blue(), 0.2);
+                if (this.showCollisionDebug) {
+                    DrawDebugPoint(origin, 3, Color3.Blue(), 0.2);
+                }
                 dir = Vector3.Down();
                 ray = new Ray(origin, dir, 3);
                 intersection = RayCollidersIntersection(ray, this.terrain);
@@ -297,7 +303,9 @@ export class Humanoid extends Mesh {
                         legToMove = this.leftLeg;
                         targetPosition = targetLeft;
                         targetNormal = normalLeft!;
-                        DrawDebugPoint(targetPosition, 60, Color3.Red(), 1);
+                        if (this.showCollisionDebug) {
+                            DrawDebugPoint(targetPosition, 60, Color3.Red(), 1);
+                        }
                     }
                 }
 
@@ -334,9 +342,9 @@ export class Humanoid extends Mesh {
         this.rightLeg.update();
 
         let dFoot = this.rightLeg.foot.position.subtract(this.leftLeg.foot.position);
-        let dFootZ = Vector3.Dot(dFoot, this.forward);
-        this.rightArm.handTarget.copyFrom(this.body.position).addInPlace(this.forward.scale(- dFootZ * 0.5)).addInPlace(this.right.scale(0.2)).addInPlace(this.up.scale(0.1));
-        this.leftArm.handTarget.copyFrom(this.body.position).addInPlace(this.forward.scale(dFootZ * 0.5)).addInPlace(this.right.scale(- 0.2)).addInPlace(this.up.scale(0.1));
+        let dFootZ = Vector3.Dot(dFoot, this.forward) * this.prop.walkStyle[this.moveMode].handAmplitude;
+        this.rightArm.handTarget.copyFrom(this.body.position).addInPlace(this.forward.scale(- dFootZ * 0.5)).addInPlace(this.right.scale(0.2)).addInPlace(this.up.scale(this.prop.walkStyle[this.moveMode].handBodyDY));
+        this.leftArm.handTarget.copyFrom(this.body.position).addInPlace(this.forward.scale(dFootZ * 0.5)).addInPlace(this.right.scale(- 0.2)).addInPlace(this.up.scale(this.prop.walkStyle[this.moveMode].handBodyDY));
 
         this.rightArm.update();
         this.leftArm.update();
@@ -419,7 +427,7 @@ export class Humanoid extends Mesh {
         this.position.y = this.position.y * 0.9 + footAnchor.y * 0.1;
         let dir = this.position.subtract(footAnchor);
         let l = dir.length();
-        let maxL = this.speed * (1 - angleStrech);
+        let maxL = this.fSpeed * this.speed * (1 - angleStrech);
         if (l > maxL) {
             dir.scaleInPlace(1 / l);
             this.position.copyFrom(dir).scaleInPlace(maxL).addInPlace(footAnchor);

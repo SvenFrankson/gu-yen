@@ -27,7 +27,7 @@ class HumanController {
     }
 
     public async updateExplorerDestination(): Promise<boolean> {
-        this.destination = this.human.position.add(new Vector3(Math.random() * 60 - 30, 0, Math.random() * 60 - 30));
+        this.destination = this.human.game.player.position.add(new Vector3(Math.random() * 20 - 10, 0, Math.random() * 20 - 10));
         if (this.human.game.terrain!.chunckDataGenerator instanceof ChunckDataGeneratorFromManager && this.human.game.terrain!.chunckDataGenerator.manager.generator instanceof ChunckDataGeneratorDataSets) {
             let ijk = this.human.game.terrain!.worldPosToGlobalIJK(this.destination);
             let height = await this.human.game.terrain!.chunckDataGenerator.manager.generator.asyncEvaluateHeight(ijk.i, ijk.j);
@@ -95,11 +95,6 @@ export class Human extends Humanoid {
 
     constructor(public game: Game, props: HumanoidProp) {
         super("human", props, game.scene);
-
-        let povMaterial = new StandardMaterial("debug-pov-material", this.game.scene);
-        povMaterial.diffuseColor = new Color3(0.5, 0.5, 1);
-        povMaterial.alpha = 0.4;
-        povMaterial.specularColor = new Color3(0.5, 0.5, 0.5);
         
         let colliderMaterial = new StandardMaterial("body", this.game.scene);
         colliderMaterial.diffuseColor = new Color3(0.5, 1, 0.5);
@@ -140,7 +135,7 @@ export class Human extends Humanoid {
 
         this.updateBodyCollidersMeshes();
 
-        this.showCollisionDebug = true;
+        this.showCollisionDebug = false;
 
         if (this.showCollisionDebug) {
             let cross = MeshBuilder.CreateLineSystem(
@@ -221,6 +216,8 @@ export class Human extends Humanoid {
             prop.walkStyle[MoveMode.Walk].stepHeight = 0.15;
             prop.walkStyle[MoveMode.Walk].stepDuration = 0.8;
             prop.walkStyle[MoveMode.Walk].stepFSkip = 1;
+            prop.walkStyle[MoveMode.Walk].handAmplitude = 0.7;
+            prop.walkStyle[MoveMode.Walk].handBodyDY = -0.1;
             prop.walkStyle[MoveMode.Walk].bodyOffsetUpdate = (fSpeed: number, deltaFoot: Vector3, bodyOffsetRef: Vector3) => {
                 let maxOffsetHeight = prop.totalLegLength - prop.rightHipAnchor.y;
                 let ll = prop.totalLegLengthSquared;
@@ -237,6 +234,8 @@ export class Human extends Humanoid {
             prop.walkStyle[MoveMode.Run].stepHeight = 0.3;
             prop.walkStyle[MoveMode.Run].stepDuration = 0.6;
             prop.walkStyle[MoveMode.Run].stepFSkip = 0.7;
+            prop.walkStyle[MoveMode.Run].handAmplitude = 0.9;
+            prop.walkStyle[MoveMode.Run].handBodyDY = 0.15;
             prop.walkStyle[MoveMode.Run].bodyOffsetUpdate = (fSpeed: number, deltaFoot: Vector3, bodyOffsetRef: Vector3) => {
                 let maxOffsetHeight = prop.totalLegLength - prop.rightHipAnchor.y;
                 let ll = prop.totalLegLengthSquared;
@@ -246,7 +245,14 @@ export class Human extends Humanoid {
                     bodyOffsetRef.y = Math.sqrt(ll - df);
                     bodyOffsetRef.y = Math.min(bodyOffsetRef.y, maxOffsetHeight) - 0.1 * fSpeed;
                 }
-                bodyOffsetRef.z = 0.2 * fSpeed;
+                bodyOffsetRef.z = 0.3 * fSpeed;
+            }
+
+            let rSteps = Math.floor(Math.random() * 3) + 1;
+            for (let n = 0; n < rSteps; n++) {
+                prop.randomize();
+                prop.randomize();
+                prop.randomize();
             }
 
             let human = new Human(game, prop);
