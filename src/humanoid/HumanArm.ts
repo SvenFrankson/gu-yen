@@ -4,18 +4,20 @@ import { Scene } from "@babylonjs/core/scene.pure";
 import { Quaternion, Vector3 } from "@babylonjs/core/Maths/math.vector.pure";
 import { CloneVertexData, ColorizeVertexDataInPlace, CreateBeveledBoxVertexData, ForceDistanceFromOriginInPlace, MirrorXVertexDataInPlace, QuaternionFromYZAxisToRef, QuaternionFromZYAxisToRef, TranslateVertexDataInPlace } from "babylonjs-tiaratumgames-tools";
 import { MeshBuilder } from "@babylonjs/core/Meshes/meshBuilder";
-import { Human } from "./Human";
+import { Human } from "./HumanController";
+import { HumanoidProp } from "./HumanoidProp";
 
 export class HumanArm extends Mesh {
+
+    public get prop(): HumanoidProp {
+        return this.humanoid.prop;
+    }
 
     public shoulderWorldPosition: Vector3 = Vector3.Zero();
     public isLeft: boolean = false;
 
-    public handLength: number = 0;
-    public upperArmLength: number = 0.5;
-    public lowerArmLength: number = 0.5;
     public get totalLength(): number {
-        return this.upperArmLength + this.lowerArmLength;
+        return this.prop.upperArmLength + this.prop.lowerArmLength;
     }
     public get totalLengthSquared(): number {
         return this.totalLength * this.totalLength;
@@ -65,15 +67,15 @@ export class HumanArm extends Mesh {
 
     public update(): void {
         this._elbowTarget.copyFrom(this.shoulderWorldPosition).addInPlace(this.handTarget).scaleInPlace(0.5).subtractInPlace(this.humanoid.forward).addInPlace(this.humanoid.right.scale(this.isLeft ? - 0.5 : 0.5));
-        let wristTarget = this.handForward.scale(this.handLength).add(this.handTarget);
+        let wristTarget = this.handForward.scale(this.prop.handLength).add(this.handTarget);
         
         for (let n = 0; n < 3; n++) {
-            ForceDistanceFromOriginInPlace(this._elbowTarget, wristTarget, this.lowerArmLength);
-            ForceDistanceFromOriginInPlace(this._elbowTarget, this.shoulderWorldPosition, this.upperArmLength);
+            ForceDistanceFromOriginInPlace(this._elbowTarget, wristTarget, this.prop.lowerArmLength);
+            ForceDistanceFromOriginInPlace(this._elbowTarget, this.shoulderWorldPosition, this.prop.upperArmLength);
         }
 
         this.hand.position.copyFrom(wristTarget);
-        ForceDistanceFromOriginInPlace(this.hand.position, this._elbowTarget, this.lowerArmLength);
+        ForceDistanceFromOriginInPlace(this.hand.position, this._elbowTarget, this.prop.lowerArmLength);
         this.upperArm.position.copyFrom(this.shoulderWorldPosition);
         this.lowerArm.position.copyFrom(this._elbowTarget);
 

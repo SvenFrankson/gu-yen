@@ -4,26 +4,21 @@ import { Scene } from "@babylonjs/core/scene.pure";
 import { Quaternion, Vector3 } from "@babylonjs/core/Maths/math.vector.pure";
 import { CloneVertexData, ColorizeVertexDataInPlace, CreateBeveledBoxVertexData, ForceDistanceFromOriginInPlace, MirrorXVertexDataInPlace, QuaternionFromYZAxisToRef, QuaternionFromZYAxisToRef, TranslateVertexDataInPlace } from "babylonjs-tiaratumgames-tools";
 import { MeshBuilder } from "@babylonjs/core/Meshes/meshBuilder";
-import { Human } from "./Human";
+import { Human } from "./HumanController";
 import { MakeStandardMaterial } from "../MaterialUtils";
 import { Color3 } from "@babylonjs/core/Maths/math.color.pure";
 import { StandardMaterial } from "@babylonjs/core/Materials/standardMaterial.pure";
+import { HumanoidProp } from "./HumanoidProp";
 
 export class HumanLeg extends Mesh {
 
+    public get prop(): HumanoidProp {
+        return this.humanoid.prop;
+    }
+
+    public stepping: boolean = false;
     public hipWorldPosition: Vector3 = Vector3.Zero();
     public isLeft: boolean = false;
-
-    public footThickness: number = 0.1;
-    public upperLegLength: number = 0.5;
-    public lowerLegLength: number = 0.5;
-    public footLength: number = 0.2;
-    public get totalLength(): number {
-        return this.upperLegLength + this.lowerLegLength + this.footThickness;
-    }
-    public get totalLengthSquared(): number {
-        return this.totalLength * this.totalLength;
-    }
 
     public upperLeg: Mesh;
     public lowerLeg: Mesh;
@@ -89,23 +84,23 @@ export class HumanLeg extends Mesh {
 
     public update(): void {
         this._kneeTarget.copyFrom(this.hipWorldPosition).addInPlace(this.footTarget).scaleInPlace(0.5).addInPlace(this.humanoid.forward.scale(0.1));
-        let ankleTarget = this.footUp.scale(this.footThickness).add(this.footTarget);
+        let ankleTarget = this.footUp.scale(this.prop.footThickness).add(this.footTarget);
         
         for (let n = 0; n < 6; n++) {
-            ForceDistanceFromOriginInPlace(this._kneeTarget, ankleTarget, this.lowerLegLength);
-            ForceDistanceFromOriginInPlace(this._kneeTarget, this.hipWorldPosition, this.upperLegLength);
+            ForceDistanceFromOriginInPlace(this._kneeTarget, ankleTarget, this.prop.lowerLegLength);
+            ForceDistanceFromOriginInPlace(this._kneeTarget, this.hipWorldPosition, this.prop.upperLegLength);
         }
 
         this.foot.position.copyFrom(ankleTarget);
-        ForceDistanceFromOriginInPlace(this.foot.position, this._kneeTarget, this.lowerLegLength);
+        ForceDistanceFromOriginInPlace(this.foot.position, this._kneeTarget, this.prop.lowerLegLength);
         this.upperLeg.position.copyFrom(this.hipWorldPosition);
         this.lowerLeg.position.copyFrom(this._kneeTarget);
 
         this._tmpZ.copyFrom(this._kneeTarget).subtractInPlace(this.hipWorldPosition);
-        QuaternionFromZYAxisToRef(this._tmpZ, this.humanoid.forward, this.upperLeg.rotationQuaternion!);
+        QuaternionFromZYAxisToRef(this._tmpZ, this.humanoid.body.forward, this.upperLeg.rotationQuaternion!);
         
         this._tmpZ.copyFrom(this.foot.position).subtractInPlace(this._kneeTarget);
-        QuaternionFromZYAxisToRef(this._tmpZ, this.humanoid.forward, this.lowerLeg.rotationQuaternion!);
+        QuaternionFromZYAxisToRef(this._tmpZ, this.humanoid.body.forward, this.lowerLeg.rotationQuaternion!);
         
         QuaternionFromYZAxisToRef(this.footUp, this.footForward, this.foot.rotationQuaternion!);
 

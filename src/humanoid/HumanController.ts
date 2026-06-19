@@ -4,13 +4,14 @@ import { Vector3, Quaternion } from "@babylonjs/core/Maths/math.vector.pure";
 import { Mesh } from "@babylonjs/core/Meshes/mesh.pure";
 import { MeshBuilder } from "@babylonjs/core/Meshes/meshBuilder";
 import { Game } from "../Game";
-import { Humanoid, IHumanoidProps } from "./Humanoid";
+import { Humanoid } from "./Humanoid";
 import { AngleFromToAround, GetGLTFMeshDataArray, IsFinite, QuaternionFromZYAxis, RotateVertexDataInPlace, SphereCollider } from "babylonjs-tiaratumgames-tools";
 import { ImportMeshAsync } from "@babylonjs/core/Loading/sceneLoader";
 import "@babylonjs/core";
 import { Axis, Space, VertexData } from "@babylonjs/core";
 import { ChunckDataGeneratorFromManager } from "../voxel-engine/TerrainGen/ChunkDataManager";
 import { ChunckDataGeneratorDataSets } from "../voxel-engine/TerrainGen/ChunckDataGeneratorDataSets";
+import { HumanoidProp, MoveMode } from "./HumanoidProp";
 
 class HumanController {
 
@@ -26,7 +27,7 @@ class HumanController {
     }
 
     public async updateExplorerDestination(): Promise<boolean> {
-        this.destination = this.human.position.add(new Vector3(Math.random() * 30 - 15, 0, Math.random() * 30 - 15));
+        this.destination = this.human.position.add(new Vector3(Math.random() * 60 - 30, 0, Math.random() * 60 - 30));
         if (this.human.game.terrain!.chunckDataGenerator instanceof ChunckDataGeneratorFromManager && this.human.game.terrain!.chunckDataGenerator.manager.generator instanceof ChunckDataGeneratorDataSets) {
             let ijk = this.human.game.terrain!.worldPosToGlobalIJK(this.destination);
             let height = await this.human.game.terrain!.chunckDataGenerator.manager.generator.asyncEvaluateHeight(ijk.i, ijk.j);
@@ -39,7 +40,7 @@ class HumanController {
 
     public update(): void {
         if (this.stop) {
-            this.human.speed = 0;
+            this.human.targetSpeed = 0;
             this.human.rotationSpeed = 0;
             return;
         }
@@ -60,7 +61,7 @@ class HumanController {
         }
 
         let dirDestination = this.destination.subtract(this.human.position);
-        let rightDestination = Vector3.Cross(this.human.localNormal, dirDestination);
+        let rightDestination = Vector3.Cross(Axis.Y, dirDestination);
         this.human.targetUp = Vector3.Cross(dirDestination, rightDestination).normalize();
         let distDestination = dirDestination.length();
         if (distDestination < 0.4) {
@@ -75,8 +76,7 @@ class HumanController {
             return;
         }
         
-        this.human.speed = (distDestination + 1) * 0.5 ;
-        this.human.speed = Math.max(Math.min(this.human.speed, 1), 0);
+        this.human.targetSpeed = (distDestination + 1) * 0.5 ;
         let alphaDestination = AngleFromToAround(dirDestination, this.human.forward, this.human.up);
         this.human.rotationSpeed = 0;
         if (alphaDestination > Math.PI / 64) {
@@ -93,7 +93,7 @@ export class Human extends Humanoid {
     public controller: HumanController;
     public destination: Vector3 = Vector3.Zero();
 
-    constructor(public game: Game, props: IHumanoidProps = {}) {
+    constructor(public game: Game, props: HumanoidProp) {
         super("human", props, game.scene);
 
         let povMaterial = new StandardMaterial("debug-pov-material", this.game.scene);
@@ -140,9 +140,7 @@ export class Human extends Humanoid {
 
         this.updateBodyCollidersMeshes();
 
-        this.debugPovMaterial = povMaterial;
         this.showCollisionDebug = true;
-        this.showPOVDebug = true;
 
         if (this.showCollisionDebug) {
             let cross = MeshBuilder.CreateLineSystem(
@@ -206,25 +204,57 @@ export class Human extends Humanoid {
             let upperArmLength = lowerArm.position.subtract(upperArm.position).length();
             let lowerArmLength = hand.position.subtract(lowerArm.position).length();
 
-            let human = new Human(game, {
-                hipAnchor: hipAnchor,
-                shoulderAnchor: shoulderAnchor,
-                footTarget: footTarget,
-                headAnchor: (new Vector3(0, 0.8, 0.1)),
-                torsoAnchor: torsoAnchor,
-                footThickness: footThickness,
-                upperLegLength: upperLegLength,
-                lowerLegLength: lowerLegLength,
-                upperArmLength: upperArmLength,
-                lowerArmLength: lowerArmLength,
-                handLength: 0.2,
-                stepHeightMin: 0.0,
-                stepHeightMax: 0.15,
-                stepDurationMin: 0.7,
-                stepDurationMax: 0.7,
-                stepSimultaneousMaxCount: 3,
-                bodyLocalOffset: new Vector3(0, 0.6, 0)
-            });
+            let prop = new HumanoidProp();
+            prop.hipAnchor = hipAnchor;
+            prop.shoulderAnchor = shoulderAnchor;
+            prop.footTarget = footTarget;
+            prop.headAnchor = (new Vector3(0, 0.8, 0.1));
+            prop.torsoAnchor = torsoAnchor;
+            prop.footThickness = footThickness;
+            prop.upperLegLength = upperLegLength;
+            prop.lowerLegLength = lowerLegLength;
+            prop.upperArmLength = upperArmLength;
+            prop.lowerArmLength = lowerArmLength;
+            prop.handLength = 0.2;
+
+            prop.walkStyle[MoveMode.Walk].bootyShakiness = 0.2;
+            prop.walkStyle[MoveMode.Walk].stepHeight = 0.15;
+            prop.walkStyle[MoveMode.Walk].stepDuration = 0.8;
+            prop.walkStyle[MoveMode.Walk].stepFSkip = 1;
+            prop.walkStyle[MoveMode.Walk].bodyOffsetUpdate = (fSpeed: number, deltaFoot: Vector3, bodyOffsetRef: Vector3) => {
+                let maxOffsetHeight = prop.totalLegLength - prop.rightHipAnchor.y;
+                let ll = prop.totalLegLengthSquared;
+                let df = deltaFoot.scale(0.5).lengthSquared();
+                bodyOffsetRef.copyFromFloats(0, 0.5 * maxOffsetHeight, 0);
+                if (ll > df) {
+                    bodyOffsetRef.y = Math.sqrt(ll - df);
+                    bodyOffsetRef.y = Math.min(bodyOffsetRef.y, maxOffsetHeight) + 0.05 * fSpeed;
+                }
+                bodyOffsetRef.z = 0.1 * fSpeed;
+            }
+
+            prop.walkStyle[MoveMode.Run].bootyShakiness = 0.2;
+            prop.walkStyle[MoveMode.Run].stepHeight = 0.3;
+            prop.walkStyle[MoveMode.Run].stepDuration = 0.6;
+            prop.walkStyle[MoveMode.Run].stepFSkip = 0.7;
+            prop.walkStyle[MoveMode.Run].bodyOffsetUpdate = (fSpeed: number, deltaFoot: Vector3, bodyOffsetRef: Vector3) => {
+                let maxOffsetHeight = prop.totalLegLength - prop.rightHipAnchor.y;
+                let ll = prop.totalLegLengthSquared;
+                let df = deltaFoot.scale(0.5).lengthSquared();
+                bodyOffsetRef.copyFromFloats(0, 0.5 * maxOffsetHeight, 0);
+                if (ll > df) {
+                    bodyOffsetRef.y = Math.sqrt(ll - df);
+                    bodyOffsetRef.y = Math.min(bodyOffsetRef.y, maxOffsetHeight) - 0.1 * fSpeed;
+                }
+                bodyOffsetRef.z = 0.2 * fSpeed;
+            }
+
+            let human = new Human(game, prop);
+            human.moveMode = MoveMode.Run;
+            if (Math.random() > 0.5) {
+                human.prop.maxSpeed = 1;
+                human.moveMode = MoveMode.Walk;
+            }
 
             human.bodyVertexData = body.vertexData;
             human.torsoVertexData = torso.vertexData;

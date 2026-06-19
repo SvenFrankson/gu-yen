@@ -37,7 +37,7 @@ import { MiniatureFactory } from "./MiniatureFactory";
 import { BlockType } from "./voxel-engine/BlockType";
 import { PlayerActionBlock } from "./player/PlayerActionBlock";
 import { PlayerActionDelete } from "./player/PlayerActionDelete";
-import { Human } from "./humanoid/Human";
+import { Human } from "./humanoid/HumanController";
 import { ChunckDataGeneratorFromManager } from "./voxel-engine/TerrainGen/ChunkDataManager";
 registerBuiltInLoaders();
 
@@ -185,7 +185,7 @@ export class Game {
             else if (event.code === "Numpad6") {
                 console.log("Player position: ", this.player.absolutePosition.clone());
                 let human = await Human.FactoryInstantiate(this);
-                human.setPosition(this.player.absolutePosition.add(this.player.forward.scale(5)));
+                human!.setPosition(this.player.absolutePosition.add(this.player.forward.scale(5)));
             }
         });
 
@@ -238,7 +238,7 @@ export class Game {
             });
 
             this.terrain.initialize();
-            this.terrain.chunckManager.setDistance(50);
+            this.terrain.chunckManager.setDistance(100);
             this.terrain.sunDir.copyFrom(light.direction);
 
             let noiseTexture = new CubicNoiseTexture(this.scene);
