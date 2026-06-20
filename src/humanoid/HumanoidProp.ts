@@ -99,6 +99,7 @@ export class HumanoidProp {
     public leftShoulderAnchor: Vector3 = new Vector3(-0.2, 0, 0);
     public rightHipAnchor: Vector3 = new Vector3(0.2, 0, 0);
     public leftHipAnchor: Vector3 = new Vector3(-0.2, 0, 0)
+    public footTargets: Vector3[] = [new Vector3(0.2, 0, 0), new Vector3(-0.2, 0, 0)];
     public rightFootTarget: Vector3 = new Vector3(0.2, 0, 0);
     public leftFootTarget: Vector3 = new Vector3(-0.2, 0, 0);
 
@@ -124,6 +125,8 @@ export class HumanoidProp {
         this.rightFootTarget.copyFrom(this.footTarget);
         this.leftFootTarget.copyFrom(this.footTarget);
         this.leftFootTarget.x *= -1;
+        this.footTargets[0].copyFrom(this.rightFootTarget);
+        this.footTargets[1].copyFrom(this.leftFootTarget);
     }
 
     public randomize(): void {

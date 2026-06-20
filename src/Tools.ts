@@ -10,6 +10,10 @@ export async function WaitNSeconds(n: number): Promise<void> {
     });
 }
 
+export function Clamp(value: number, min: number, max: number): number {
+    return Math.min(Math.max(value, min), max);
+}
+
 export function smoothNSec(fps: number, n: number): number {
     if (!isFinite(fps)) {
         return 0;

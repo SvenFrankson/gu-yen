@@ -9,7 +9,7 @@ import { Vector3, Quaternion } from "@babylonjs/core/Maths/math.vector.pure";
 import { MeshBuilder } from "@babylonjs/core/Meshes/meshBuilder";
 import { Angle, Collider, ColorizeVertexDataInPlace, CreateBeveledBoxVertexData, DrawDebugHit, DrawDebugPoint, ForceDistanceFromOriginInPlace, IsFinite, QuaternionFromXYAxis, QuaternionFromYZAxis, QuaternionFromYZAxisToRef, QuaternionFromZYAxisToRef, RandomInSphereCut, RayCollidersIntersection, SphereCollider, TranslateVertexDataInPlace } from "babylonjs-tiaratumgames-tools";
 import { IsVeryFinite, MinMax } from "../Number";
-import { smoothNSec } from "../Tools";
+import { Clamp, smoothNSec } from "../Tools";
 import { Chunck } from "../voxel-engine/Chunck";
 import { SphereChuncksIntersection } from "../voxel-engine/TmpMath";
 import { Engine } from "@babylonjs/core/Engines/engine.pure";
@@ -101,6 +101,8 @@ export class Humanoid extends Mesh {
     public nameTag: NameTag | null = null;
 
     private _stepping: number = 0;
+    public legIndex: number = 0;
+    public otherLegFootTarget: Vector3 | null = null;
 
     constructor(name: string, prop: HumanoidProp, scene: Scene) {
         super(name, scene);
@@ -193,9 +195,10 @@ export class Humanoid extends Mesh {
             let destination = target.clone();
             let destinationNorm = targetNorm.clone();
             let destinationForward = targetForward.clone();
-            let dist = 1.5 * Vector3.Distance(origin, destination);
-            let hMax = Math.min(Math.max(this.prop.walkStyle[this.moveMode].stepHeight * 0.5, dist * 0.5), this.prop.walkStyle[this.moveMode].stepHeight);
-            let duration = Math.min(Math.max(this.prop.walkStyle[this.moveMode].stepDuration * 0.5, dist), this.prop.walkStyle[this.moveMode].stepDuration);
+            let dist = Vector3.Distance(origin, destination);
+            let dY = destination.y - origin.y;
+            let hMax = Clamp(this.prop.walkStyle[this.moveMode].stepHeight + dY * 0.5, this.prop.walkStyle[this.moveMode].stepHeight * 0.5, dist * 0.5);
+            let duration = Clamp(this.prop.walkStyle[this.moveMode].stepDuration, this.prop.walkStyle[this.moveMode].stepDuration * 0.5, dist);
             let t = 0;
             leg.stepping = true;
             let easingFactor = this.prop.walkStyle[this.moveMode].stepEasingFactor;
@@ -253,7 +256,7 @@ export class Humanoid extends Mesh {
         let visibleSpeed = Vector3.Dot(bodyDelta, this.forward) / dt;
         this.visibleSpeed = 0.98 * this.visibleSpeed + 0.02 * visibleSpeed;
 
-        this.speed = 0.95 * this.speed + 0.05 * this.targetSpeed;
+        this.speed = 0.98 * this.speed + 0.02 * this.targetSpeed;
         this.speed = Math.max(Math.min(this.speed, this.prop.maxSpeed), 0);
         this.fSpeed = this.visibleSpeed / this.prop.maxSpeed;
         this.fSpeed = Math.max(Math.min(this.fSpeed, 1), 0);
@@ -273,81 +276,48 @@ export class Humanoid extends Mesh {
 
         if (this._stepping < 1) {
             if (true) {
-                let legTarget = Vector3.Zero();
-                let longestStepDist = 0;
-                let legToMove: HumanLeg;
-                let targetPosition: Vector3;
-                let targetNormal: Vector3;
-
-                Vector3.TransformCoordinatesToRef(this.prop.rightFootTarget, m, legTarget);
-                let targetRight: Vector3 | undefined;
-                let normalRight: Vector3 | undefined;
-
-                let origin = legTarget;
-                origin.addInPlace(this.forward.scale(this.avgdFSpeed * this.prop.walkStyle[this.moveMode].stepDuration * 1));
+                let moveDir = this.forward;
+                let stepDistance = this.speed * this.prop.walkStyle[this.moveMode].stepDuration;
+                stepDistance = Math.min(stepDistance, this.prop.totalLegLength * 2);
+                let quat = QuaternionFromYZAxis(Axis.Y, moveDir);
+                let leg = this.legs[this.legIndex];
+                let otherLeg = this.legs[(this.legIndex + 1) % 2];
+                let deltaFootTarget = this.prop.footTargets[this.legIndex].subtract(this.prop.footTargets[(this.legIndex + 1) % 2]);
+                deltaFootTarget.applyRotationQuaternionInPlace(quat);
+                let origin: Vector3;
+                if (this.otherLegFootTarget) {
+                    origin = this.otherLegFootTarget.clone();
+                }
+                else {
+                    origin = otherLeg.footTarget.clone();
+                }
+                origin.addInPlace(deltaFootTarget);
+                origin.addInPlace(moveDir.scale(stepDistance));
                 origin.y += 1;
                 if (this.showCollisionDebug) {
                     DrawDebugPoint(origin, 3, Color3.Blue(), 0.2);
                 }
-                let dir = Vector3.Down();
-                let ray = new Ray(origin, dir, 3);
+
+                let footTarget: Vector3 | null = null;
+                let footNormal: Vector3 | null = null;
+                let ray = new Ray(origin, Vector3.Down(), 3);
                 let intersection = RayCollidersIntersection(ray, this.terrain);
                 if (intersection.hit) {
-                    targetRight = intersection.point!;
-                    normalRight = intersection.normal!;
+                    footTarget = intersection.point!;
+                    footNormal = intersection.normal!;
                 }
-                if (targetRight && !this.rightLeg.stepping) {
-                    let d = Vector3.DistanceSquared(this.rightLeg.foot.position, targetRight) / this.prop.totalLegLengthSquared;
-                    if (d > longestStepDist) {
-                        longestStepDist = d;
-                        legToMove = this.rightLeg;
-                        targetPosition = targetRight;
-                        targetNormal = normalRight!;
-                        if (this.showCollisionDebug) {
-                            DrawDebugPoint(targetPosition, 60, Color3.Red(), 1);
-                        }
-                    }
-                }
+                
 
-                Vector3.TransformCoordinatesToRef(this.prop.leftFootTarget, m, legTarget);
-                //DrawDebugPoint(legTarget, 60, Color3.Blue(), 1);
-                let targetLeft: Vector3 | undefined;
-                let normalLeft: Vector3 | undefined;
-
-                origin = legTarget;
-                origin.addInPlace(this.forward.scale(this.avgdFSpeed * this.prop.walkStyle[this.moveMode].stepDuration * 1));
-                origin.y += 1;
-                if (this.showCollisionDebug) {
-                    DrawDebugPoint(origin, 3, Color3.Blue(), 0.2);
-                }
-                dir = Vector3.Down();
-                ray = new Ray(origin, dir, 3);
-                intersection = RayCollidersIntersection(ray, this.terrain);
-                if (intersection.hit) {
-                    targetLeft = intersection.point!;
-                    normalLeft = intersection.normal!;
-                }
-                if (targetLeft && !this.leftLeg.stepping) {
-                    let d = Vector3.DistanceSquared(this.leftLeg.foot.position, targetLeft) / this.prop.totalLegLengthSquared;
-                    if (d > longestStepDist) {
-                        longestStepDist = d;
-                        legToMove = this.leftLeg;
-                        targetPosition = targetLeft;
-                        targetNormal = normalLeft!;
-                        if (this.showCollisionDebug) {
-                            DrawDebugPoint(targetPosition, 60, Color3.Red(), 1);
-                        }
-                    }
-                }
-
-                if (longestStepDist > 0.01) {
+                if (footTarget && footNormal) {
                     this._stepping++;
+                    this.legIndex = (this.legIndex + 1) % 2;
+                    this.otherLegFootTarget = footTarget.clone();
                     let once = false;
                     //DrawDebugLine(legToMove.hipWorldPosition, targetPosition, 60, Color3.Yellow());
                     this.step(
-                        legToMove!,
-                        targetPosition!,
-                        targetNormal!.scale(0.3).add(this.up.scale(0.7)),
+                        leg!,
+                        footTarget!,
+                        footNormal!,
                         this.forward,
                         (f) => {
                             if (f > this.prop.walkStyle[this.moveMode].stepFSkip) {
@@ -458,7 +428,7 @@ export class Humanoid extends Mesh {
         this.position.y = this.position.y * 0.9 + footAnchor.y * 0.1;
         let dir = this.position.subtract(footAnchor);
         let l = dir.length();
-        let maxL = this.avgdFSpeed + 2 * this.prop.totalLegLength * (1 - angleStrech);
+        let maxL = this.prop.totalLegLength * (1 - angleStrech);
         if (l > maxL) {
             dir.scaleInPlace(1 / l);
             this.position.copyFrom(dir).scaleInPlace(maxL).addInPlace(footAnchor);

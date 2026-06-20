@@ -250,14 +250,14 @@ export class Human extends Humanoid {
                 bodyOffsetRef.copyFromFloats(0, 0.5 * maxOffsetHeight, 0);
                 if (ll > df) {
                     bodyOffsetRef.y = Math.sqrt(ll - df);
-                    bodyOffsetRef.y = Math.min(bodyOffsetRef.y, maxOffsetHeight - 0.2 * fSpeed);
+                    bodyOffsetRef.y = Math.min(bodyOffsetRef.y, maxOffsetHeight - 0.1 * fSpeed);
                 }
                 bodyOffsetRef.z = 0.3 * fSpeed;
             }
 
             let rSteps = Math.floor(Math.random() * 6) + 1;
             for (let n = 0; n < rSteps; n++) {
-                prop.randomize();
+                //prop.randomize();
             }
 
             let human = new Human(HumanNames[HumanNameIndex++ % HumanNames.length], game, prop);
