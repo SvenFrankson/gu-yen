@@ -19,6 +19,7 @@ import { Human } from "./HumanController";
 import { HumanArm } from "./HumanArm";
 import { easeInOutQuad, easeInOutSine, easeInSine } from "../Easing";
 import { HumanoidProp, MoveMode } from "./HumanoidProp";
+import { NameTag } from "../ui3D/NameTag";
 
 export class Humanoid extends Mesh {
 
@@ -97,6 +98,8 @@ export class Humanoid extends Mesh {
 
     public color: Color3 = Color3.FromHexString("#208b9e");
 
+    public nameTag: NameTag | null = null;
+
     private _stepping: number = 0;
 
     constructor(name: string, prop: HumanoidProp, scene: Scene) {
@@ -104,6 +107,8 @@ export class Humanoid extends Mesh {
         
         this.prop = prop;
         this.prop.recompute();
+
+        this.nameTag = new NameTag("nametag", scene);
 
         let material = new ToonMaterial("drone-material", this.getScene());
         let color = Color3.FromHexString("#208b9e");
@@ -209,7 +214,7 @@ export class Humanoid extends Mesh {
                         let footPushFactor = 0;
                         footPushFactor = (f - footPushStart) / (footPushEnd - footPushStart);
                         footPushFactor = Math.sin(footPushFactor * Math.PI);
-                        footPushFactor = Math.min(dist * 0.5, 0.5 * footPushFactor);
+                        footPushFactor = Math.min(dist, footPushFactor);
                         n.addInPlace(forward.scale(footPushFactor)).normalize();
                     }
                     //let n = this.up;
@@ -246,7 +251,7 @@ export class Humanoid extends Mesh {
         let bodyDelta = bodyPosition.subtract(this._lastBodyPosition);
         this._lastBodyPosition.copyFrom(bodyPosition);
         let visibleSpeed = Vector3.Dot(bodyDelta, this.forward) / dt;
-        this.visibleSpeed = 0.95 * this.visibleSpeed + 0.05 * visibleSpeed;
+        this.visibleSpeed = 0.98 * this.visibleSpeed + 0.02 * visibleSpeed;
 
         this.speed = 0.95 * this.speed + 0.05 * this.targetSpeed;
         this.speed = Math.max(Math.min(this.speed, this.prop.maxSpeed), 0);
@@ -459,6 +464,20 @@ export class Humanoid extends Mesh {
             this.position.copyFrom(dir).scaleInPlace(maxL).addInPlace(footAnchor);
         }
         // [^] Prevent overstrech
+
+        if (this.nameTag) {
+            this.nameTag.position.x = footAnchor.x;
+            this.nameTag.position.y = this.nameTag.position.y * 0.99 + (footAnchor.y + 2) * 0.01;
+            this.nameTag.position.z = footAnchor.z;
+
+            let speedDiff = this.speed - this.visibleSpeed;
+
+            this.nameTag.lines = [
+                this.name,
+                "SpeedDiff " + speedDiff.toFixed(1).padStart(5, " ") + "m/s",
+            ];
+            this.nameTag.redraw();
+        }
     }
 
     public updateBodyCollidersMeshes(): void {

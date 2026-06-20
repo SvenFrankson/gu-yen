@@ -69,7 +69,7 @@ export class Game {
         this.scene = new Scene(this.engine);
         this.scene.clearColor.set(1, 1, 1, 1);
         this.player = new Player(this);
-        this.camera = new MyCamera(this.player, this);
+        this.camera = new MyCamera(this.player, this, true);
         let light = new HemisphericLight("light", new Vector3(1, 3, -2), this.scene);
         light.direction = (new Vector3(2, 1, -1.5)).normalize();
         light.intensity = 0.7;

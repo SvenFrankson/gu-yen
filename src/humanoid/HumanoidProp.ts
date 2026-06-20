@@ -1,5 +1,34 @@
 import { Vector3 } from "@babylonjs/core/Maths/math.vector.pure";
 
+export var HumanNames: string[] = [
+    "Anne-Sophie",
+    "Beatrice",
+    "Colette",
+    "Delphine",
+    "Elisa",
+    "Fleur",
+    "Gwendoline",
+    "Heloise",
+    "Isabelle",
+    "Jacqueline",
+    "Karine",
+    "Laetitia",
+    "Mary",
+    "Nolwenn",
+    "Odette",
+    "Pauline",
+    "Qunégonde",
+    "Roxane",
+    "Sophie",
+    "Tristane",
+    "Ursule",
+    "Valérie",
+    "Wanda",
+    "Xénia",
+    "Yvette",
+    "Zoé"
+];
+
 export function myRand(min: number, max: number): number {
     return Math.random() * (max - min) + min;
 }

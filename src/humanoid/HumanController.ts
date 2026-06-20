@@ -11,8 +11,10 @@ import "@babylonjs/core";
 import { Axis, Space, VertexData } from "@babylonjs/core";
 import { ChunckDataGeneratorFromManager } from "../voxel-engine/TerrainGen/ChunkDataManager";
 import { ChunckDataGeneratorDataSets } from "../voxel-engine/TerrainGen/ChunckDataGeneratorDataSets";
-import { HumanoidProp, MoveMode } from "./HumanoidProp";
+import { HumanNames, HumanoidProp, MoveMode } from "./HumanoidProp";
 import { easeInOutSine, easeInSine, easeOutSine } from "../Easing";
+
+var HumanNameIndex: number = 0;
 
 class HumanController {
 
@@ -94,8 +96,8 @@ export class Human extends Humanoid {
     public controller: HumanController;
     public destination: Vector3 = Vector3.Zero();
 
-    constructor(public game: Game, props: HumanoidProp) {
-        super("human", props, game.scene);
+    constructor(name: string, public game: Game, props: HumanoidProp) {
+        super(name, props, game.scene);
         
         let colliderMaterial = new StandardMaterial("body", this.game.scene);
         colliderMaterial.diffuseColor = new Color3(0.5, 1, 0.5);
@@ -236,9 +238,9 @@ export class Human extends Humanoid {
             prop.walkStyle[MoveMode.Run].bootyShakiness = 0.2;
             prop.walkStyle[MoveMode.Run].stepHeight = 0.4;
             prop.walkStyle[MoveMode.Run].stepDuration = 0.6;
-            prop.walkStyle[MoveMode.Run].stepFSkip = 0.7;
-            prop.walkStyle[MoveMode.Run].handAmplitude = 0.9;
-            prop.walkStyle[MoveMode.Run].handBodyDY = 0.15;
+            prop.walkStyle[MoveMode.Run].stepFSkip = 0.8;
+            prop.walkStyle[MoveMode.Run].handAmplitude = 0.7;
+            prop.walkStyle[MoveMode.Run].handBodyDY = 0.1;
             prop.walkStyle[MoveMode.Run].stepEasing = easeOutSine;
             prop.walkStyle[MoveMode.Run].stepEasingFactor = 0.2;
             prop.walkStyle[MoveMode.Run].bodyOffsetUpdate = (fSpeed: number, deltaFoot: Vector3, bodyOffsetRef: Vector3) => {
@@ -248,19 +250,17 @@ export class Human extends Humanoid {
                 bodyOffsetRef.copyFromFloats(0, 0.5 * maxOffsetHeight, 0);
                 if (ll > df) {
                     bodyOffsetRef.y = Math.sqrt(ll - df);
-                    bodyOffsetRef.y = Math.min(bodyOffsetRef.y, maxOffsetHeight);
+                    bodyOffsetRef.y = Math.min(bodyOffsetRef.y, maxOffsetHeight - 0.2 * fSpeed);
                 }
                 bodyOffsetRef.z = 0.3 * fSpeed;
             }
 
-            let rSteps = Math.floor(Math.random() * 3) + 1;
+            let rSteps = Math.floor(Math.random() * 6) + 1;
             for (let n = 0; n < rSteps; n++) {
-                //prop.randomize();
-                //prop.randomize();
-                //prop.randomize();
+                prop.randomize();
             }
 
-            let human = new Human(game, prop);
+            let human = new Human(HumanNames[HumanNameIndex++ % HumanNames.length], game, prop);
             human.moveMode = MoveMode.Run;
             if (Math.random() > 0.5) {
                 human.prop.maxSpeed = 1;
