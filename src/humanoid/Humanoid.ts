@@ -198,12 +198,14 @@ export class Humanoid extends Mesh {
             let dist = Vector3.Distance(origin, destination);
             let dY = destination.y - origin.y;
             let hMax = Clamp(this.prop.walkStyle[this.moveMode].stepHeight + dY * 0.5, this.prop.walkStyle[this.moveMode].stepHeight * 0.5, dist * 0.5);
-            let duration = Clamp(this.prop.walkStyle[this.moveMode].stepDuration, this.prop.walkStyle[this.moveMode].stepDuration * 0.5, dist);
+            hMax = Math.min(hMax, this.prop.totalLegLength * 0.5);
+            let duration = Math.min(this.prop.walkStyle[this.moveMode].stepDuration, dist);
+            duration = Math.max(duration, this.prop.walkStyle[this.moveMode].stepDuration * 0.5);
             let t = 0;
             leg.stepping = true;
             let easingFactor = this.prop.walkStyle[this.moveMode].stepEasingFactor;
             let footPushStart = 0;
-            let footPushEnd = 0.7;
+            let footPushEnd = 1;
             let animationCB = () => {
                 t += this.getScene().getEngine().getDeltaTime() / 1000;
                 let f = t / duration;
@@ -214,11 +216,11 @@ export class Humanoid extends Mesh {
                     let n = originNorm.scale(1 - f).addInPlace(destinationNorm.scale(f)).normalize();
                     let forward = originForward.scale(1 - f).addInPlace(destinationForward.scale(f)).normalize();
                     if (f >= footPushStart && f <= footPushEnd) {
-                        let footPushFactor = 0;
-                        footPushFactor = (f - footPushStart) / (footPushEnd - footPushStart);
-                        footPushFactor = Math.sin(footPushFactor * Math.PI);
-                        footPushFactor = Math.min(dist, footPushFactor);
-                        n.addInPlace(forward.scale(footPushFactor)).normalize();
+                        let fFootPush = 0;
+                        fFootPush = (f - footPushStart) / (footPushEnd - footPushStart);
+                        fFootPush = Math.sin(fFootPush * Math.PI);
+                        fFootPush = Math.min(dist, this.prop.walkStyle[this.moveMode].footPushFactor * fFootPush);
+                        n.addInPlace(forward.scale(fFootPush)).normalize();
                     }
                     //let n = this.up;
                     p.y += h;
@@ -226,7 +228,7 @@ export class Humanoid extends Mesh {
                     leg.footUp.copyFrom(n);
                     leg.footForward.copyFrom(forward);
                     if (updateCallback) {
-                        updateCallback(f);
+                        updateCallback(t / duration);
                     }
                 }
                 else {
@@ -293,22 +295,25 @@ export class Humanoid extends Mesh {
                 }
                 origin.addInPlace(deltaFootTarget);
                 origin.addInPlace(moveDir.scale(stepDistance));
+
+                let fromPosOrigin = Vector3.TransformCoordinates(this.prop.footTargets[this.legIndex], m);
+
+                origin.scaleInPlace(0.5).addInPlace(fromPosOrigin.scale(0.5));
+
                 origin.y += 1;
                 if (this.showCollisionDebug) {
                     DrawDebugPoint(origin, 3, Color3.Blue(), 0.2);
                 }
 
                 let footTarget: Vector3 | null = null;
-                let footNormal: Vector3 | null = null;
                 let ray = new Ray(origin, Vector3.Down(), 3);
                 let intersection = RayCollidersIntersection(ray, this.terrain);
                 if (intersection.hit) {
                     footTarget = intersection.point!;
-                    footNormal = intersection.normal!;
                 }
                 
 
-                if (footTarget && footNormal) {
+                if (footTarget) {
                     this._stepping++;
                     this.legIndex = (this.legIndex + 1) % 2;
                     this.otherLegFootTarget = footTarget.clone();
@@ -317,7 +322,7 @@ export class Humanoid extends Mesh {
                     this.step(
                         leg!,
                         footTarget!,
-                        footNormal!,
+                        Vector3.Up(),
                         this.forward,
                         (f) => {
                             if (f > this.prop.walkStyle[this.moveMode].stepFSkip) {

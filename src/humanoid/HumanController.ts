@@ -238,11 +238,12 @@ export class Human extends Humanoid {
             prop.walkStyle[MoveMode.Run].bootyShakiness = 0.2;
             prop.walkStyle[MoveMode.Run].stepHeight = 0.4;
             prop.walkStyle[MoveMode.Run].stepDuration = 0.6;
-            prop.walkStyle[MoveMode.Run].stepFSkip = 0.8;
+            prop.walkStyle[MoveMode.Run].stepFSkip = 0.7;
             prop.walkStyle[MoveMode.Run].handAmplitude = 0.7;
             prop.walkStyle[MoveMode.Run].handBodyDY = 0.1;
             prop.walkStyle[MoveMode.Run].stepEasing = easeOutSine;
             prop.walkStyle[MoveMode.Run].stepEasingFactor = 0.2;
+            prop.walkStyle[MoveMode.Run].footPushFactor = 2;
             prop.walkStyle[MoveMode.Run].bodyOffsetUpdate = (fSpeed: number, deltaFoot: Vector3, bodyOffsetRef: Vector3) => {
                 let maxOffsetHeight = prop.totalLegLength - prop.rightHipAnchor.y;
                 let ll = prop.totalLegLengthSquared;
