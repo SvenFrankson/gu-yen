@@ -154,6 +154,9 @@ export class Game {
                             height *= this.terrain.blockSizeK_m;
                             this.player.position = new Vector3(0, height + 4, 0);
                             this.player.targetPosition = this.player.position.clone();
+                            if (this.player.human) {
+                                this.player.human.setPosition(this.player.position.clone());
+                            }
                             console.log("Player position set to: ", this.player.position.clone());
                         }
                     }
@@ -194,6 +197,8 @@ export class Game {
         miniMap.setGame(this);
 
         this.miniatureFactory = new MiniatureFactory(this);
+
+        this.player.instantiate();
 
         ChunckVertexData.InitializeData("meshes/chunck-parts.gltf", this.scene).then(async () => {
             await BlockPoleVertexData.InitializeData("meshes/poleblocks.gltf", this.scene);

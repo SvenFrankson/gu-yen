@@ -28,6 +28,7 @@ export var HumanNames: string[] = [
     "Yvette",
     "Zoé"
 ];
+HumanNames.sort(() => { return Math.random() - 0.5; });
 
 export function myRand(min: number, max: number): number {
     return Math.random() * (max - min) + min;
@@ -50,7 +51,9 @@ export class WalkStyleProp {
     public footPushFactor: number = 1;
     public bootyShakiness: number = 0;
     public handAmplitude: number = 1;
+    public handBodyDX: number = 0.2;
     public handBodyDY: number = 0;
+    public bodyLean: number = 0;
 
     constructor(public prop: HumanoidProp) {
         this.bodyOffsetUpdate = (fSpeed: number, deltaFoot: Vector3, bodyOffsetRef: Vector3) => {
@@ -71,9 +74,12 @@ export class WalkStyleProp {
         this.stepFSkip += myRand(-0.1, 0.1);
         this.stepEasingFactor += myRand(-0.1, 0.1);
         this.footPushFactor += myRand(-0.2, 0.2);
-        this.bootyShakiness += myRand(-0.05, 0.05);
+        this.bootyShakiness += myRand(-0.1, 0.1);
+        this.bodyLean += myRand(-0.1, 0.1);
         this.handAmplitude += myRand(-0.2, 0.2);
-        this.handBodyDY += myRand(-0.05, 0.05);
+        this.handBodyDX += myRand(-0.1, 0.1);
+        this.handBodyDX = Math.max(this.handBodyDX, this.prop.hipAnchor.x + 0.05);
+        this.handBodyDY += myRand(-0.1, 0.1);
         this.stepEasingFactor += myRand(-0.1, 0.1);
     }
 }
@@ -95,6 +101,8 @@ export class HumanoidProp {
     public upperArmLength: number = 0.5;
     public lowerArmLength: number = 0.5;
     public handLength: number = 0.2;
+    public overStrechAngleFactor: number = 1.0;
+    public overStrechLengthMultiplier: number = 1.0;
 
     public walkStyle: WalkStyleProp[] = [];
 
@@ -133,6 +141,8 @@ export class HumanoidProp {
     }
 
     public randomize(): void {
+        this.footTarget.x += myRand(-0.1, 0.1);
+        this.footTarget.x = Math.max(this.footTarget.x, 0.05);
         for (let walkStyle of this.walkStyle) {
             walkStyle.randomize();
         }

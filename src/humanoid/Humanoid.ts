@@ -111,13 +111,11 @@ export class Humanoid extends Mesh {
         this.prop.recompute();
 
         this.nameTag = new NameTag("nametag", scene);
+        this.nameTag.lines = [this.name];
+        this.nameTag.redraw();
 
         let material = new ToonMaterial("drone-material", this.getScene());
-        let color = Color3.FromHexString("#208b9e");
-        color.r *= 0.7 + 0.6 * Math.random();
-        color.g *= 0.7 + 0.6 * Math.random();
-        color.b *= 0.7 + 0.6 * Math.random();
-        this.color = color;
+        this.color = Color3.FromHSV(Math.random() * 360, 0.88, 0.76);
         material.setDiffuseColor(this.color);
         this.material = material;
 
@@ -144,7 +142,6 @@ export class Humanoid extends Mesh {
     }
 
     public setPosition(p: Vector3): void {
-        console.log(p);
         this.position.copyFrom(p);
         let m = this.computeWorldMatrix(true);
         
@@ -175,7 +172,7 @@ export class Humanoid extends Mesh {
     }
 
     public async initialize(): Promise<void> {
-        this.getScene().onBeforeRenderObservable.add(this._update);
+        this.getScene().onBeforeRenderObservable.add(() => this.update());
     }
 
     public isGrounded(): boolean {
@@ -246,7 +243,7 @@ export class Humanoid extends Mesh {
 
     private _lastBodyPosition: Vector3 = Vector3.Zero();
 
-    private _update = () => {
+    public update(): void {
         let dt = this.engine.getDeltaTime() / 1000;
         if (isNaN(dt)) {
             return;
@@ -263,8 +260,10 @@ export class Humanoid extends Mesh {
         this.fSpeed = this.visibleSpeed / this.prop.maxSpeed;
         this.fSpeed = Math.max(Math.min(this.fSpeed, 1), 0);
 
+        this.moveMode = this.speed < 1.5 ? MoveMode.Walk : MoveMode.Run;
+
         this.position.addInPlace(this.forward.scale(this.speed * dt));
-        this.rotate(Axis.Y, 0.5 * this.rotationSpeed * dt, Space.WORLD);
+        this.rotate(Axis.Y, this.rotationSpeed * dt, Space.WORLD);
         this.computeWorldMatrix(true);
         QuaternionFromYZAxisToRef(Axis.Y, this.forward, this.rotationQuaternion!);
         
@@ -306,7 +305,7 @@ export class Humanoid extends Mesh {
                 }
 
                 let footTarget: Vector3 | null = null;
-                let ray = new Ray(origin, Vector3.Down(), 3);
+                let ray = new Ray(origin, Vector3.Down(), 2);
                 let intersection = RayCollidersIntersection(ray, this.terrain);
                 if (intersection.hit) {
                     footTarget = intersection.point!;
@@ -340,7 +339,11 @@ export class Humanoid extends Mesh {
                             }
                         }
                     );
-                } 
+                }
+                else if (this.terrain.length >= 4) {
+                    leg.footTarget.y -= 4 * dt;
+                    otherLeg.footTarget.y -= 4 * dt;
+                }
             }
         }
 
@@ -365,10 +368,12 @@ export class Humanoid extends Mesh {
         Vector3.TransformNormalToRef(this.bodyLocalOffset, m, this.bodyLocalOffset);
         bodyPos.addInPlace(this.bodyLocalOffset);
 
-        let baseQuat = QuaternionFromYZAxis(Axis.Y, this.forward);
 
         let bootyXAxis = deltaFoot.clone().normalize();
-        let bootyQuat = QuaternionFromXYAxis(bootyXAxis, Axis.Y);
+        let bodyY = this.forward.scale(this.prop.walkStyle[this.moveMode].bodyLean * this.fSpeed);
+        bodyY.y += 1;
+        let baseQuat = QuaternionFromYZAxis(bodyY, this.forward);
+        let bootyQuat = QuaternionFromXYAxis(bootyXAxis, bodyY);
         let bodyQuat = Quaternion.Slerp(baseQuat, bootyQuat, this.prop.walkStyle[this.moveMode].bootyShakiness);
 
         Quaternion.SlerpToRef(this.body.rotationQuaternion!, bodyQuat, 1 - smoothNSec(1 / dt, 0.1), this.body.rotationQuaternion!);
@@ -380,7 +385,7 @@ export class Humanoid extends Mesh {
         this.torso.position.copyFrom(this.prop.torsoAnchor);
         Vector3.TransformCoordinatesToRef(this.torso.position, this.body.getWorldMatrix(), this.torso.position);
         let handRight = this.rightArm.hand.position.subtract(this.leftArm.hand.position).normalize();
-        let quatFromArm = QuaternionFromXYAxis(handRight, Axis.Y);
+        let quatFromArm = QuaternionFromXYAxis(handRight, bodyY);
         let torsoQuat = Quaternion.Slerp(baseQuat, quatFromArm, 0.2);
 
         Quaternion.SlerpToRef(this.torso.rotationQuaternion!, torsoQuat, 1 - smoothNSec(1 / dt, 0.1), this.torso.rotationQuaternion!);
@@ -428,13 +433,15 @@ export class Humanoid extends Mesh {
         let angle = Angle(this.forward, this.body.forward);
         let angleStrech = (angle - Math.PI / 8) / (Math.PI / 4 - Math.PI / 8);
         angleStrech = Math.min(Math.max(angleStrech, 0), 1);
+        angleStrech = angleStrech * this.prop.overStrechAngleFactor;
         let footAnchor = this.body.position.clone();
         footAnchor.y = Math.min(this.leftLeg.footTarget.y, this.rightLeg.footTarget.y);
         this.position.y = this.position.y * 0.9 + footAnchor.y * 0.1;
         let dir = this.position.subtract(footAnchor);
         let l = dir.length();
-        let maxL = this.prop.totalLegLength * (1 - angleStrech);
+        let maxL = this.prop.overStrechLengthMultiplier * this.prop.totalLegLength * (1 - angleStrech);
         if (l > maxL) {
+            console.log("angleStrech: " + angleStrech);
             dir.scaleInPlace(1 / l);
             this.position.copyFrom(dir).scaleInPlace(maxL).addInPlace(footAnchor);
         }
@@ -443,15 +450,7 @@ export class Humanoid extends Mesh {
         if (this.nameTag) {
             this.nameTag.position.x = footAnchor.x;
             this.nameTag.position.y = this.nameTag.position.y * 0.99 + (footAnchor.y + 2) * 0.01;
-            this.nameTag.position.z = footAnchor.z;
-
-            let speedDiff = this.speed - this.visibleSpeed;
-
-            this.nameTag.lines = [
-                this.name,
-                "SpeedDiff " + speedDiff.toFixed(1).padStart(5, " ") + "m/s",
-            ];
-            this.nameTag.redraw();
+            this.nameTag.position.z = footAnchor.z;            
         }
     }
 

@@ -33,8 +33,8 @@ export class HumanLeg extends Mesh {
 
     private _tmpZ: Vector3 = Vector3.Forward();
 
-    private groundedMaterial: StandardMaterial;
-    private ungroundedMaterial: StandardMaterial;
+    //private groundedMaterial: StandardMaterial;
+    //private ungroundedMaterial: StandardMaterial;
 
     constructor(public humanoid: Humanoid, isLeft: boolean) {
         super("leg", humanoid.getScene());
@@ -50,8 +50,8 @@ export class HumanLeg extends Mesh {
         this.foot.material = this.humanoid.material;
         this.foot.rotationQuaternion = Quaternion.Identity();
 
-        this.groundedMaterial = MakeStandardMaterial(this.humanoid.getScene(), new Color3(0, 1, 0));
-        this.ungroundedMaterial = MakeStandardMaterial(this.humanoid.getScene(), new Color3(1, 0, 0));
+        //this.groundedMaterial = MakeStandardMaterial(this.humanoid.getScene(), new Color3(0, 1, 0));
+        //this.ungroundedMaterial = MakeStandardMaterial(this.humanoid.getScene(), new Color3(1, 0, 0));
     }
 
     public async instantiate(): Promise<void> {
@@ -105,6 +105,6 @@ export class HumanLeg extends Mesh {
         QuaternionFromYZAxisToRef(this.footUp, this.footForward, this.foot.rotationQuaternion!);
 
         this.grounded = Vector3.DistanceSquared(this.foot.position, ankleTarget) <= 0.01;
-        this.foot.material = this.grounded ? this.groundedMaterial : this.ungroundedMaterial;
+        //this.foot.material = this.grounded ? this.groundedMaterial : this.ungroundedMaterial;
     }
 }

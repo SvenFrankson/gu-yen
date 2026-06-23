@@ -23,6 +23,7 @@ export class ChunkDataManager {
             chunkData = new ChunkData(iPos, jPos, this.terrain);
             this.loadedChunkData.push(chunkData);
             try {
+                throw new Error("Nope");
                 let response = await fetch(SHARE_SERVICE_PATH + "get_tile/" + iPos.toFixed(0) + "/" + jPos.toFixed(0), {
                     method: "GET",
                     mode: "cors",

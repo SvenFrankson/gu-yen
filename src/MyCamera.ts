@@ -133,6 +133,7 @@ export class MyCamera extends UniversalCamera {
         }
         else {
             this.position.copyFrom(this.player.head.absolutePosition);
+            this.position.subtractInPlace(this.player.head.forward.scale(7));
             this.rotationQuaternion = QuaternionFromZYAxis(this.player.head.forward, this.player.head.up);
         }
         if (this.game.terrain && this.editionMode !== 0) {

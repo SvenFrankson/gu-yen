@@ -10,6 +10,10 @@ import { PlayerActionManager } from "./PlayerActionManager";
 import { Vehicle } from "../vehicles/Vehicle";
 import { Car } from "../vehicles/Car";
 import { PlayerInventory } from "./inventory/PlayerInventory";
+import { Human } from "../humanoid/HumanController";
+import { AngleFromToAround, QuaternionFromYZAxisToRef } from "babylonjs-tiaratumgames-tools";
+import { smoothNSec } from "../Tools";
+import { MoveMode } from "../humanoid/HumanoidProp";
 
 export class Player extends Mesh {
 
@@ -38,6 +42,8 @@ export class Player extends Mesh {
 
     public aimedObject: Vehicle | undefined;
     public aimedIJK: { chunck: Chunck, ijk: { i: number, j: number, k: number } } | undefined;
+
+    public human: Human | null = null;
 
     public get zInput(): number {
         return this.forwardInput - this.backwardInput;
@@ -166,7 +172,22 @@ export class Player extends Mesh {
         }
     }
 
+    public async instantiate(): Promise<void> {
+        this.human = await Human.FactoryInstantiate(this.game, "player");
+        if (this.human) {
+            this.human.prop.walkStyle[MoveMode.Run].stepDuration = 0.3;
+            this.human.prop.overStrechAngleFactor = 0;
+            this.human.prop.overStrechLengthMultiplier = 10.0;
+            this.human.prop.maxSpeed = 5;
+            this.human.setPosition(this.absolutePosition);
+        }
+    }
+
     private _update = () => {
+        let dt = this.game.engine.getDeltaTime() / 1000;
+        if (isNaN(dt)) {
+            return;
+        }
         if (this.game.terrain) {
             //this.debugCage.position.copyFrom(this.position);
             //this.debugCage.position.x = Math.floor(this.debugCage.position.x);
@@ -214,6 +235,16 @@ export class Player extends Mesh {
             this.defaultAction.update();
             if (this.action) {
                 this.action.update();
+            }
+
+            if (this.human) {
+                let f = smoothNSec(1 / dt, 3);
+                this.position.x = this.human.position.x;
+                this.position.y = this.position.y * f + this.human.position.y * (1 - f);
+                this.position.z = this.human.position.z;
+                this.human.targetSpeed = this.zInput * 5;
+                let dRY = AngleFromToAround(this.human.forward, this.forward, Vector3.Up());
+                this.human.rotationSpeed = 3 * dRY;
             }
         }
     }

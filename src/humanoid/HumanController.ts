@@ -93,7 +93,7 @@ class HumanController {
 
 export class Human extends Humanoid {
 
-    public controller: HumanController;
+    public controller: HumanController | null = null;
     public destination: Vector3 = Vector3.Zero();
 
     constructor(name: string, public game: Game, props: HumanoidProp) {
@@ -128,7 +128,9 @@ export class Human extends Humanoid {
             }
         }, 500);
 
-        this.controller = new HumanController(this);
+        if (this.name != "player") {
+            this.controller = new HumanController(this);
+        }
 
         this.debugColliderMaterial = colliderMaterial;
         this.debugColliderHitMaterial = colliderHitMaterial;
@@ -178,7 +180,11 @@ export class Human extends Humanoid {
     public lowerArmVertexData: VertexData | null = null;
     public handVertexData: VertexData | null = null
 
-    public static async FactoryInstantiate(game: Game): Promise<Human | null> {
+    public static async FactoryInstantiate(game: Game, name?: string, randomness: number = -Infinity): Promise<Human | null> {
+        if (!name) {
+            name = HumanNames[HumanNameIndex++ % HumanNames.length];
+        }
+
         let dataArray = await GetGLTFMeshDataArray("meshes/heva-robot-model.gltf", game.scene);
         if (dataArray && dataArray.length) {
             let body = dataArray.find(d => d.name === "0-body")!;
@@ -244,6 +250,7 @@ export class Human extends Humanoid {
             prop.walkStyle[MoveMode.Run].stepEasing = easeOutSine;
             prop.walkStyle[MoveMode.Run].stepEasingFactor = 0.2;
             prop.walkStyle[MoveMode.Run].footPushFactor = 2;
+            prop.walkStyle[MoveMode.Run].bodyLean = 0.5;
             prop.walkStyle[MoveMode.Run].bodyOffsetUpdate = (fSpeed: number, deltaFoot: Vector3, bodyOffsetRef: Vector3) => {
                 let maxOffsetHeight = prop.totalLegLength - prop.rightHipAnchor.y;
                 let ll = prop.totalLegLengthSquared;
@@ -256,17 +263,13 @@ export class Human extends Humanoid {
                 bodyOffsetRef.z = 0.3 * fSpeed;
             }
 
-            let rSteps = Math.floor(Math.random() * 6) + 1;
+            let rSteps = Math.floor(Math.random() * randomness) + 1;
             for (let n = 0; n < rSteps; n++) {
-                //prop.randomize();
+                prop.randomize();
             }
 
-            let human = new Human(HumanNames[HumanNameIndex++ % HumanNames.length], game, prop);
-            human.moveMode = MoveMode.Run;
-            if (Math.random() > 0.5) {
-                human.prop.maxSpeed = 1;
-                human.moveMode = MoveMode.Walk;
-            }
+            let human = new Human(name, game, prop);
+            human.prop.maxSpeed = 1 + 4 * Math.random();
 
             human.bodyVertexData = body.vertexData;
             human.torsoVertexData = torso.vertexData;
@@ -301,6 +304,8 @@ export class Human extends Humanoid {
     }
 
     private _updateDrone = () => {
-        this.controller.update();
+        if (this.controller) {
+            this.controller.update();
+        }
     }
 }

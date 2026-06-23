@@ -319,8 +319,8 @@ export class ChunckDataGeneratorDataSets extends ChunckDataGenerator {
                         noiseValue = noiseMap[iGlobalNoise + jGlobalNoise * this.noiseSize] / 255 - 0.5;
                     }
 
-                    let maxRock = h + Math.min(0, noiseValue) - 0.5;
-                    let maxDirt = h + noiseValue * 6;
+                    let maxRock = h;
+                    let maxDirt = h;
                     if (isRoad) {
                         maxRock -= 0.5;
                         maxDirt -= 0.5;
@@ -345,11 +345,11 @@ export class ChunckDataGeneratorDataSets extends ChunckDataGenerator {
 
                     for (let k: number = 0; k <= chunck.chunckLengthK; k++) {
                         let kGlobal = k;
-                        if (kGlobal <= maxRock) {
-                            chunck.setRawData(BlockType.Rock, i + m, j + m, k);
+                        if (kGlobal < maxRock) {
+                            chunck.setRawData(BlockType.Dirt, i + m, j + m, k);
                         }
                         else if (kGlobal <= maxDirt) {
-                            chunck.setRawData(BlockType.Dirt, i + m, j + m, k);
+                            chunck.setRawData(BlockType.Grass, i + m, j + m, k);
                         }
                         else if (kGlobal <= maxAsphalt) {
                             if (isRoad === 1) {
