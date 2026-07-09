@@ -43,7 +43,6 @@ class HumanController {
 
     public update(): void {
         if (this.stop) {
-            this.human.targetSpeed = 0;
             this.human.rotationSpeed = 0;
             return;
         }
@@ -79,7 +78,6 @@ class HumanController {
             return;
         }
         
-        this.human.targetSpeed = (distDestination) * 0.5 ;
         let alphaDestination = AngleFromToAround(dirDestination, this.human.forward, this.human.up);
         this.human.rotationSpeed = 0;
         if (alphaDestination > Math.PI / 64) {
@@ -140,7 +138,7 @@ export class Human extends Humanoid {
 
         this.updateBodyCollidersMeshes();
 
-        this.showCollisionDebug = true;
+        //this.showCollisionDebug = true;
 
         if (this.showCollisionDebug) {
             let cross = MeshBuilder.CreateLineSystem(
@@ -238,12 +236,12 @@ export class Human extends Humanoid {
                     bodyOffsetRef.y = Math.sqrt(ll - df);
                     bodyOffsetRef.y = Math.min(bodyOffsetRef.y, maxOffsetHeight) + 0.05 * fSpeed;
                 }
-                bodyOffsetRef.z = 0.1 * fSpeed;
             }
 
             prop.walkStyle[MoveMode.Run].bootyShakiness = 0.2;
             prop.walkStyle[MoveMode.Run].stepHeight = 0.4;
             prop.walkStyle[MoveMode.Run].stepDuration = 0.6;
+            prop.walkStyle[MoveMode.Run].stepLength = 2;
             prop.walkStyle[MoveMode.Run].stepFSkip = 0.7;
             prop.walkStyle[MoveMode.Run].handAmplitude = 0.7;
             prop.walkStyle[MoveMode.Run].handBodyDY = 0.1;
@@ -260,7 +258,6 @@ export class Human extends Humanoid {
                     bodyOffsetRef.y = Math.sqrt(ll - df);
                     bodyOffsetRef.y = Math.min(bodyOffsetRef.y, maxOffsetHeight - 0.1 * fSpeed);
                 }
-                bodyOffsetRef.z = 0.3 * fSpeed;
             }
 
             let rSteps = Math.floor(Math.random() * randomness) + 1;

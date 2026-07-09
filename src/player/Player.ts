@@ -34,6 +34,8 @@ export class Player extends Mesh {
     public targetSpeed: number = 1;
     public currentSpeed: number = 0;
     public fly: boolean = false;
+    public slowWalk: boolean = false;
+    public running: boolean = false;
 
     public forwardInput: number = 0;
     public backwardInput: number = 0;
@@ -52,6 +54,8 @@ export class Player extends Mesh {
     public get xInput(): number {
         return this.rightInput - this.leftInput;
     }
+
+    private _lastForwardUp: number = NaN;
 
     constructor(public game: Game) {
         super("player", game.scene);
@@ -75,8 +79,10 @@ export class Player extends Mesh {
         this.game.scene.onBeforeRenderObservable.add(this._update);
 
         this.game.canvas.addEventListener("keydown", (event) => {
-            if (event.code === "KeyW") {
+            if (event.code === "KeyW" && this.forwardInput != 1) {
                 this.forwardInput = 1;
+                this.running = performance.now() - this._lastForwardUp < 300;
+                this._lastForwardUp = performance.now();
             }
             else if (event.code === "KeyS") {
                 this.backwardInput = 1;
@@ -242,8 +248,12 @@ export class Player extends Mesh {
                 this.position.x = this.human.position.x;
                 this.position.y = this.position.y * f + this.human.position.y * (1 - f);
                 this.position.z = this.human.position.z;
-                this.human.moveInput.x = this.xInput * 0.5;
-                this.human.moveInput.z = this.zInput * 0.5;
+                let s = 0.5;
+                if (this.running) {
+                    s = 1;
+                }
+                this.human.moveInput.x = this.xInput * s;
+                this.human.moveInput.z = this.zInput * s;
                 let dRY = AngleFromToAround(this.human.forward, this.forward, Vector3.Up());
                 this.human.rotationSpeed = 3 * dRY;
             }
