@@ -1,4 +1,5 @@
 import { Mesh } from "@babylonjs/core/Meshes/mesh.pure";
+import { Vector2 } from "@babylonjs/core/Maths/math.vector.pure";
 import { HumanLeg } from "./HumanLeg";
 import { Scene } from "@babylonjs/core/scene.pure";
 import { Ray } from "@babylonjs/core/Culling/ray.pure";
@@ -7,17 +8,14 @@ import { Axis, Space } from "@babylonjs/core/Maths/math.axis";
 import { Color3 } from "@babylonjs/core/Maths/math.color.pure";
 import { Vector3, Quaternion } from "@babylonjs/core/Maths/math.vector.pure";
 import { MeshBuilder } from "@babylonjs/core/Meshes/meshBuilder";
-import { Angle, Collider, ColorizeVertexDataInPlace, CreateBeveledBoxVertexData, DrawDebugHit, DrawDebugPoint, ForceDistanceFromOriginInPlace, IsFinite, QuaternionFromXYAxis, QuaternionFromYZAxis, QuaternionFromYZAxisToRef, QuaternionFromZYAxisToRef, RandomInSphereCut, RayCollidersIntersection, SphereCollider, TranslateVertexDataInPlace } from "babylonjs-tiaratumgames-tools";
-import { IsVeryFinite, MinMax } from "../Number";
+import { Angle, Collider, DrawDebugPoint, MinMax, QuaternionFromXYAxis, QuaternionFromYZAxis, QuaternionFromYZAxisToRef, QuaternionFromZYAxisToRef, RayCollidersIntersection, SphereCollider } from "babylonjs-tiaratumgames-tools";
 import { Clamp, smoothNSec } from "../Tools";
 import { Chunck } from "../voxel-engine/Chunck";
 import { SphereChuncksIntersection } from "../voxel-engine/TmpMath";
 import { Engine } from "@babylonjs/core/Engines/engine.pure";
-import { CreateBoxVertexData } from "@babylonjs/core/Meshes/Builders/boxBuilder.pure";
 import { ToonMaterial } from "../ToonMaterial";
 import { Human } from "./HumanController";
 import { HumanArm } from "./HumanArm";
-import { easeInOutQuad, easeInOutSine, easeInSine } from "../Easing";
 import { HumanoidProp, MoveMode } from "./HumanoidProp";
 import { NameTag } from "../ui3D/NameTag";
 
@@ -27,19 +25,13 @@ export class Humanoid extends Mesh {
         return this.getScene().getEngine() as Engine;
     }
     
-    private _speed: number = 0;
-    public get speed(): number {
-        return this._speed;
-    }
-    private set speed(value: number) {
-        this._speed = value;
-    }
+    public velocity: Vector3 = Vector3.Zero();
     public visibleSpeed: number = 0;
-    public targetSpeed: number = 0;
     private fSpeed: number = 0;
     private get avgdFSpeed(): number {
         return 0.5 * this.fSpeed + 0.5 * this.speed / this.prop.maxSpeed;
     }
+    public moveInput: Vector3 = new Vector3(0, 0, 0);
 
     public moveMode: MoveMode = MoveMode.Walk;
     public rotationSpeed: number = 0;
@@ -196,8 +188,10 @@ export class Humanoid extends Mesh {
             let dY = destination.y - origin.y;
             let hMax = Clamp(this.prop.walkStyle[this.moveMode].stepHeight + dY * 0.5, this.prop.walkStyle[this.moveMode].stepHeight * 0.5, dist * 0.5);
             hMax = Math.min(hMax, this.prop.totalLegLength * 0.5);
-            let duration = Math.min(this.prop.walkStyle[this.moveMode].stepDuration, dist);
-            duration = Math.max(duration, this.prop.walkStyle[this.moveMode].stepDuration * 0.5);
+            let desiredStepLength = this.prop.walkStyle[this.moveMode].stepLength;
+            //let duration = Math.min(this.prop.walkStyle[this.moveMode].stepDuration, dist);
+            let duration = desiredStepLength / this.velocity.length();
+            duration = MinMax(duration, this.prop.walkStyle[this.moveMode].stepDuration * 0.5, this.prop.walkStyle[this.moveMode].stepDuration);
             let t = 0;
             leg.stepping = true;
             let easingFactor = this.prop.walkStyle[this.moveMode].stepEasingFactor;
@@ -253,16 +247,25 @@ export class Humanoid extends Mesh {
         let bodyDelta = bodyPosition.subtract(this._lastBodyPosition);
         this._lastBodyPosition.copyFrom(bodyPosition);
         let visibleSpeed = Vector3.Dot(bodyDelta, this.forward) / dt;
-        this.visibleSpeed = 0.98 * this.visibleSpeed + 0.02 * visibleSpeed;
+        this.visibleSpeed = 0.95 * this.visibleSpeed + 0.05 * visibleSpeed;
 
-        this.speed = 0.98 * this.speed + 0.02 * this.targetSpeed;
-        this.speed = Math.max(Math.min(this.speed, this.prop.maxSpeed), 0);
+        if (this.moveInput.lengthSquared() > 1) {
+            this.moveInput.normalize();
+        }
+        let fMaxSpeed = 1 - Math.acos(this.moveInput.z) / Math.PI;
+        fMaxSpeed = fMaxSpeed;
+        let maxSpeed = fMaxSpeed * this.prop.maxSpeed + (1 - fMaxSpeed) * this.prop.maxSpeed * 0.1;
+
+        this.velocity.scaleInPlace(0.95);
+        this.velocity.addInPlace(this.forward.scale(this.moveInput.z * maxSpeed * 0.05));
+        this.velocity.addInPlace(this.right.scale(this.moveInput.x * maxSpeed * 0.05));
+        this.velocity.y = 0;
         this.fSpeed = this.visibleSpeed / this.prop.maxSpeed;
         this.fSpeed = Math.max(Math.min(this.fSpeed, 1), 0);
 
-        this.moveMode = this.speed < 1.5 ? MoveMode.Walk : MoveMode.Run;
+        this.moveMode = this.velocity.length() < 2 ? MoveMode.Walk : MoveMode.Run;
 
-        this.position.addInPlace(this.forward.scale(this.speed * dt));
+        this.position.addInPlace(this.velocity.scale(dt));
         this.rotate(Axis.Y, this.rotationSpeed * dt, Space.WORLD);
         this.computeWorldMatrix(true);
         QuaternionFromYZAxisToRef(Axis.Y, this.forward, this.rotationQuaternion!);
@@ -277,10 +280,10 @@ export class Humanoid extends Mesh {
 
         if (this._stepping < 1) {
             if (true) {
-                let moveDir = this.forward;
-                let stepDistance = this.speed * this.prop.walkStyle[this.moveMode].stepDuration;
+                let moveDir = Vector3.TransformNormal(this.moveInput, this.getWorldMatrix());
+                let stepDistance = this.velocity.length() * this.prop.walkStyle[this.moveMode].stepDuration;
                 stepDistance = Math.min(stepDistance, this.prop.totalLegLength * 2);
-                let quat = QuaternionFromYZAxis(Axis.Y, moveDir);
+                let quat = QuaternionFromYZAxis(Axis.Y, this.forward);
                 let leg = this.legs[this.legIndex];
                 let otherLeg = this.legs[(this.legIndex + 1) % 2];
                 let deltaFootTarget = this.prop.footTargets[this.legIndex].subtract(this.prop.footTargets[(this.legIndex + 1) % 2]);
@@ -295,13 +298,19 @@ export class Humanoid extends Mesh {
                 origin.addInPlace(deltaFootTarget);
                 origin.addInPlace(moveDir.scale(stepDistance));
 
-                let fromPosOrigin = Vector3.TransformCoordinates(this.prop.footTargets[this.legIndex], m);
+                let desiredStepLength = this.prop.walkStyle[this.moveMode].stepLength;
+                let duration = desiredStepLength / this.velocity.length();
+                duration = MinMax(duration, this.prop.walkStyle[this.moveMode].stepDuration * 0.5, this.prop.walkStyle[this.moveMode].stepDuration);
 
-                origin.scaleInPlace(0.5).addInPlace(fromPosOrigin.scale(0.5));
+                let fromPosOrigin = Vector3.TransformCoordinates(this.prop.footTargets[this.legIndex], m);
+                fromPosOrigin.addInPlace(this.velocity.scale(duration));
+                const posOriginFactor = 0.5;
+
+                origin.scaleInPlace(1 - posOriginFactor).addInPlace(fromPosOrigin.scale(posOriginFactor));
 
                 origin.y += 1;
                 if (this.showCollisionDebug) {
-                    DrawDebugPoint(origin, 3, Color3.Blue(), 0.2);
+                    DrawDebugPoint(origin, 144, Color3.Blue(), 0.5);
                 }
 
                 let footTarget: Vector3 | null = null;
@@ -310,9 +319,11 @@ export class Humanoid extends Mesh {
                 if (intersection.hit) {
                     footTarget = intersection.point!;
                 }
-                
 
                 if (footTarget) {
+                    if (this.showCollisionDebug) {
+                        DrawDebugPoint(footTarget, 144, Color3.Red(), 0.5).position.y += 0.05;
+                    }
                     this._stepping++;
                     this.legIndex = (this.legIndex + 1) % 2;
                     this.otherLegFootTarget = footTarget.clone();
@@ -436,7 +447,7 @@ export class Humanoid extends Mesh {
         angleStrech = angleStrech * this.prop.overStrechAngleFactor;
         let footAnchor = this.body.position.clone();
         footAnchor.y = Math.min(this.leftLeg.footTarget.y, this.rightLeg.footTarget.y);
-        this.position.y = this.position.y * 0.9 + footAnchor.y * 0.1;
+        this.position.y = this.position.y * 0.99 + footAnchor.y * 0.01;
         let dir = this.position.subtract(footAnchor);
         let l = dir.length();
         let maxL = this.prop.overStrechLengthMultiplier * this.prop.totalLegLength * (1 - angleStrech);
@@ -450,7 +461,10 @@ export class Humanoid extends Mesh {
         if (this.nameTag) {
             this.nameTag.position.x = footAnchor.x;
             this.nameTag.position.y = this.nameTag.position.y * 0.99 + (footAnchor.y + 2) * 0.01;
-            this.nameTag.position.z = footAnchor.z;            
+            this.nameTag.position.z = footAnchor.z;
+            
+            this.nameTag.lines = [this.name, this.moveInput.x.toFixed(2) + "," + this.moveInput.z.toFixed(0), fMaxSpeed.toFixed(2)];
+            this.nameTag.redraw();
         }
     }
 

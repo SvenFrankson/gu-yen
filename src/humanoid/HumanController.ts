@@ -269,7 +269,7 @@ export class Human extends Humanoid {
             }
 
             let human = new Human(name, game, prop);
-            human.prop.maxSpeed = 1 + 4 * Math.random();
+            human.prop.maxSpeed = 3;
 
             human.bodyVertexData = body.vertexData;
             human.torsoVertexData = torso.vertexData;

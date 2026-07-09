@@ -242,7 +242,8 @@ export class Player extends Mesh {
                 this.position.x = this.human.position.x;
                 this.position.y = this.position.y * f + this.human.position.y * (1 - f);
                 this.position.z = this.human.position.z;
-                this.human.targetSpeed = this.zInput * 5;
+                this.human.moveInput.x = this.xInput * 0.5;
+                this.human.moveInput.z = this.zInput * 0.5;
                 let dRY = AngleFromToAround(this.human.forward, this.forward, Vector3.Up());
                 this.human.rotationSpeed = 3 * dRY;
             }

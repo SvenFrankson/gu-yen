@@ -45,6 +45,7 @@ export class WalkStyleProp {
     public bodyOffsetUpdate: (fSpeed: number, deltaFoot: Vector3, bodyOffsetRef: Vector3) => void = () => {};
     public stepHeight: number = 0.2;
     public stepDuration: number = 0.6;
+    public stepLength: number = 0.7;
     public stepFSkip: number = 1;
     public stepEasing: (f: number) => number = (f: number) => { return f; };
     public stepEasingFactor: number = 0.5;
