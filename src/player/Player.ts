@@ -252,8 +252,15 @@ export class Player extends Mesh {
                 if (this.running) {
                     s = 1;
                 }
-                this.human.moveInput.x = this.xInput * s;
-                this.human.moveInput.z = this.zInput * s;
+                let xInputNormalized = this.xInput;
+                let zInputNormalized = this.zInput;
+                let inputLength = Math.sqrt(xInputNormalized * xInputNormalized + zInputNormalized * zInputNormalized);
+                if (inputLength > 1) {
+                    xInputNormalized /= inputLength;
+                    zInputNormalized /= inputLength;
+                }
+                this.human.moveInput.x = xInputNormalized * s;
+                this.human.moveInput.z = zInputNormalized * s;
                 let dRY = AngleFromToAround(this.human.forward, this.forward, Vector3.Up());
                 this.human.rotationSpeed = 3 * dRY;
             }

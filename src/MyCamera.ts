@@ -11,9 +11,10 @@ import { MeshBuilder } from "@babylonjs/core/Meshes/meshBuilder";
 import { PassPostProcess } from "@babylonjs/core/PostProcesses/passPostProcess.pure";
 import { MakeStandardMaterial } from "./MaterialUtils";
 import { Player } from "./player/Player";
-import { QuaternionFromZYAxis } from "babylonjs-tiaratumgames-tools";
+import { MinMax, QuaternionFromZYAxis, RayCollidersIntersection } from "babylonjs-tiaratumgames-tools";
 import { OutlinePostProcess } from "./OutlinePostProcess";
 import { Vehicle } from "./vehicles/Vehicle";
+import { Ray } from "@babylonjs/core/Culling/ray.pure";
 
 export var NO_OUTLINE_LAYERMASK = 0x10000000;
 
@@ -23,6 +24,8 @@ export class MyCamera extends UniversalCamera {
     public noOutlineCamera?: FreeCamera;
 
     public pointer: Mesh;
+
+    public distance: number = 7;
 
     constructor(public player: Player, public game: Game, public useOutline: boolean = true) {
         super("my-camera", new Vector3(0, 64, 0), game.scene);
@@ -126,14 +129,26 @@ export class MyCamera extends UniversalCamera {
     }
 
     private _update = () => {
+        let terrain = this.player.human?.terrain;
+        if (terrain) {
+            let ray = new Ray(this.player.head.absolutePosition, this.player.head.forward.scale(-1), 7);
+            let intersection = RayCollidersIntersection(ray, terrain);
+            if (intersection.hit) {
+                let d = Vector3.Distance(ray.origin, intersection.point!);
+                this.distance = this.distance * 0.95 + d * 0.05;
+            }
+            else {
+                this.distance = this.distance * 0.99 + 7 * 0.01;
+            }
+        }
         if (this.player.vehicle instanceof Vehicle) {
             this.position.copyFrom(this.player.vehicle.head.absolutePosition);
-            this.position.subtractInPlace(this.player.vehicle.head.forward.scale(7));
+            this.position.subtractInPlace(this.player.vehicle.head.forward.scale(this.distance));
             this.rotationQuaternion = QuaternionFromZYAxis(this.player.vehicle.head.forward, Vector3.Up());
         }
         else {
             this.position.copyFrom(this.player.head.absolutePosition);
-            this.position.subtractInPlace(this.player.head.forward.scale(7));
+            this.position.subtractInPlace(this.player.head.forward.scale(this.distance));
             this.rotationQuaternion = QuaternionFromZYAxis(this.player.head.forward, this.player.head.up);
         }
         if (this.game.terrain && this.editionMode !== 0) {
