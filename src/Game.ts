@@ -39,6 +39,7 @@ import { PlayerActionBlock } from "./player/PlayerActionBlock";
 import { PlayerActionDelete } from "./player/PlayerActionDelete";
 import { Human } from "./humanoid/HumanController";
 import { ChunckDataGeneratorFromManager } from "./voxel-engine/TerrainGen/ChunkDataManager";
+import { Turtle } from "./sumuqan/Turtle";
 registerBuiltInLoaders();
 
 export var SHARE_SERVICE_PATH: string = "https://guyen.tiaratum.com/index.php/";
@@ -190,6 +191,12 @@ export class Game {
                 let human = await Human.FactoryInstantiate(this);
                 human!.setPosition(this.player.absolutePosition.add(this.player.forward.scale(5)));
             }
+            else if (event.code === "Numpad7") {
+                let turtle = new Turtle(this);
+                turtle.setPosition(this.player.absolutePosition.add(this.player.forward.scale(30)));
+                turtle.instantiate();
+                turtle.initialize();
+            }
         });
 
         let miniMap: Minimap = document.createElement("mini-map") as Minimap;
@@ -228,12 +235,12 @@ export class Game {
                     //url: "map_2.png",
                     noiseUrl: "noise.png",
                     squareSize: squareSize,
-                    treeTiles: treeDatas,
-                    roadTiles: roadDatas,
-                    buildingTiles: buildingDatas
+                    //treeTiles: treeDatas,
+                    //roadTiles: roadDatas,
+                    //buildingTiles: buildingDatas
                 },
                 maxDisplayedLevel: 0,
-                blockSizeIJ_m: 0.5,
+                blockSizeIJ_m: 1,
                 blockSizeK_m: 0.5,
                 chunckLengthIJ: chunckLengthIJ,
                 chunckLengthK: 256,
@@ -243,7 +250,10 @@ export class Game {
             });
 
             this.terrain.initialize();
-            this.terrain.chunckManager.setDistance(50);
+            this.terrain.chunckManager.setDistance(100);
+            setTimeout(() => {
+                this.terrain!.chunckManager.setDistance(200);
+            }, 5000);
             this.terrain.sunDir.copyFrom(light.direction);
 
             let noiseTexture = new CubicNoiseTexture(this.scene);

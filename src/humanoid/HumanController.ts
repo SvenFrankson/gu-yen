@@ -138,7 +138,7 @@ export class Human extends Humanoid {
 
         this.updateBodyCollidersMeshes();
 
-        //this.showCollisionDebug = true;
+        this.showCollisionDebug = true;
 
         if (this.showCollisionDebug) {
             let cross = MeshBuilder.CreateLineSystem(
@@ -221,7 +221,7 @@ export class Human extends Humanoid {
 
             prop.walkStyle[MoveMode.Walk].bootyShakiness = 0.2;
             prop.walkStyle[MoveMode.Walk].stepHeight = 0.15;
-            prop.walkStyle[MoveMode.Walk].stepDuration = 0.8;
+            prop.walkStyle[MoveMode.Walk].stepDuration = 0.5;
             prop.walkStyle[MoveMode.Walk].stepFSkip = 1;
             prop.walkStyle[MoveMode.Walk].handAmplitude = 0.7;
             prop.walkStyle[MoveMode.Walk].handBodyDY = -0.1;
@@ -240,7 +240,7 @@ export class Human extends Humanoid {
 
             prop.walkStyle[MoveMode.Run].bootyShakiness = 0.2;
             prop.walkStyle[MoveMode.Run].stepHeight = 0.4;
-            prop.walkStyle[MoveMode.Run].stepDuration = 0.6;
+            prop.walkStyle[MoveMode.Run].stepDuration = 0.5;
             prop.walkStyle[MoveMode.Run].stepLength = 2;
             prop.walkStyle[MoveMode.Run].stepFSkip = 0.7;
             prop.walkStyle[MoveMode.Run].handAmplitude = 0.7;

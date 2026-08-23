@@ -300,8 +300,8 @@ export class Humanoid extends Mesh {
                 duration = MinMax(duration, this.prop.walkStyle[this.moveMode].stepDuration * 0.25, this.prop.walkStyle[this.moveMode].stepDuration);
 
                 let fromPosOrigin = Vector3.TransformCoordinates(this.prop.footTargets[this.legIndex], m);
-                fromPosOrigin.addInPlace(this.velocity.scale(duration * 0.5));
-                const posOriginFactor = 0.5 + 0.5 * (1 - this.velocity.length() / this.prop.maxSpeed);
+                fromPosOrigin.addInPlace(this.velocity.scale(duration * 1));
+                const posOriginFactor = 0.9;
 
                 origin.scaleInPlace(1 - posOriginFactor).addInPlace(fromPosOrigin.scale(posOriginFactor));
 
@@ -447,7 +447,7 @@ export class Humanoid extends Mesh {
         angleStrech = angleStrech * this.prop.overStrechAngleFactor;
         let footAnchor = this.body.position.clone();
         footAnchor.y = Math.min(this.leftLeg.footTarget.y, this.rightLeg.footTarget.y);
-        this.position.y = this.position.y * 0.99 + footAnchor.y * 0.01;
+        this.position.y = footAnchor.y;
         let dir = this.position.subtract(footAnchor);
         let l = dir.length();
         let maxL = this.prop.overStrechLengthMultiplier * this.prop.totalLegLength * (1 - angleStrech);

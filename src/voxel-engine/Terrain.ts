@@ -240,12 +240,12 @@ export class Terrain {
         return undefined;
     }
 
-    public getMeshesAtWorldPosition(pos: Vector3): ChunckMesh[] | undefined {
+    public getMeshesAtWorldPosition(pos: Vector3, range: number = 1): ChunckMesh[] | undefined {
         let meshI0Global = Math.floor((pos.x + this.blockSizeIJ_m * 0.5 + this.halfTerrainSizeIJ_m) / (this.chunckSizeIJ_m / this.meshesPerChunckSide));
         let meshJ0Global = Math.floor((pos.z + this.blockSizeIJ_m * 0.5 + this.halfTerrainSizeIJ_m) / (this.chunckSizeIJ_m / this.meshesPerChunckSide));
         let meshes: ChunckMesh[] | undefined = [];
-        for (let i = -1; i <= 1; i++) {
-            for (let j = -1; j <= 1; j++) {
+        for (let i = -range; i <= range; i++) {
+            for (let j = -range; j <= range; j++) {
                 let meshIGlobal = meshI0Global + i;
                 let meshJGlobal = meshJ0Global + j;
                 let chunckIPos = Math.floor(meshIGlobal / this.meshesPerChunckSide);    

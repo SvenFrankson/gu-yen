@@ -1,13 +1,13 @@
 import { Ray } from "@babylonjs/core/Culling/ray.pure";
 import { Material } from "@babylonjs/core/Materials/material.pure";
-import { Space } from "@babylonjs/core/Maths/math.axis";
+import { Axis, Space } from "@babylonjs/core/Maths/math.axis";
 import { Color3 } from "@babylonjs/core/Maths/math.color.pure";
 import { Vector3, Quaternion } from "@babylonjs/core/Maths/math.vector.pure";
 import { Mesh } from "@babylonjs/core/Meshes/mesh.pure";
 import { MeshBuilder } from "@babylonjs/core/Meshes/meshBuilder";
 import { Antenna } from "./Antenna";
 import { KneeMode, Leg } from "./Leg";
-import { Collider, DrawDebugHit, IsFinite, QuaternionFromYZAxis, QuaternionFromYZAxisToRef, QuaternionFromZYAxisToRef, RandomInSphereCut, RayCollidersIntersection, SphereCollider } from "babylonjs-tiaratumgames-tools";
+import { Collider, DrawDebugHit, DrawDebugPoint, IsFinite, QuaternionFromYZAxis, QuaternionFromYZAxisToRef, QuaternionFromZYAxisToRef, RandomInSphereCut, RayCollidersIntersection, SphereCollider } from "babylonjs-tiaratumgames-tools";
 import { IScorpionTailProps, ScorpionTail } from "./ScorpionTail";
 import { IsVeryFinite, MinMax } from "../Number";
 import { smoothNSec } from "../Tools";
@@ -126,7 +126,7 @@ export class Polypode extends Mesh {
     public mentalMapMaxSize: number = 200;
     public localNormal: Vector3 = Vector3.Up();
     
-    public mentalCheckPerFrame: number = 3;
+    public mentalCheckPerFrame: number = 0;
 
     public legPairCount: number = 2;
     public get legCount(): number {
@@ -520,10 +520,10 @@ export class Polypode extends Mesh {
         let m = this.computeWorldMatrix(true);
 
         if (this._stepping < this.stepSimultaneousMaxCount) {
-            let averageTimeBetweenStep = MinMax(2 - 20 * Math.abs(this.speed), 0, 2);
-            let prob1s = 1 / averageTimeBetweenStep;
-            let probDT = dt * prob1s;
-            if (Math.random() < probDT) {
+            //let averageTimeBetweenStep = MinMax(2 - 20 * Math.abs(this.speed), 0, 2);
+            //let prob1s = 1 / averageTimeBetweenStep;
+            //let probDT = dt * prob1s;
+            //if (Math.random() < probDT) {
                 let legTarget = Vector3.Zero();
                 let longestStepDist = 0;
                 let legToMove: Leg;
@@ -537,15 +537,26 @@ export class Polypode extends Mesh {
                     let normalRight: Vector3 | undefined;
                     let closestMentalMapSqrDist = Infinity;
 
-                    for (let j = 0; j < this.mentalMap.length; j++) {
-                        let mentalPoint = this.mentalMap[j];
-                        let sqrD = Vector3.DistanceSquared(legTarget, mentalPoint);
-                        if (sqrD < closestMentalMapSqrDist) {
-                            if (Vector3.DistanceSquared(this.rightLegs[i].hipPos, mentalPoint) < this.rightLegs[i].totalLengthSquared * 1) {
-                                targetRight = mentalPoint;
-                                normalRight = this.mentalMapNormal[j];
-                                closestMentalMapSqrDist = sqrD;
+                    if (this.mentalMap.length > 0) {
+                        for (let j = 0; j < this.mentalMap.length; j++) {
+                            let mentalPoint = this.mentalMap[j];
+                            let sqrD = Vector3.DistanceSquared(legTarget, mentalPoint);
+                            if (sqrD < closestMentalMapSqrDist) {
+                                if (Vector3.DistanceSquared(this.rightLegs[i].hipPos, mentalPoint) < this.rightLegs[i].totalLengthSquared * 1) {
+                                    targetRight = mentalPoint;
+                                    normalRight = this.mentalMapNormal[j];
+                                    closestMentalMapSqrDist = sqrD;
+                                }
                             }
+                        }
+                    }
+                    else {
+                        let ray = new Ray(legTarget.add(this.up.scale(0.5 * this.size)), new Vector3(0, - 1, 0));
+                        let intersection = RayCollidersIntersection(ray, this.terrain);
+                        if (intersection.hit) {
+                            targetRight = intersection.point!;
+                            normalRight = intersection.normal!;
+                            DrawDebugPoint(targetRight.clone(), 60, new Color3(0, 1, 1), 6);
                         }
                     }
                     if (targetRight) {
@@ -565,15 +576,26 @@ export class Polypode extends Mesh {
                     let normalLeft: Vector3 | undefined;
                     closestMentalMapSqrDist = Infinity;
 
-                    for (let j = 0; j < this.mentalMap.length; j++) {
-                        let mentalPoint = this.mentalMap[j];
-                        let sqrD = Vector3.DistanceSquared(legTarget, mentalPoint);
-                        if (sqrD < closestMentalMapSqrDist) {
-                            if (Vector3.DistanceSquared(this.leftLegs[i].hipPos, mentalPoint) < this.leftLegs[i].totalLengthSquared * 1) {
-                                targetLeft = mentalPoint;
-                                normalLeft = this.mentalMapNormal[j];
-                                closestMentalMapSqrDist = sqrD;
+                    if (this.mentalMap.length > 0) {
+                        for (let j = 0; j < this.mentalMap.length; j++) {
+                            let mentalPoint = this.mentalMap[j];
+                            let sqrD = Vector3.DistanceSquared(legTarget, mentalPoint);
+                            if (sqrD < closestMentalMapSqrDist) {
+                                if (Vector3.DistanceSquared(this.leftLegs[i].hipPos, mentalPoint) < this.leftLegs[i].totalLengthSquared * 1) {
+                                    targetLeft = mentalPoint;
+                                    normalLeft = this.mentalMapNormal[j];
+                                    closestMentalMapSqrDist = sqrD;
+                                }
                             }
+                        }
+                    }
+                    else {
+                        let ray = new Ray(legTarget.add(this.up.scale(0.5 * this.size)), new Vector3(0, - 1, 0));
+                        let intersection = RayCollidersIntersection(ray, this.terrain);
+                        if (intersection.hit) {
+                            targetLeft = intersection.point!;
+                            normalLeft = intersection.normal!;
+                            DrawDebugPoint(targetLeft.clone(), 60, new Color3(0, 1, 1), 6);
                         }
                     }
                     if (targetLeft) {
@@ -598,7 +620,7 @@ export class Polypode extends Mesh {
                         }
                     );
                 } 
-            }
+            //}
         }
 
         for (let i = 0; i < this.legPairCount; i++) {
@@ -629,6 +651,7 @@ export class Polypode extends Mesh {
         averageRightFoot.subtractInPlace(this.body.position);
         averageLeftFoot.subtractInPlace(this.body.position);
         let quatFromLeg = QuaternionFromYZAxis(this.localNormal, this.forward);
+        //let quatFromLeg = QuaternionFromYZAxis(Axis.Y, this.forward);
 
         Quaternion.SlerpToRef(this.body.rotationQuaternion!, quatFromLeg, 1 - smoothNSec(1 / dt, 0.1), this.body.rotationQuaternion!);
         
@@ -676,6 +699,7 @@ export class Polypode extends Mesh {
         // [^] Terrain collision
         
         // Prevent overstrech [v]
+        /*
         let dir = this.position.subtract(this.body.absolutePosition);
         let l = dir.length();
         let maxL = 1 * Math.sqrt(this.size);
@@ -683,6 +707,7 @@ export class Polypode extends Mesh {
             dir.scaleInPlace(1 / l);
             this.position.copyFrom(dir).scaleInPlace(maxL).addInPlace(this.body.absolutePosition);
         }
+        */
 
         this.antennas.forEach(antenna => {
             antenna.update(dt);

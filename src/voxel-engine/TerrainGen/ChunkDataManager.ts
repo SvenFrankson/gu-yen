@@ -36,8 +36,8 @@ export class ChunkDataManager {
                     let data = JSON.parse(dataText);
                     let inlineDataB64 = data.dataText;
                     let inlineData = Uint8Array.fromBase64(inlineDataB64);
-                    chunkData.deinlineData(inlineData);
-                    chunkData.dataInitialized = true;
+                    chunkData!.deinlineData(inlineData);
+                    chunkData!.dataInitialized = true;
                 }
                 else {
                     throw new Error("Failed to load chunk data, status: " + response.status);

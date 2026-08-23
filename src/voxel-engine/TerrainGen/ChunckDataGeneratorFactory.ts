@@ -51,7 +51,6 @@ export class ChunckDataGeneratorFactory {
             chunkManagerGenerator.url = props.url as string;
             chunkManagerGenerator.noiseUrl = props.noiseUrl as string;
             chunkManagerGenerator.squareSize = props.squareSize as number;
-            chunkManagerGenerator.treeTiles = props.treeTiles as IDataTilesCollection<IDataTile<ITreeData>>;
 
             let dLat = Math.atan2(16384, terrain.geoConverter.radius) / Math.PI * 180;
             let dLong = Math.atan2(16384, terrain.geoConverter.radius * Math.cos(terrain.geoConverter.latZero * Math.PI / 180)) / Math.PI * 180;
@@ -61,18 +60,19 @@ export class ChunckDataGeneratorFactory {
             chunkManagerGenerator.lat1 = terrain.geoConverter.latZero + dLat;
             chunkManagerGenerator.long1 = terrain.geoConverter.longZero + dLong;
 
-            chunkManagerGenerator.treeTiles.tiles.forEach(tile => {
-                tile.dataArray.forEach(t => {
-                    t.n = Math.floor(Math.random() * treesVoxelDrawingDatas.length);
-                    let x = (t.long - chunkManagerGenerator.long0) / (chunkManagerGenerator.long1 - chunkManagerGenerator.long0);
-                    let y = (t.lat - chunkManagerGenerator.lat0) / (chunkManagerGenerator.lat1 - chunkManagerGenerator.lat0);
-                    t.iGlobal = Math.floor(x * terrain.chunckLengthIJ * terrain.chunckCountIJ);
-                    t.jGlobal = Math.floor(y * terrain.chunckLengthIJ * terrain.chunckCountIJ);
+            if (props.treeTiles) {
+                chunkManagerGenerator.treeTiles = props.treeTiles as IDataTilesCollection<IDataTile<ITreeData>>;
+                chunkManagerGenerator.treeTiles.tiles.forEach(tile => {
+                    tile.dataArray.forEach(t => {
+                        t.n = Math.floor(Math.random() * treesVoxelDrawingDatas.length);
+                        let x = (t.long - chunkManagerGenerator.long0) / (chunkManagerGenerator.long1 - chunkManagerGenerator.long0);
+                        let y = (t.lat - chunkManagerGenerator.lat0) / (chunkManagerGenerator.lat1 - chunkManagerGenerator.lat0);
+                        t.iGlobal = Math.floor(x * terrain.chunckLengthIJ * terrain.chunckCountIJ);
+                        t.jGlobal = Math.floor(y * terrain.chunckLengthIJ * terrain.chunckCountIJ);
+                    });
                 });
-            });
+            }
 
-            
-            chunkManagerGenerator.treeTiles = props.treeTiles as IDataTilesCollection<IDataTile<ITreeData>>;
             if (props.roadTiles) {
                 let tags: UniqueList<string> = new UniqueList<string>();
                 let widthByType: { [type: string]: number } = {};

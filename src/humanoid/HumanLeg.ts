@@ -86,7 +86,7 @@ export class HumanLeg extends Mesh {
         this._kneeTarget.copyFrom(this.hipWorldPosition).addInPlace(this.footTarget).scaleInPlace(0.5).addInPlace(this.humanoid.forward.scale(0.1));
         let ankleTarget = this.footUp.scale(this.prop.footThickness).add(this.footTarget);
         
-        for (let n = 0; n < 6; n++) {
+        for (let n = 0; n < 3; n++) {
             ForceDistanceFromOriginInPlace(this._kneeTarget, ankleTarget, this.prop.lowerLegLength);
             ForceDistanceFromOriginInPlace(this._kneeTarget, this.hipWorldPosition, this.prop.upperLegLength);
         }
