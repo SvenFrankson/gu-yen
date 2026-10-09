@@ -85,3 +85,13 @@ BlockTypeColors[BlockType.YellowConcrete] = Color3.FromHexString("#e6d784");
 BlockTypeColors[BlockType.GrayConcrete] = Color3.FromHexString("#b1aea6");
 BlockTypeColors[BlockType.BlackConcrete] = Color3.FromHexString("#6b635a");
 BlockTypeColors[BlockType.MetalPole] = new Color3(0.839, 0.431, 0.02);
+
+export var BlockTypeNoisyness: number[] = BlockTypeNames.map(() => 0.5);
+BlockTypeNoisyness[BlockType.Grass] = 2;
+BlockTypeNoisyness[BlockType.SparseGrass] = 2;
+BlockTypeNoisyness[BlockType.Dirt] = 2;
+BlockTypeNoisyness[BlockType.Sand] = 2;
+BlockTypeNoisyness[BlockType.WhiteConcrete] = 0;
+BlockTypeNoisyness[BlockType.YellowConcrete] = 0;
+BlockTypeNoisyness[BlockType.GrayConcrete] = 0;
+BlockTypeNoisyness[BlockType.BlackConcrete] = 0;

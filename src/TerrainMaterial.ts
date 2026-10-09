@@ -6,7 +6,7 @@ import { Color3 } from "@babylonjs/core/Maths/math.color.pure";
 import { Vector3 } from "@babylonjs/core/Maths/math.vector.pure";
 import { Scene } from "@babylonjs/core/scene.pure";
 import { ShaderMaterial } from "@babylonjs/core/Materials/shaderMaterial.pure";
-import { BlockTypeColors } from "./voxel-engine/BlockType";
+import { BlockTypeColors, BlockTypeNoisyness } from "./voxel-engine/BlockType";
 
 export class TerrainMaterial extends ShaderMaterial {
 
@@ -60,6 +60,7 @@ export class TerrainMaterial extends ShaderMaterial {
         
         console.log("Passing " + BlockTypeColors.length + " terrain colors to shader");
         this.setColor3Array("terrainColors", BlockTypeColors);
+        this.setFloats("noisyness", BlockTypeNoisyness);
         
         this.setTexture("barkTexture", new Texture("textures/bark.png"));
         this.setTexture("leavesTexture", new Texture("textures/leaves_2.png"));

@@ -25,13 +25,30 @@ export class MyCamera extends UniversalCamera {
 
     public pointer: Mesh;
 
-    public distance: number = 7;
+    private _distance: number = 0;
+    public get distance(): number {
+        return this._distance;
+    }
+    public set distance(value: number) {
+        this._distance = value;
+        this.updateHeadVisibility();
+    }
+    public updateHeadVisibility(): void {
+        if (this._distance <= 0) {
+            console.log("hide head")
+            this.player.human!.head.isVisible = false;
+        }
+        else {
+            console.log("show head");
+            this.player.human!.head.isVisible = true;
+        }
+    }
 
     constructor(public player: Player, public game: Game, public useOutline: boolean = true) {
         super("my-camera", new Vector3(0, 64, 0), game.scene);
 
         this.maxZ = 2000;
-        this.minZ = 0.2;
+        this.minZ = 0.1;
 
         this.speed = 0.2;
 
@@ -130,15 +147,15 @@ export class MyCamera extends UniversalCamera {
 
     private _update = () => {
         let terrain = this.player.human?.terrain;
-        if (terrain) {
-            let ray = new Ray(this.player.head.absolutePosition, this.player.head.forward.scale(-1), 7);
+        if (terrain && this.distance > 0) {
+            let ray = new Ray(this.player.eyes.absolutePosition, this.player.eyes.forward.scale(-1), this.distance);
             let intersection = RayCollidersIntersection(ray, terrain);
             if (intersection.hit) {
                 let d = Vector3.Distance(ray.origin, intersection.point!);
                 this.distance = this.distance * 0.95 + d * 0.05;
             }
             else {
-                this.distance = this.distance * 0.99 + 7 * 0.01;
+                this.distance = this.distance * 0.99 + this.distance * 0.01;
             }
         }
         if (this.player.vehicle instanceof Vehicle) {
@@ -147,9 +164,9 @@ export class MyCamera extends UniversalCamera {
             this.rotationQuaternion = QuaternionFromZYAxis(this.player.vehicle.head.forward, Vector3.Up());
         }
         else {
-            this.position.copyFrom(this.player.head.absolutePosition);
-            this.position.subtractInPlace(this.player.head.forward.scale(this.distance));
-            this.rotationQuaternion = QuaternionFromZYAxis(this.player.head.forward, this.player.head.up);
+            this.position.copyFrom(this.player.eyes.absolutePosition);
+            this.position.subtractInPlace(this.player.eyes.forward.scale(this.distance));
+            this.rotationQuaternion = QuaternionFromZYAxis(this.player.eyes.forward, this.player.eyes.up);
         }
         if (this.game.terrain && this.editionMode !== 0) {
             let ray = this._scene.createPickingRay(this._scene.pointerX, this._scene.pointerY, Matrix.Identity(), this);

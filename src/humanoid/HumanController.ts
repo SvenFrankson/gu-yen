@@ -171,12 +171,13 @@ export class Human extends Humanoid {
 
     public bodyVertexData: VertexData | null = null;
     public torsoVertexData: VertexData | null = null;
+    public headVertexData: VertexData | null = null;
     public upperLegVertexData: VertexData | null = null;
     public lowerLegVertexData: VertexData | null = null
     public footVertexData: VertexData | null = null;
     public upperArmVertexData: VertexData | null = null;
     public lowerArmVertexData: VertexData | null = null;
-    public handVertexData: VertexData | null = null
+    public handVertexData: VertexData | null = null;
 
     public static async FactoryInstantiate(game: Game, name?: string, randomness: number = -Infinity): Promise<Human | null> {
         if (!name) {
@@ -193,11 +194,13 @@ export class Human extends Humanoid {
             let upperArm = dataArray.find(d => d.name === "5-upper-arm")!;
             let lowerArm = dataArray.find(d => d.name === "6-lower-arm")!;
             let hand = dataArray.find(d => d.name === "7-hand")!;
+            let head = dataArray.find(d => d.name === "8-head")!;
             
             let footThickness = foot.position.y;
             let footTarget = foot.position.clone();
             footTarget.y = 0;
 
+            let headAnchor = head.position.subtract(torso.position);
             let hipAnchor = upperLeg.position.subtract(body.position);
             let shoulderAnchor = upperArm.position.subtract(torso.position);
             let torsoAnchor = torso.position.subtract(body.position);
@@ -210,7 +213,7 @@ export class Human extends Humanoid {
             prop.hipAnchor = hipAnchor;
             prop.shoulderAnchor = shoulderAnchor;
             prop.footTarget = footTarget;
-            prop.headAnchor = (new Vector3(0, 0.8, 0.1));
+            prop.headAnchor = headAnchor;
             prop.torsoAnchor = torsoAnchor;
             prop.footThickness = footThickness;
             prop.upperLegLength = upperLegLength;
@@ -288,6 +291,8 @@ export class Human extends Humanoid {
             human.lowerLegVertexData = RotateVertexDataInPlace(lowerLeg.vertexData, lowerLegQ);
 
             human.footVertexData = foot.vertexData;
+
+            human.headVertexData = head.vertexData;
             
             let handForward = Axis.X;
             let handQ = QuaternionFromZYAxis(handForward, Vector3.Up()).invertInPlace();

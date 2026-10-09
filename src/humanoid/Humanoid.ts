@@ -18,6 +18,7 @@ import { Human } from "./HumanController";
 import { HumanArm } from "./HumanArm";
 import { HumanoidProp, MoveMode } from "./HumanoidProp";
 import { NameTag } from "../ui3D/NameTag";
+import { CreateBoxVertexData } from "@babylonjs/core/Meshes/Builders/boxBuilder.pure";
 
 export class Humanoid extends Mesh {
 
@@ -157,6 +158,7 @@ export class Humanoid extends Mesh {
         if (this instanceof Human) {
             this.bodyVertexData?.applyToMesh(this.body);
             this.torsoVertexData?.applyToMesh(this.torso);
+            this.headVertexData?.applyToMesh(this.head);
         }
     }
 
@@ -271,7 +273,7 @@ export class Humanoid extends Mesh {
         Vector3.TransformCoordinatesToRef(this.prop.rightHipAnchor, this.body.getWorldMatrix(), this.rightLeg.hipWorldPosition);
         Vector3.TransformCoordinatesToRef(this.prop.leftShoulderAnchor, this.torso.getWorldMatrix(), this.leftArm.shoulderWorldPosition);
         Vector3.TransformCoordinatesToRef(this.prop.rightShoulderAnchor, this.torso.getWorldMatrix(), this.rightArm.shoulderWorldPosition);
-        Vector3.TransformCoordinatesToRef(this.prop.headAnchor, this.body.getWorldMatrix(), this.head.position);
+        Vector3.TransformCoordinatesToRef(this.prop.headAnchor, this.torso.getWorldMatrix(), this.head.position);
 
         let m = this.computeWorldMatrix(true);
 
@@ -463,7 +465,7 @@ export class Humanoid extends Mesh {
             this.nameTag.position.y = this.nameTag.position.y * 0.99 + (footAnchor.y + 2) * 0.01;
             this.nameTag.position.z = footAnchor.z;
             
-            this.nameTag.lines = [this.name, this.moveInput.x.toFixed(2) + "," + this.moveInput.z.toFixed(0), fMaxSpeed.toFixed(2)];
+            this.nameTag.lines = [this.name, this.moveInput.x.toFixed(2) + "," + this.moveInput.z.toFixed(0), fMaxSpeed.toFixed(2), this.head.absolutePosition.x.toFixed(2) + "," + this.head.absolutePosition.y.toFixed(2) + "," + this.head.absolutePosition.z.toFixed(2) ];
             this.nameTag.redraw();
         }
     }

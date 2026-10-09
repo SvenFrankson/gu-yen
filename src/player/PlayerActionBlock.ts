@@ -7,7 +7,8 @@ import { MakeStandardMaterial } from "../MaterialUtils";
 import { BlockType } from "../voxel-engine/BlockType";
 import { TerrainMaterial } from "../TerrainMaterial";
 import { PlayerAction } from "./PlayerAction";
-import { CreateBeveledBox } from "babylonjs-tiaratumgames-tools";
+import { CloneVertexData, CreateBeveledBox, CreateBeveledBoxVertexData, MergeVertexDatas, TranslateVertexDataInPlace } from "babylonjs-tiaratumgames-tools";
+import { CreateLineSystem, Vector3, VertexData } from "@babylonjs/core";
 
 export class PlayerActionBlock extends PlayerAction {
 
@@ -28,11 +29,24 @@ export class PlayerActionBlock extends PlayerAction {
 
         this.svgIcon = "";
 
-        this.blockPointer = CreateBeveledBox("block-pointer", { size: 0.5 }, player.game.scene);
-        this.blockPointer.scaling.copyFromFloats(1.05, 1.05, 1.05);
-        let redMaterial = MakeStandardMaterial(player._scene, new Color3(1, 0.5, 0.5), 0, 0.3);
-        redMaterial.alpha = 0.5;
+        this.blockPointer = CreateBeveledBox("block-pointer", { size: 0.45 }, player.game.scene);
+        let redMaterial = MakeStandardMaterial(player._scene, new Color3(1, 1, 1), 0, 0.3);
         this.blockPointer.material = redMaterial;
+        this.blockPointer.visibility = 0.6;
+
+        /*
+        for (let x = - 1; x <= 1; x++) {
+            for (let y = 0; y <= 0; y++) {
+                for (let z = - 1; z <= 1; z++) {
+                    let translatedBlock = CreateBeveledBox("block-pointer", { size: 0.45 }, player.game.scene);
+                    translatedBlock.parent = this.blockPointer;
+                    translatedBlock.position = new Vector3(x * 0.5, y * 0.5, z * 0.5);
+                    translatedBlock.visibility = 0.2;
+                    translatedBlock.material = redMaterial;
+                }
+            }
+        }
+        */
     }
 
     public equip(): void {

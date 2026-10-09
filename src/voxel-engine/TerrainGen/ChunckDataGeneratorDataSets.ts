@@ -239,6 +239,7 @@ export class ChunckDataGeneratorDataSets extends ChunckDataGenerator {
     }
 
     public async initializeData(chunck: Chunck | ChunkData): Promise<boolean> {
+        let cubeMode = false;
         let m = chunck instanceof Chunck ? DRAW_CHUNCK_MARGIN : 0;
 
         if (!chunck.dataInitialized) {
@@ -302,8 +303,12 @@ export class ChunckDataGeneratorDataSets extends ChunckDataGenerator {
                     let iGlobal = (i + chunck.chunckLengthIJ * chunck.iPos);
                     let jGlobal = (j + chunck.chunckLengthIJ * chunck.jPos);
 
-                    let isRoad = roadMap[i + m][j + m];
+                    if (cubeMode) {
+                        iGlobal = Math.floor(iGlobal / 2) * 2;
+                        jGlobal = Math.floor(jGlobal / 2) * 2;
+                    }
 
+                    let isRoad = roadMap[i + m][j + m];
 
                     let h = this.evaluateHeight(heightMap, iGlobal, jGlobal);
 
@@ -313,6 +318,11 @@ export class ChunckDataGeneratorDataSets extends ChunckDataGenerator {
                     let jGlobalNoise = Math.floor(j + chunck.chunckLengthIJ * chunck.jPos);
                     while (jGlobalNoise < 0) jGlobalNoise += this.noiseSize;
                     jGlobalNoise = jGlobalNoise % this.noiseSize;
+
+                    if (cubeMode) {
+                        iGlobalNoise = Math.floor(iGlobalNoise / 2) * 2;
+                        jGlobalNoise = Math.floor(jGlobalNoise / 2) * 2;
+                    }
 
                     let noiseValue = 0;
                     if (noiseMap) {
@@ -341,6 +351,12 @@ export class ChunckDataGeneratorDataSets extends ChunckDataGenerator {
                     else if (isRoad >= 1 && isRoad <= 2) {
                         maxRock -= 2;
                         maxAsphalt = h - 1;
+                    }
+
+                    if (cubeMode) {
+                        maxRock = Math.floor(maxRock / 2) * 2;
+                        maxDirt = Math.floor(maxDirt / 2) * 2;
+                        maxAsphalt = Math.floor(maxAsphalt / 2) * 2;
                     }
 
                     for (let k: number = 0; k <= chunck.chunckLengthK; k++) {

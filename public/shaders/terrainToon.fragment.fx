@@ -3,6 +3,7 @@ precision highp float;
 precision mediump sampler3D;
  
 uniform vec3 terrainColors[22];
+uniform float noisyness[22];
 uniform vec3 lightInvDirW;
 uniform int level;
 uniform float blockSize_m;
@@ -75,16 +76,17 @@ void main() {
 
    float period = 1.;
    float ampli = 0.1;
-   float outlineThreshold = 0.;
-
-   vec3 uvrNoise = vec3(vPositionL.x * 0.1, vPositionL.z * 0.1, vPositionL.y * 0.1);
-   float noise = 2. * (texture(noiseTexture, uvrNoise).r - 0.5);
+   float outlineThreshold = 0.01;
 
    int cIndex1 = colorIndex1;
    int cIndex2 = colorIndex2;
    int cIndex3 = colorIndex3;
 
+   vec3 uvrNoise = vec3(vPositionL.x, vPositionL.z, vPositionL.y) * 0.15;
+   float noise = (noisyness[cIndex1] + noisyness[cIndex2] + noisyness[cIndex3]) / 3. * (texture(noiseTexture, uvrNoise).r - 0.5);
+
    // Turn Grass into Dirt on vertical surfaces
+   /*
    float diff = vNormalW.y - (0.85 + noise * 0.1);
    if (cIndex1 >= 2 && cIndex1 <= 3) {
       if (diff < 0.) {
@@ -101,6 +103,7 @@ void main() {
          cIndex3 = 4;
       }
    }
+   */
 
    float offset = noise * 0.25;
    // case all same
@@ -230,13 +233,17 @@ void main() {
 
    // show grid
    /*
-   float dx = vPositionW.x - floor(vPositionW.x);
-   float dz = vPositionW.z - floor(vPositionW.z);
+   float dx = vPositionW.x / blockSize_m - floor(vPositionW.x / blockSize_m);
+   float dy = vPositionW.y / blockHeight_m - floor(vPositionW.y / blockHeight_m);
+   float dz = vPositionW.z / blockSize_m - floor(vPositionW.z / blockSize_m);
 
-   if (dx < 0.005 || dx > 0.995) {
+   if ((dx < 0.005 || dx > 0.995) && (dy < 0.005 || dy > 0.995)) {
       color = vec3(0.1, 0., 0.1);
    }
-   if (dz < 0.005 || dz > 0.995) {
+   if ((dz < 0.005 || dz > 0.995) && (dy < 0.005 || dy > 0.995)) {
+      color = vec3(0.1, 0., 0.1);
+   }
+   if ((dz < 0.005 || dz > 0.995) && (dx < 0.005 || dx > 0.995)) {
       color = vec3(0.1, 0., 0.1);
    }
    */
@@ -254,6 +261,7 @@ void main() {
    }
    */
 
+   /*
    vec2 diffuseUV = vec2(0., 0.);
    if (abs(vNormalL.x) >= abs(vNormalL.y) && abs(vNormalL.x) >= abs(vNormalL.z)) {
       diffuseUV.x = vPositionL.z * 1.;
@@ -268,7 +276,6 @@ void main() {
       diffuseUV.y = vPositionL.y * 1.;
    }
 
-   /*
    if (colorIndex == 2) {
       color = texture(grassTexture, diffuseUV * 0.3).rgb;
    }

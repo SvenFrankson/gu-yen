@@ -205,7 +205,9 @@ export class Game {
 
         this.miniatureFactory = new MiniatureFactory(this);
 
-        this.player.instantiate();
+        this.player.instantiate().then(() => {
+            this.camera.updateHeadVisibility();
+        });
 
         ChunckVertexData.InitializeData("meshes/chunck-parts.gltf", this.scene).then(async () => {
             await BlockPoleVertexData.InitializeData("meshes/poleblocks.gltf", this.scene);
@@ -235,12 +237,12 @@ export class Game {
                     //url: "map_2.png",
                     noiseUrl: "noise.png",
                     squareSize: squareSize,
-                    //treeTiles: treeDatas,
-                    //roadTiles: roadDatas,
-                    //buildingTiles: buildingDatas
+                    treeTiles: treeDatas,
+                    roadTiles: roadDatas,
+                    buildingTiles: buildingDatas
                 },
                 maxDisplayedLevel: 0,
-                blockSizeIJ_m: 1,
+                blockSizeIJ_m: 0.5,
                 blockSizeK_m: 0.5,
                 chunckLengthIJ: chunckLengthIJ,
                 chunckLengthK: 256,
@@ -250,9 +252,9 @@ export class Game {
             });
 
             this.terrain.initialize();
-            this.terrain.chunckManager.setDistance(100);
+            this.terrain.chunckManager.setDistance(50);
             setTimeout(() => {
-                this.terrain!.chunckManager.setDistance(200);
+                this.terrain!.chunckManager.setDistance(100);
             }, 5000);
             this.terrain.sunDir.copyFrom(light.direction);
 

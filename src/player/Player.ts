@@ -27,6 +27,7 @@ export class Player extends Mesh {
     public defaultAction: PlayerActionDefault;
 
     public head: TransformNode;
+    public eyes: TransformNode;
     public vehicle: Vehicle | undefined;
     public chuncks: Chunck[] = [];
     public chunckMeshes: Mesh[] = [];
@@ -70,7 +71,12 @@ export class Player extends Mesh {
         //});
         this.head = new TransformNode("player-head", game.scene);
         this.head.parent = this;
-        this.head.position.y = 1.8;
+        this.head.position.y = 1.5;
+
+        this.eyes = new TransformNode("player-eyes", game.scene);
+        this.eyes.parent = this.head;
+        this.eyes.position.z = 0.1;
+        this.eyes.position.y = 0.1;
 
         this.playerActionManager = new PlayerActionManager(this);
         this.playerInventory = new PlayerInventory(this);

@@ -74,7 +74,7 @@ export class OutlinePostProcess {
 					int r = int(round(gl_FragColor.r * 256.));
 					if (r % 2 == 1) {
 						if (max(sobel.r, max(sobel.g, sobel.b)) > 1. + 0.25 * depthFactor) {
-							gl_FragColor = vec4(0., 0., 0., 1.) * (1. - depthFactor) + n[4] * depthFactor;
+							//gl_FragColor = vec4(0., 0., 0., 1.) * (1. - depthFactor) + n[4] * depthFactor;
 						}
 					}
 				}
