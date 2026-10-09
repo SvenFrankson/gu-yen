@@ -12,7 +12,7 @@ import { CreateLineSystem, Vector3, VertexData } from "@babylonjs/core";
 
 export class PlayerActionBlock extends PlayerAction {
 
-    public blockPointer: Mesh;
+    public blockPointer: Mesh | null = null;
 
     public static async Create(player: Player, blockType: BlockType): Promise<PlayerActionBlock> {
         let playerActionBlock = new PlayerActionBlock(player, blockType);
@@ -28,11 +28,6 @@ export class PlayerActionBlock extends PlayerAction {
         `;
 
         this.svgIcon = "";
-
-        this.blockPointer = CreateBeveledBox("block-pointer", { size: 0.45 }, player.game.scene);
-        let redMaterial = MakeStandardMaterial(player._scene, new Color3(1, 1, 1), 0, 0.3);
-        this.blockPointer.material = redMaterial;
-        this.blockPointer.visibility = 0.6;
 
         /*
         for (let x = - 1; x <= 1; x++) {
@@ -51,11 +46,27 @@ export class PlayerActionBlock extends PlayerAction {
 
     public equip(): void {
         super.equip();
+        if (!this.blockPointer) {
+            this.blockPointer = CreateBeveledBox("block-pointer", { size: 0.45 }, this.player.game.scene);
+            let redMaterial = MakeStandardMaterial(this.player._scene, new Color3(1, 1, 1), 0, 0.3);
+            this.blockPointer.material = redMaterial;
+            this.blockPointer.visibility = 0.6;
+        }
+    }
+
+    public unEquip(): void {
+        super.unEquip();
+        if (this.blockPointer) {
+            this.blockPointer.dispose();
+            this.blockPointer = null;
+        }
     }
     
     public update(): void {
         if (this.game.terrain) {
-            this.blockPointer.isVisible = false;
+            if (this.blockPointer) {
+                this.blockPointer.isVisible = false;
+            }
             if (this.game.terrain) {
                 let material = this.game.terrain.getMaterial(0) as TerrainMaterial;
                 material.setGridRangeRadius(0);
@@ -72,12 +83,16 @@ export class PlayerActionBlock extends PlayerAction {
                     let ijk = this.game.terrain.getChunckAndIJKAtPos(p, 0, false);
                     if (ijk) {
                         this.player.aimedIJK = ijk;
-                        this.blockPointer.position = ijk.chunck.getPosAtIJK(ijk.ijk);
-                        this.blockPointer.isVisible = true;
+                        if (this.blockPointer) {
+                            this.blockPointer.position = ijk.chunck.getPosAtIJK(ijk.ijk);
+                            this.blockPointer.isVisible = true;
+                        }
                         if (this.game.terrain) {
                             let material = this.game.terrain.getMaterial(0) as TerrainMaterial;
-                            material.setGridRangeRadius(this.game.terrain.blockSizeIJ_m * 0.5 + 0.02);
-                            material.setGridRangePosition(this.blockPointer.position);
+                            if (this.blockPointer) {
+                                material.setGridRangeRadius(this.game.terrain.blockSizeIJ_m * 0.5 + 0.01);
+                                material.setGridRangePosition(this.blockPointer.position);
+                            }
                         }
                         return;
                     }

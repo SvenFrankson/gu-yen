@@ -354,8 +354,11 @@ void main() {
    }
    
    if (gridRangeRadius_m > 0.) {
+      vec3 invCol = vec3(1.0) * (1. - round((color.r + color.g + color.b) / 3.));
       vec3 dist = vPositionW - gridRangePosition;
+      
       if (abs(dist.x) < gridRangeRadius_m && abs(dist.y) < gridRangeRadius_m && abs(dist.z) < gridRangeRadius_m) {
+         /*
          if (abs(dist.x) > gridRangeRadius_m - 0.01 || abs(dist.y) > gridRangeRadius_m - 0.01 || abs(dist.z) > gridRangeRadius_m - 0.01) {
             color = vec3(1., 1., 1.);
             lightFactor = 1.;
@@ -364,6 +367,27 @@ void main() {
             color.r *= 1.5;
             color.g *= 0.75;
             color.b *= 0.75;
+         }
+         */
+         color.r *= 1.4;
+         color.g *= 1.4;
+         color.b *= 1.4;
+      }
+      if (length(dist) < 4. * gridRangeRadius_m) {
+         float dx = vPositionW.x / blockSize_m - floor(vPositionW.x / blockSize_m);
+         float dy = vPositionW.y / blockHeight_m - floor(vPositionW.y / blockHeight_m);
+         float dz = vPositionW.z / blockSize_m - floor(vPositionW.z / blockSize_m);
+
+         float l0 = 0.008;
+         float l1 = 0.992;
+         if ((dx < l0 || dx > l1) && (dy < l0 || dy > l1)) {
+            color = invCol;
+         }
+         if ((dz < l0 || dz > l1) && (dy < l0 || dy > l1)) {
+            color = invCol;
+         }
+         if ((dz < l0 || dz > l1) && (dx < l0 || dx > l1)) {
+            color = invCol;
          }
       }
    }

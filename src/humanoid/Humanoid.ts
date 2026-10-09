@@ -254,10 +254,11 @@ export class Humanoid extends Mesh {
         let fMaxSpeed = 1 - Math.acos(this.moveInput.z) / Math.PI;
         fMaxSpeed = fMaxSpeed;
         let maxSpeed = fMaxSpeed * this.prop.maxSpeed + (1 - fMaxSpeed) * this.prop.maxSpeed * 0.1;
+        maxSpeed = this.prop.maxSpeed;
 
-        this.velocity.scaleInPlace(0.95);
-        this.velocity.addInPlace(this.forward.scale(this.moveInput.z * maxSpeed * 0.05));
-        this.velocity.addInPlace(this.right.scale(this.moveInput.x * maxSpeed * 0.05));
+        this.velocity.scaleInPlace(0.9);
+        this.velocity.addInPlace(this.forward.scale(this.moveInput.z * maxSpeed * 0.1));
+        this.velocity.addInPlace(this.right.scale(this.moveInput.x * maxSpeed * 0.1));
         this.velocity.y = 0;
         this.fSpeed = this.visibleSpeed / this.prop.maxSpeed;
         this.fSpeed = Math.max(Math.min(this.fSpeed, 1), 0);

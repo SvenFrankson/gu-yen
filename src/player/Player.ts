@@ -75,8 +75,8 @@ export class Player extends Mesh {
 
         this.eyes = new TransformNode("player-eyes", game.scene);
         this.eyes.parent = this.head;
-        this.eyes.position.z = 0.1;
-        this.eyes.position.y = 0.1;
+        this.eyes.position.z = 0.15;
+        this.eyes.position.y = 0.15;
 
         this.playerActionManager = new PlayerActionManager(this);
         this.playerInventory = new PlayerInventory(this);
@@ -190,7 +190,7 @@ export class Player extends Mesh {
             this.human.prop.walkStyle[MoveMode.Run].stepDuration = 0.3;
             this.human.prop.overStrechAngleFactor = 0;
             this.human.prop.overStrechLengthMultiplier = 10.0;
-            this.human.prop.maxSpeed = 5;
+            this.human.prop.maxSpeed = 8;
             this.human.setPosition(this.absolutePosition);
         }
     }
@@ -351,6 +351,7 @@ export class Player extends Mesh {
             else {
                 this.rotation.y += movementX * 0.004;
                 this.head.rotation.x += movementY * 0.004;
+                this.head.rotation.x = Math.max(- Math.PI / 2 * 0.99, Math.min(Math.PI / 2 * 0.99, this.head.rotation.x));
             }
         }
         let defaultActionValue = this.defaultAction.pointerMove(e);
