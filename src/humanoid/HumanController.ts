@@ -244,7 +244,7 @@ export class Human extends Humanoid {
             prop.walkStyle[MoveMode.Run].bootyShakiness = 0.2;
             prop.walkStyle[MoveMode.Run].stepHeight = 0.4;
             prop.walkStyle[MoveMode.Run].stepDuration = 0.5;
-            prop.walkStyle[MoveMode.Run].stepLength = 2;
+            prop.walkStyle[MoveMode.Run].stepLength = 3;
             prop.walkStyle[MoveMode.Run].stepFSkip = 0.7;
             prop.walkStyle[MoveMode.Run].handAmplitude = 0.7;
             prop.walkStyle[MoveMode.Run].handBodyDY = 0.1;

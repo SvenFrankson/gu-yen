@@ -76,7 +76,7 @@ void main() {
 
    float period = 1.;
    float ampli = 0.1;
-   float outlineThreshold = 0.01;
+   float outlineThreshold = 0.02;
 
    int cIndex1 = colorIndex1;
    int cIndex2 = colorIndex2;

@@ -25,6 +25,7 @@ export class MyCamera extends UniversalCamera {
 
     public pointer: Mesh;
 
+    public maxDistance: number = 0;
     private _distance: number = 0;
     public get distance(): number {
         return this._distance;
@@ -35,11 +36,9 @@ export class MyCamera extends UniversalCamera {
     }
     public updateHeadVisibility(): void {
         if (this._distance <= 0) {
-            console.log("hide head")
             this.player.human!.head.isVisible = false;
         }
         else {
-            console.log("show head");
             this.player.human!.head.isVisible = true;
         }
     }
@@ -61,6 +60,7 @@ export class MyCamera extends UniversalCamera {
         this.game.scene.onBeforeRenderObservable.add(this._update);
 
         this.game.canvas.addEventListener("pointerdown", this._pointerDown);
+        this.game.canvas.addEventListener("wheel", this._wheel);
 
         document.getElementById("add-concrete")?.addEventListener("click", () => {
             if (this.editionMode === 1) {
@@ -145,17 +145,22 @@ export class MyCamera extends UniversalCamera {
         
     }
 
+    public _wheel = (event: WheelEvent) => {
+        this.maxDistance += event.deltaY * 0.01;
+        this.maxDistance = MinMax(this.maxDistance, 0, 16);
+    }
+
     private _update = () => {
         let terrain = this.player.human?.terrain;
-        if (terrain && this.distance > 0) {
+        if (terrain) {
             let ray = new Ray(this.player.eyes.absolutePosition, this.player.eyes.forward.scale(-1), this.distance);
             let intersection = RayCollidersIntersection(ray, terrain);
             if (intersection.hit) {
                 let d = Vector3.Distance(ray.origin, intersection.point!);
-                this.distance = this.distance * 0.95 + d * 0.05;
+                this.distance = this.distance * 0.8 + d * 0.2;
             }
             else {
-                this.distance = this.distance * 0.99 + this.distance * 0.01;
+                this.distance = this.distance * 0.98 + this.maxDistance * 0.02;
             }
         }
         if (this.player.vehicle instanceof Vehicle) {
