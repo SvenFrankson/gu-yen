@@ -193,8 +193,8 @@ export class Humanoid extends Mesh {
             hMax = Math.min(hMax, this.prop.totalLegLength * 0.5);
             let desiredStepLength = this.prop.walkStyle[this.moveMode].stepLength;
             //let duration = Math.min(this.prop.walkStyle[this.moveMode].stepDuration, dist);
-            let duration = Math.min(dist, desiredStepLength) / Math.max(this.velocity.length(), 1) * this.prop.walkStyle[this.moveMode].stepFSkip;
-            //duration = MinMax(duration, this.prop.walkStyle[this.moveMode].stepDuration * 0.25, this.prop.walkStyle[this.moveMode].stepDuration);
+            let duration = Math.min(dist, desiredStepLength) / this.velocity.length() * this.prop.walkStyle[this.moveMode].stepFSkip;
+            duration = Math.min(Math.max(duration, this.prop.walkStyle[this.moveMode].stepDuration * 0.5), this.prop.walkStyle[this.moveMode].stepDuration);
             let t = 0;
             leg.stepping = true;
             let easingFactor = this.prop.walkStyle[this.moveMode].stepEasingFactor;
@@ -290,33 +290,22 @@ export class Humanoid extends Mesh {
                 let quat = QuaternionFromYZAxis(Axis.Y, this.forward);
                 let leg = this.legs[this.legIndex];
                 let otherLeg = this.legs[(this.legIndex + 1) % 2];
-                let deltaFootTarget = this.prop.footTargets[this.legIndex].subtract(this.prop.footTargets[(this.legIndex + 1) % 2]);
-                deltaFootTarget.applyRotationQuaternionInPlace(quat);
-                let origin: Vector3;
-                if (this.otherLegFootTarget) {
-                    origin = this.otherLegFootTarget.clone();
-                }
-                else {
-                    origin = otherLeg.footTarget.clone();
-                }
-                origin.addInPlace(deltaFootTarget);
-                origin.addInPlace(moveDir.scale(stepDistance));
 
-                let desiredStepLength = this.prop.walkStyle[this.moveMode].stepLength;
-                let duration = desiredStepLength / Math.max(this.velocity.length(), 1);
-                //duration = MinMax(duration, this.prop.walkStyle[this.moveMode].stepDuration * 0.25, this.prop.walkStyle[this.moveMode].stepDuration);
+                let duration = this.prop.walkStyle[this.moveMode].stepDuration;
+                let p = this.position.add(this.velocity.scale(duration * 0.5));
 
-                let fromPosOrigin = Vector3.TransformCoordinates(this.prop.footTargets[this.legIndex], m);
-                fromPosOrigin.addInPlace(this.velocity.scale(duration * 0.75 * (inputing ? 1 : 0)));
-                const posOriginFactor = 0.9;
+                let originSym: Vector3 = otherLeg.footTarget.subtract(p);
+                originSym.y = 0;
+                originSym.scaleInPlace(-1);
+                originSym.addInPlace(p);
+                originSym.y += 1;
 
-                origin.scaleInPlace(1 - posOriginFactor).addInPlace(fromPosOrigin.scale(posOriginFactor));
+                let originIdle: Vector3 = Vector3.TransformCoordinates(this.prop.footTargets[this.legIndex], m);
+                originIdle.y += 1;
 
-                origin.y += 1;
-                if (this.showCollisionDebug) {
-                    DrawDebugPoint(origin, 144, Color3.Blue(), 0.5);
-                }
-
+                let f = this.fSpeed;
+                let origin = Vector3.Lerp(originIdle, originSym, f);
+                
                 let footTarget: Vector3 | null = null;
                 let ray = new Ray(origin, Vector3.Down(), 2);
                 let intersection = RayCollidersIntersection(ray, this.terrain);
@@ -472,10 +461,12 @@ export class Humanoid extends Mesh {
         // [^] Prevent overstrech
 
         // Sliding prevention [v]
+        /*
         let dP = this.body.position.subtract(this.position);
         dP.y = 0;
         this.leftLeg.footTarget.subtractInPlace(dP.scale(0.05));
         this.rightLeg.footTarget.subtractInPlace(dP.scale(0.05));
+        */
         // [^] Sliding prevention
 
         if (this.nameTag) {

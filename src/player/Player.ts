@@ -190,7 +190,7 @@ export class Player extends Mesh {
             this.human.prop.walkStyle[MoveMode.Run].stepDuration = 0.3;
             this.human.prop.overStrechAngleFactor = 0;
             this.human.prop.overStrechLengthMultiplier = 10.0;
-            this.human.prop.maxSpeed = 8;
+            this.human.prop.maxSpeed = 4;
             this.human.setPosition(this.absolutePosition);
         }
     }

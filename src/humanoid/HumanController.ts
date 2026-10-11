@@ -243,7 +243,7 @@ export class Human extends Humanoid {
 
             prop.walkStyle[MoveMode.Run].bootyShakiness = 0.2;
             prop.walkStyle[MoveMode.Run].stepHeight = 0.4;
-            prop.walkStyle[MoveMode.Run].stepDuration = 0.5;
+            prop.walkStyle[MoveMode.Run].stepDuration = 0.33;
             prop.walkStyle[MoveMode.Run].stepLength = 1.5;
             prop.walkStyle[MoveMode.Run].stepFSkip = 0.7;
             prop.walkStyle[MoveMode.Run].handAmplitude = 0.7;
@@ -269,7 +269,7 @@ export class Human extends Humanoid {
             }
 
             let human = new Human(name, game, prop);
-            human.prop.maxSpeed = 3;
+            human.prop.maxSpeed = 1.5;
 
             human.bodyVertexData = body.vertexData;
             human.torsoVertexData = torso.vertexData;
