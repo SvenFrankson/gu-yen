@@ -25,8 +25,8 @@ export class MyCamera extends UniversalCamera {
 
     public pointer: Mesh;
 
-    public maxDistance: number = 0;
-    private _distance: number = 0;
+    public maxDistance: number = 8;
+    private _distance: number = 8;
     public get distance(): number {
         return this._distance;
     }

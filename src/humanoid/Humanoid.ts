@@ -254,6 +254,10 @@ export class Humanoid extends Mesh {
         let visibleSpeed = Vector3.Dot(bodyDelta, this.forward) / dt;
         this.visibleSpeed = 0.95 * this.visibleSpeed + 0.05 * visibleSpeed;
 
+        let inputing = true;
+        if (this.moveInput.lengthSquared() < 0.01) {
+            inputing = false;
+        }
         if (this.moveInput.lengthSquared() > 1) {
             this.moveInput.normalize();
         }
@@ -262,9 +266,9 @@ export class Humanoid extends Mesh {
         let maxSpeed = fMaxSpeed * this.prop.maxSpeed + (1 - fMaxSpeed) * this.prop.maxSpeed * 0.1;
         maxSpeed = this.prop.maxSpeed;
 
-        this.velocity.scaleInPlace(0.8);
-        this.velocity.addInPlace(this.forward.scale(this.moveInput.z * maxSpeed * 0.2));
-        this.velocity.addInPlace(this.right.scale(this.moveInput.x * maxSpeed * 0.2));
+        this.velocity.scaleInPlace(0.95);
+        this.velocity.addInPlace(this.forward.scale(this.moveInput.z * maxSpeed * 0.05));
+        this.velocity.addInPlace(this.right.scale(this.moveInput.x * maxSpeed * 0.05));
         this.velocity.y = 0;
         this.fSpeed = this.visibleSpeed / this.prop.maxSpeed;
         this.fSpeed = Math.max(Math.min(this.fSpeed, 1), 0);
@@ -303,8 +307,8 @@ export class Humanoid extends Mesh {
                 //duration = MinMax(duration, this.prop.walkStyle[this.moveMode].stepDuration * 0.25, this.prop.walkStyle[this.moveMode].stepDuration);
 
                 let fromPosOrigin = Vector3.TransformCoordinates(this.prop.footTargets[this.legIndex], m);
-                fromPosOrigin.addInPlace(this.velocity.scale(duration * 0.5));
-                const posOriginFactor = 1;
+                fromPosOrigin.addInPlace(this.velocity.scale(duration * 0.75 * (inputing ? 1 : 0)));
+                const posOriginFactor = 0.9;
 
                 origin.scaleInPlace(1 - posOriginFactor).addInPlace(fromPosOrigin.scale(posOriginFactor));
 
@@ -453,7 +457,6 @@ export class Humanoid extends Mesh {
         footAnchor.y = Math.min(this.leftLeg.footTarget.y, this.rightLeg.footTarget.y);
         this.position.y = footAnchor.y;
         // Prevent overstrech [v]
-        /*
         let angle = Angle(this.forward, this.body.forward);
         let angleStrech = (angle - Math.PI / 8) / (Math.PI / 4 - Math.PI / 8);
         angleStrech = Math.min(Math.max(angleStrech, 0), 1);
@@ -466,16 +469,13 @@ export class Humanoid extends Mesh {
             dir.scaleInPlace(1 / l);
             this.position.copyFrom(dir).scaleInPlace(maxL).addInPlace(footAnchor);
         }
-        */
         // [^] Prevent overstrech
 
         // Sliding prevention [v]
-        /*
         let dP = this.body.position.subtract(this.position);
         dP.y = 0;
         this.leftLeg.footTarget.subtractInPlace(dP.scale(0.05));
         this.rightLeg.footTarget.subtractInPlace(dP.scale(0.05));
-        */
         // [^] Sliding prevention
 
         if (this.nameTag) {
